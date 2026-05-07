@@ -1,3 +1,5 @@
 PROJECT_DESCRIPTION.md
 PLAN.md
 exercises/
+__pycache__/
+*.pyc
