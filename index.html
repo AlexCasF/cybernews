@@ -20,6 +20,8 @@
 
   <main>
     <p>Latest cybersecurity updates will appear here soon.</p>
+    <button id="refreshButton">Refresh Headlines</button>
+    <section id="headlinesContainer"></section>
   </main>
 
   <footer>
@@ -40,6 +42,48 @@
 
     console.log(message);
     document.querySelector("h1").textContent = message;
+
+    const refreshButton = document.getElementById("refreshButton");
+    const headlinesContainer = document.getElementById("headlinesContainer");
+
+    const headlines = [
+      "Breaking: Cyber Attack Hits Major Company!",
+      "New Security Patch Released Today",
+      "AI Tool Detects Malware Faster Than Ever",
+      "Phishing Scam Targets Online Users",
+      "Password123 Still Somehow in Use",
+      "Trump Proposes Law to Set Pi (π) = 3.0 Once and for All",
+      "NVIDIA Bankrupt",
+      "Safest Password in the World Is Actually \"password\"",
+      "Intern Spots Fake Login Page Before Lunch"
+    ];
+
+    const descriptions = [
+      "Experts are analyzing the incident to prevent future breaches.",
+      "Make sure to update your systems to stay safe.",
+      "AI algorithms are now capable of spotting threats automatically.",
+      "Users are advised to verify all emails before clicking links.",
+      "Admins are reminding everyone to choose stronger passwords.",
+      "Mathematicians and engineers are calling an emergency meeting.",
+      "Graphics cards everywhere are blinking sadly in RGB.",
+      "Security experts are confused, worried, and checking their notes.",
+      "The suspicious page was reported before anyone entered their password."
+    ];
+
+    refreshButton.addEventListener("click", function () {
+      const randomIndex = Math.floor(Math.random() * headlines.length);
+      const headlineItem = document.createElement("article");
+      const headlineTitle = document.createElement("h3");
+      const headlineText = document.createElement("p");
+
+      headlineTitle.textContent = headlines[randomIndex];
+      headlineText.textContent = descriptions[randomIndex];
+
+      document.querySelector("h1").textContent = headlines[randomIndex];
+      headlineItem.appendChild(headlineTitle);
+      headlineItem.appendChild(headlineText);
+      headlinesContainer.appendChild(headlineItem);
+    });
   </script>
 </body>
 </html>
