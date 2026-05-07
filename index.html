@@ -8,7 +8,7 @@
 </head>
 <body>
   <header>
-    <h1>CyberNews Tracker</h1>
+    <h1>Welcome!</h1>
     <nav>
       <ul>
         <li><a href="#">Home</a></li>
@@ -25,5 +25,21 @@
   <footer>
     <p>&copy; 2025 CyberNews Tracker</p>
   </footer>
+
+  <script>
+    const hour = new Date().getHours();
+    let message = "";
+
+    if (hour < 12) {
+      message = "Good Morning, Cyber Explorer!";
+    } else if (hour < 18) {
+      message = "Good Afternoon, Cyber Defender!";
+    } else {
+      message = "Good Evening, Night Watcher!";
+    }
+
+    console.log(message);
+    document.querySelector("h1").textContent = message;
+  </script>
 </body>
 </html>
