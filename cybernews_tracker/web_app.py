@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 
-from flask import Flask
+from flask import Flask, render_template
 
 
 app = Flask(__name__)
@@ -8,7 +8,37 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Welcome to the Route Master Home Page!"
+    return "Welcome to CyberNews Tracker!"
+
+
+@app.route("/news")
+def news():
+    username = "Alex"
+    articles = [
+        {
+            "title": "New Security Patch Released Today",
+            "summary": "Admins are encouraged to update their systems before the weekend.",
+            "date": "2026-05-07",
+        },
+        {
+            "title": "Phishing Scam Targets Online Users",
+            "summary": "Users are advised to check email links carefully before clicking.",
+            "date": "2026-05-06",
+        },
+        {
+            "title": "AI Tool Detects Malware Faster Than Ever",
+            "summary": "Researchers say automated detection can help teams respond sooner.",
+            "date": "2026-05-05",
+        },
+    ]
+    last_updated = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    return render_template(
+        "news.html",
+        username=username,
+        articles=articles,
+        last_updated=last_updated,
+    )
 
 
 @app.route("/status")

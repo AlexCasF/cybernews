@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberNews Tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>CyberNews Tracker</h1>
+    <p>Welcome, {{ username }}.</p>
+  </header>
+
+  <main>
+    <p>Last updated: {{ last_updated }}</p>
+
+    <section>
+      {% for article in articles %}
+        <article>
+          <h2>{{ article.title }}</h2>
+          <p>{{ article.summary }}</p>
+          <p><strong>Date:</strong> {{ article.date }}</p>
+        </article>
+      {% endfor %}
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 CyberNews Tracker</p>
+  </footer>
+</body>
+</html>
