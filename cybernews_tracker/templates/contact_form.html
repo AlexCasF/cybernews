@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact - CyberNews Tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>CyberNews Tracker</h1>
+    <p>Report an incident or suggest an improvement.</p>
+    <nav>
+      <a href="{{ url_for('news') }}">News</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Contact Us</h2>
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form action="{{ url_for('submit_message') }}" method="POST">
+      <label for="name">Name:</label>
+      <input type="text" name="name" id="name" value="{{ name or '' }}" required>
+
+      <label for="email">Email:</label>
+      <input type="email" name="email" id="email" value="{{ email or '' }}" required>
+
+      <label for="message">Message:</label>
+      <textarea name="message" id="message" rows="5" required>{{ message or '' }}</textarea>
+
+      <button type="submit">Send</button>
+    </form>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 CyberNews Tracker</p>
+  </footer>
+</body>
+</html>

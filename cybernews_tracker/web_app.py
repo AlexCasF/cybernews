@@ -1,6 +1,7 @@
+import re
 from datetime import date, datetime
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 
 app = Flask(__name__)
@@ -38,6 +39,35 @@ def news():
         username=username,
         articles=articles,
         last_updated=last_updated,
+    )
+
+
+@app.route("/contact")
+def contact():
+    return render_template("contact_form.html")
+
+
+@app.route("/submit-message", methods=["POST"])
+def submit_message():
+    name = request.form.get("name")
+    email = request.form.get("email")
+    message = request.form.get("message")
+    email_pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+
+    if not re.match(email_pattern, email):
+        return render_template(
+            "contact_form.html",
+            error="Please enter a valid email address.",
+            name=name,
+            email=email,
+            message=message,
+        )
+
+    return render_template(
+        "confirmation.html",
+        name=name,
+        email=email,
+        message=message,
     )
 
 

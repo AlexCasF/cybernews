@@ -19,6 +19,16 @@ main {
   padding: 30px 20px;
 }
 
+nav a {
+  margin: 0 10px;
+  color: white;
+  text-decoration: none;
+}
+
+nav a:hover {
+  color: #ccc;
+}
+
 article {
   margin-bottom: 20px;
   padding: 15px;
@@ -28,4 +38,26 @@ article {
 
 article h2 {
   margin-top: 0;
+}
+
+form {
+  display: grid;
+  gap: 10px;
+  max-width: 500px;
+}
+
+input,
+textarea,
+button {
+  padding: 10px;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.error {
+  color: #b00020;
+  font-weight: bold;
 }
