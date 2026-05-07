@@ -3,6 +3,12 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
   background-color: #f4f4f4;
+  color: #222;
+}
+
+body.dark-mode {
+  background-color: #121212;
+  color: #f4f4f4;
 }
 
 header,

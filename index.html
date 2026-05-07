@@ -21,6 +21,7 @@
   <main>
     <p>Latest cybersecurity updates will appear here soon.</p>
     <button id="refreshButton">Refresh Headlines</button>
+    <button id="darkModeButton">Toggle Dark Mode</button>
     <section id="headlinesContainer"></section>
   </main>
 
@@ -44,6 +45,7 @@
     document.querySelector("h1").textContent = message;
 
     const refreshButton = document.getElementById("refreshButton");
+    const darkModeButton = document.getElementById("darkModeButton");
     const headlinesContainer = document.getElementById("headlinesContainer");
 
     const headlines = [
@@ -83,6 +85,10 @@
       headlineItem.appendChild(headlineTitle);
       headlineItem.appendChild(headlineText);
       headlinesContainer.appendChild(headlineItem);
+    });
+
+    darkModeButton.addEventListener("click", function () {
+      document.body.classList.toggle("dark-mode");
     });
   </script>
 </body>
