@@ -11,6 +11,13 @@ body.dark-mode {
   color: #f4f4f4;
 }
 
+@media (prefers-color-scheme: dark) {
+  body.device-mode {
+    background-color: #121212;
+    color: #f4f4f4;
+  }
+}
+
 header,
 footer {
   padding: 20px;
