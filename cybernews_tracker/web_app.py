@@ -1,8 +1,12 @@
+import json
+import os
 import re
 import secrets
 from datetime import date, datetime
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
-from flask import Flask, make_response, redirect, render_template, request, url_for
+from flask import Flask, jsonify, make_response, redirect, render_template, request, url_for
 
 
 app = Flask(__name__)
@@ -11,6 +15,23 @@ USERS = {
     "alice": {"password": "alicepass", "role": "user"},
     "bob": {"password": "bobpass", "role": "admin"},
 }
+LOCAL_NEWS = [
+    {
+        "title": "New Malware Targets Industrial Systems",
+        "source": "CyberDaily",
+        "url": "#",
+    },
+    {
+        "title": "Researchers Discover AI-Powered Phishing Campaign",
+        "source": "TechWatch",
+        "url": "#",
+    },
+    {
+        "title": "Security Patch Closes Critical Login Bug",
+        "source": "PatchWire",
+        "url": "#",
+    },
+]
 
 
 def get_current_user():
@@ -58,9 +79,52 @@ def news():
         "news.html",
         username=username,
         current_user=current_user,
-        articles=articles,
         last_updated=last_updated,
     )
+
+
+@app.route("/api/news")
+def api_news():
+    return jsonify({"articles": LOCAL_NEWS})
+
+
+@app.route("/api/live-news")
+def api_live_news():
+    api_key = os.getenv("NEWS_API_KEY")
+
+    if not api_key:
+        return jsonify({"error": "NEWS_API_KEY is missing."}), 500
+
+    query = urlencode(
+        {
+            "q": "cybersecurity",
+            "language": "en",
+            "apiKey": api_key,
+        }
+    )
+    api_url = f"https://newsapi.org/v2/everything?{query}"
+
+    try:
+        with urlopen(api_url, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return jsonify({"error": "Live news unavailable."}), 502
+
+    if data.get("status") != "ok":
+        return jsonify({"error": "NewsAPI returned an error."}), 502
+
+    articles = []
+
+    for article in data.get("articles", [])[:10]:
+        articles.append(
+            {
+                "title": article.get("title"),
+                "source": article.get("source", {}).get("name", "Unknown source"),
+                "url": article.get("url"),
+            }
+        )
+
+    return jsonify({"articles": articles})
 
 
 @app.route("/login", methods=["GET", "POST"])

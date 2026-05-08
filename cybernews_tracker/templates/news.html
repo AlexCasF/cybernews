@@ -1,46 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CyberNews Tracker</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <header>
-    <h1>CyberNews Tracker</h1>
-    <p>Welcome, {{ username }}{% if current_user %} ({{ current_user.role }}){% endif %}.</p>
-    <nav>
-      <a href="{{ url_for('news') }}">News</a>
-      <a href="{{ url_for('contact') }}">Contact</a>
-      <a href="{{ url_for('cookie_check') }}">Cookie Check</a>
-      {% if current_user %}
-        <a href="{{ url_for('dashboard') }}">User Dashboard</a>
-      {% endif %}
-      {% if current_user and current_user.role == "admin" %}
-        <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
-      {% endif %}
-      <a href="{{ url_for('login') }}">Login</a>
-      <a href="{{ url_for('logout') }}">Logout</a>
-    </nav>
-  </header>
+{% extends "index.html" %}
 
-  <main>
-    <p>Last updated: {{ last_updated }}</p>
+{% block title %}CyberNews Tracker{% endblock %}
 
-    <section>
-      {% for article in articles %}
-        <article>
-          <h2>{{ article.title }}</h2>
-          <p>{{ article.summary }}</p>
-          <p><strong>Date:</strong> {{ article.date }}</p>
-        </article>
-      {% endfor %}
-    </section>
-  </main>
+{% block header_text %}
+  <p>Welcome, {{ username }}{% if current_user %} ({{ current_user.role }}){% endif %}.</p>
+{% endblock %}
 
-  <footer>
-    <p>&copy; 2026 CyberNews Tracker</p>
-  </footer>
-</body>
-</html>
+{% block content %}
+  <p>Last updated: {{ last_updated }}</p>
+
+  <button id="refreshButton">Refresh Headlines</button>
+  <p id="newsMessage"></p>
+  <ul id="headlinesContainer"></ul>
+
+  <script>
+    const headlinesContainer = document.getElementById("headlinesContainer");
+    const newsMessage = document.getElementById("newsMessage");
+    const refreshButton = document.getElementById("refreshButton");
+
+    function showArticles(articles) {
+      headlinesContainer.innerHTML = "";
+
+      for (const article of articles) {
+        const item = document.createElement("li");
+        const link = document.createElement("a");
+        const source = document.createElement("span");
+
+        link.textContent = article.title;
+        link.href = article.url;
+        link.target = "_blank";
+
+        source.textContent = " - " + article.source;
+
+        item.appendChild(link);
+        item.appendChild(source);
+        headlinesContainer.appendChild(item);
+      }
+    }
+
+    async function fetchNews(url) {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      return response.json();
+    }
+
+    async function loadLocalNews() {
+      try {
+        const data = await fetchNews("/api/news");
+        showArticles(data.articles);
+        newsMessage.textContent = "Showing local headlines.";
+      } catch (error) {
+        newsMessage.textContent = "News unavailable right now. Please try again later.";
+      }
+    }
+
+    async function loadLiveNews() {
+      try {
+        const data = await fetchNews("/api/live-news");
+        showArticles(data.articles);
+        newsMessage.textContent = "Showing live headlines.";
+      } catch (error) {
+        newsMessage.textContent = "Live news unavailable. Showing local headlines instead.";
+        loadLocalNews();
+      }
+    }
+
+    refreshButton.addEventListener("click", loadLiveNews);
+    loadLocalNews();
+  </script>
+{% endblock %}

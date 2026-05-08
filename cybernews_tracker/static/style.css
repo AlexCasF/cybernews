@@ -40,6 +40,15 @@ article h2 {
   margin-top: 0;
 }
 
+#headlinesContainer {
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+#newsMessage {
+  font-weight: bold;
+}
+
 form {
   display: grid;
   gap: 10px;
