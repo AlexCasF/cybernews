@@ -22,7 +22,7 @@
   <section id="headlines" class="panel">
     <div class="panel-heading">
       <h3>Latest Headlines</h3>
-      <span>{{ articles|length }} items</span>
+      <span id="articleCount">{{ articles|length }} items</span>
     </div>
 
     <div class="filter-bar" aria-label="News filters">
@@ -45,9 +45,13 @@
           {% endfor %}
         </select>
       </label>
+
+      <button id="refreshLiveNewsButton" type="button">Refresh Live News</button>
     </div>
 
-    <div class="item-list">
+    <p id="newsMessage" class="news-message">Showing local demo articles.</p>
+
+    <div id="articleList" class="item-list">
       {% for article in articles %}
         <article class="news-item" data-category="{{ article.category }}" data-severity="{{ article.severity }}">
           <div>
@@ -109,12 +113,16 @@
   <script>
     const categoryFilter = document.getElementById("categoryFilter");
     const severityFilter = document.getElementById("severityFilter");
-    const articleCards = document.querySelectorAll(".news-item");
+    const refreshLiveNewsButton = document.getElementById("refreshLiveNewsButton");
+    const articleList = document.getElementById("articleList");
+    const articleCount = document.getElementById("articleCount");
+    const newsMessage = document.getElementById("newsMessage");
     const emptyArticlesMessage = document.getElementById("emptyArticlesMessage");
 
     function applyArticleFilters() {
       const selectedCategory = categoryFilter.value;
       const selectedSeverity = severityFilter.value;
+      const articleCards = document.querySelectorAll(".news-item");
       let visibleCount = 0;
 
       articleCards.forEach((card) => {
@@ -132,7 +140,70 @@
       emptyArticlesMessage.hidden = visibleCount > 0;
     }
 
+    function createArticleCard(article) {
+      const card = document.createElement("article");
+      card.className = "news-item";
+      card.dataset.category = article.category;
+      card.dataset.severity = article.severity;
+
+      const content = document.createElement("div");
+      const heading = document.createElement("h4");
+      const link = document.createElement("a");
+      const meta = document.createElement("p");
+      const summary = document.createElement("p");
+      const tag = document.createElement("span");
+
+      link.href = article.url;
+      link.textContent = article.title;
+      meta.textContent = `${article.source} | ${article.published} | ${article.severity}`;
+      summary.textContent = article.summary;
+      tag.className = "tag";
+      tag.textContent = article.category;
+
+      heading.appendChild(link);
+      content.appendChild(heading);
+      content.appendChild(meta);
+      content.appendChild(summary);
+      card.appendChild(content);
+      card.appendChild(tag);
+
+      return card;
+    }
+
+    function renderArticles(articles) {
+      articleList.innerHTML = "";
+
+      articles.forEach((article) => {
+        articleList.appendChild(createArticleCard(article));
+      });
+
+      articleCount.textContent = `${articles.length} items`;
+      applyArticleFilters();
+    }
+
+    async function refreshLiveNews() {
+      refreshLiveNewsButton.disabled = true;
+      newsMessage.textContent = "Loading live news...";
+
+      try {
+        const response = await fetch("/api/live-news");
+
+        if (!response.ok) {
+          throw new Error("Live news request failed.");
+        }
+
+        const data = await response.json();
+        renderArticles(data.articles);
+        newsMessage.textContent = data.message;
+      } catch (error) {
+        newsMessage.textContent = "News unavailable right now. Please try again later.";
+      }
+
+      refreshLiveNewsButton.disabled = false;
+    }
+
     categoryFilter.addEventListener("change", applyArticleFilters);
     severityFilter.addEventListener("change", applyArticleFilters);
+    refreshLiveNewsButton.addEventListener("click", refreshLiveNews);
   </script>
 {% endblock %}

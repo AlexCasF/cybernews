@@ -148,6 +148,26 @@ body {
   border: 1px solid #b9c6cc;
 }
 
+.filter-bar button {
+  align-self: end;
+  padding: 9px 12px;
+  font: inherit;
+  cursor: pointer;
+  color: white;
+  background: #14212b;
+  border: 0;
+}
+
+.filter-bar button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.news-message {
+  margin: 0 0 14px;
+  color: #5a6872;
+}
+
 .item-list {
   display: grid;
   gap: 12px;

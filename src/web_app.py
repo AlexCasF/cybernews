@@ -1,4 +1,8 @@
+import json
+import os
 from datetime import datetime
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
@@ -19,6 +23,7 @@ USERS = {
 }
 ADMIN_REPORTS = []
 AUDIT_LOG = []
+NEWSAPI_URL = "https://newsapi.org/v2/everything"
 
 
 def get_timestamp():
@@ -87,6 +92,105 @@ def get_mock_articles():
     ]
 
 
+def guess_article_category(text):
+    lower_text = text.lower()
+
+    if "phishing" in lower_text:
+        return "Phishing"
+
+    if "malware" in lower_text or "ransomware" in lower_text:
+        return "Malware"
+
+    if "vulnerability" in lower_text or "bug" in lower_text or "cve" in lower_text:
+        return "Vulnerability"
+
+    return "News"
+
+
+def guess_article_severity(category):
+    if category == "Vulnerability":
+        return "High"
+
+    if category in ["Malware", "Phishing"]:
+        return "Medium"
+
+    return "Low"
+
+
+def normalize_newsapi_article(article, index):
+    title = article.get("title") or "Untitled article"
+    summary = article.get("description") or "No summary available."
+    category = guess_article_category(f"{title} {summary}")
+
+    return {
+        "id": f"live-{index}",
+        "title": title,
+        "summary": summary,
+        "source": article.get("source", {}).get("name") or "NewsAPI",
+        "url": article.get("url") or "#",
+        "published": (article.get("publishedAt") or "")[:10] or "Unknown date",
+        "category": category,
+        "severity": guess_article_severity(category),
+    }
+
+
+def get_live_news_articles():
+    api_key = os.getenv("NEWS_API_KEY")
+
+    if not api_key:
+        return {
+            "articles": get_mock_articles(),
+            "source": "fallback",
+            "message": "NEWS_API_KEY is missing. Showing local demo articles.",
+        }
+
+    query = urlencode(
+        {
+            "q": "cybersecurity",
+            "language": "en",
+            "sortBy": "publishedAt",
+            "pageSize": 6,
+            "apiKey": api_key,
+        }
+    )
+
+    try:
+        with urlopen(f"{NEWSAPI_URL}?{query}", timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return {
+            "articles": get_mock_articles(),
+            "source": "fallback",
+            "message": "Live news is unavailable. Showing local demo articles.",
+        }
+
+    if data.get("status") != "ok":
+        return {
+            "articles": get_mock_articles(),
+            "source": "fallback",
+            "message": "NewsAPI returned an error. Showing local demo articles.",
+        }
+
+    live_articles = [
+        normalize_newsapi_article(article, index + 1)
+        for index, article in enumerate(data.get("articles", []))
+        if article.get("title") and article.get("url")
+    ]
+
+    if not live_articles:
+        return {
+            "articles": get_mock_articles(),
+            "source": "fallback",
+            "message": "No live articles were found. Showing local demo articles.",
+        }
+
+    return {
+        "articles": live_articles,
+        "source": "newsapi",
+        "message": "Live NewsAPI articles loaded.",
+    }
+
+
 def get_dashboard_stats(articles):
     return [
         {
@@ -138,7 +242,7 @@ def get_system_status():
 
 
 def get_article_categories(articles):
-    return sorted({article["category"] for article in articles})
+    return sorted({article["category"] for article in articles} | {"News"})
 
 
 def get_article_severities():
@@ -233,6 +337,11 @@ def admin_reports():
 @app.route("/api/articles")
 def api_articles():
     return jsonify(get_mock_articles())
+
+
+@app.route("/api/live-news")
+def api_live_news():
+    return jsonify(get_live_news_articles())
 
 
 @app.route("/health")

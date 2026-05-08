@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 9: Live News Feed
+Step 10: BSI Vulnerability Feed
 
 Status: TODO
 
@@ -205,13 +205,17 @@ Notes:
 
 ### Step 9: Live News Feed
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: add live news feed
 
 Tested:
 
-- -
+- Checked `/api/live-news` returns fallback articles when `NEWS_API_KEY` is missing.
+- Checked `/api/live-news` returns live NewsAPI articles when `NEWS_API_KEY` is loaded.
+- Checked `/api/live-news` returns normalized article objects.
+- Checked `/` contains the refresh live news button and JavaScript renderer.
+- Checked `/health` still returns the health message.
 
 Notes:
 
@@ -221,6 +225,8 @@ Notes:
 - Planned upstream endpoint: `https://newsapi.org/v2/everything`.
 - Planned query: `q=cybersecurity`, `language=en`, `sortBy=publishedAt`.
 - NewsAPI is useful for general cybersecurity news but not pure threat intelligence.
+- Added NewsAPI integration with local fallback.
+- Added browser-side refresh for live news.
 
 ### Step 10: BSI Vulnerability Feed
 
