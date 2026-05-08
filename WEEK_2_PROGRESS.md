@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 13: Threat Graph Page
+Step 14: Graph Details Panel
 
 Status: TODO
 
@@ -320,7 +320,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add threat graph data API
+Commit: 4ee197e Week 2: add threat graph data API
 
 Tested:
 
@@ -338,17 +338,25 @@ Notes:
 
 ### Step 13: Threat Graph Page
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: add threat graph page
 
 Tested:
 
-- -
+- Checked `/threat-graph` returns `200`.
+- Checked the page contains the threat graph loader script.
+- Checked the main navigation links to `/threat-graph`.
+- Checked `/api/threat-graph` still returns graph JSON.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Added a Threat Graph navigation link.
+- Added a `/threat-graph` route.
+- Added a simple Threat Graph page.
+- The page fetches `/api/threat-graph` in the browser.
+- Nodes and relationships are rendered as readable cards for now.
 
 ### Step 14: Graph Details Panel
 

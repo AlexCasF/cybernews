@@ -182,10 +182,18 @@ body {
   gap: 12px;
 }
 
+.graph-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
 .news-item,
 .bsi-item,
 .intel-card,
-.report-item {
+.report-item,
+.graph-node,
+.graph-edge {
   padding: 12px;
   background: #f5f7f8;
   border: 1px solid #dbe3e7;
@@ -206,7 +214,8 @@ body {
 .news-item h4,
 .bsi-item h4,
 .intel-card h4,
-.report-item h4 {
+.report-item h4,
+.graph-node h4 {
   margin: 0;
 }
 
@@ -224,9 +233,18 @@ body {
 .news-item p,
 .bsi-item p,
 .intel-card p,
-.report-item p {
+.report-item p,
+.graph-node p,
+.graph-edge p {
   margin: 6px 0 0;
   color: #5a6872;
+}
+
+.graph-node-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .intel-source {
@@ -374,9 +392,14 @@ body {
 
   .news-item,
   .bsi-item,
-  .intel-card {
+  .intel-card,
+  .graph-node-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .graph-grid {
+    grid-template-columns: 1fr;
   }
 
   .audit-table {

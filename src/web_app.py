@@ -487,6 +487,14 @@ def admin_reports():
     )
 
 
+@app.route("/threat-graph")
+def threat_graph():
+    return render_template(
+        "threat_graph.html",
+        current_user=get_current_user(),
+    )
+
+
 @app.route("/api/articles")
 def api_articles():
     return jsonify(get_mock_articles())

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}CyberNews Threat Graph{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <p class="eyebrow">Threat correlation</p>
+    <h2>Threat Graph</h2>
+    <p>Explore how one threat can connect to techniques, targets, impacts, and defenses.</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h3>Graph Data</h3>
+      <span id="graphCount">Loading...</span>
+    </div>
+
+    <p id="graphMessage" class="news-message">Loading threat graph data...</p>
+
+    <div class="graph-grid">
+      <div>
+        <h4>Nodes</h4>
+        <div id="nodeList" class="item-list"></div>
+      </div>
+
+      <div>
+        <h4>Relationships</h4>
+        <div id="edgeList" class="item-list"></div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    const graphCount = document.getElementById("graphCount");
+    const graphMessage = document.getElementById("graphMessage");
+    const nodeList = document.getElementById("nodeList");
+    const edgeList = document.getElementById("edgeList");
+
+    function createNodeCard(node) {
+      const card = document.createElement("article");
+      const heading = document.createElement("div");
+      const title = document.createElement("h4");
+      const severity = document.createElement("span");
+      const type = document.createElement("p");
+
+      card.className = "graph-node";
+      heading.className = "graph-node-heading";
+      title.textContent = node.label;
+      severity.className = `priority severity-${node.severity.toLowerCase()}`;
+      severity.textContent = node.severity;
+      type.textContent = `Type: ${node.type}`;
+
+      heading.appendChild(title);
+      heading.appendChild(severity);
+      card.appendChild(heading);
+      card.appendChild(type);
+
+      return card;
+    }
+
+    function createEdgeCard(edge, nodesById) {
+      const card = document.createElement("article");
+      const text = document.createElement("p");
+      const source = nodesById[edge.source] || edge.source;
+      const target = nodesById[edge.target] || edge.target;
+
+      card.className = "graph-edge";
+      text.textContent = `${source} -> ${edge.label} -> ${target}`;
+      card.appendChild(text);
+
+      return card;
+    }
+
+    function renderThreatGraph(data) {
+      const nodesById = {};
+      nodeList.innerHTML = "";
+      edgeList.innerHTML = "";
+
+      data.nodes.forEach((node) => {
+        nodesById[node.id] = node.label;
+        nodeList.appendChild(createNodeCard(node));
+      });
+
+      data.edges.forEach((edge) => {
+        edgeList.appendChild(createEdgeCard(edge, nodesById));
+      });
+
+      graphCount.textContent = `${data.nodes.length} nodes, ${data.edges.length} relationships`;
+      graphMessage.textContent = data.message;
+    }
+
+    async function loadThreatGraph() {
+      try {
+        const response = await fetch("/api/threat-graph");
+
+        if (!response.ok) {
+          throw new Error("Threat graph request failed.");
+        }
+
+        const data = await response.json();
+        renderThreatGraph(data);
+      } catch (error) {
+        graphCount.textContent = "Unavailable";
+        graphMessage.textContent = "Threat graph data is unavailable right now.";
+      }
+    }
+
+    loadThreatGraph();
+  </script>
+{% endblock %}
