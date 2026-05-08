@@ -2,11 +2,27 @@
 
 ## Current Step
 
-Step 1: Clean Shared Layout
+Setup: Archive Week 1 Files
 
-Status: TODO
+Status: READY FOR REVIEW
 
 ## Progress Log
+
+### Setup: Archive Week 1 Files
+
+Status: READY FOR REVIEW
+
+Commit: -
+
+Tested:
+
+- Confirmed Week 1 files moved into `week_1/`.
+- Confirmed new `src/` directory exists.
+
+Notes:
+
+- Moved the original HTML, CSS, README, Flask app folder, and exercises folder into `week_1/`.
+- Created `src/` as the workspace for the next product version.
 
 ### Step 1: Clean Shared Layout
 
