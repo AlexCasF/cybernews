@@ -1,10 +1,21 @@
 import re
+import secrets
 from datetime import date, datetime
 
-from flask import Flask, render_template, request
+from flask import Flask, make_response, redirect, render_template, request, url_for
 
 
 app = Flask(__name__)
+sessions = {}
+
+
+def get_current_user():
+    session_token = request.cookies.get("session_token")
+
+    if not session_token:
+        return None
+
+    return sessions.get(session_token)
 
 
 @app.route("/")
@@ -14,7 +25,12 @@ def home():
 
 @app.route("/news")
 def news():
-    username = "Alex"
+    current_user = get_current_user()
+    username = "Guest"
+
+    if current_user:
+        username = current_user["username"]
+
     articles = [
         {
             "title": "New Security Patch Released Today",
@@ -40,6 +56,64 @@ def news():
         articles=articles,
         last_updated=last_updated,
     )
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "GET":
+        return render_template("login.html")
+
+    username = request.form.get("username")
+    role = request.form.get("role")
+
+    if not username:
+        return render_template("login.html", error="Please enter a username.")
+
+    session_token = secrets.token_urlsafe(24)
+    sessions[session_token] = {
+        "username": username,
+        "role": role,
+        "login_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+
+    response = make_response(redirect(url_for("news")))
+    response.set_cookie(
+        "session_token",
+        session_token,
+        httponly=True,
+        samesite="Lax",
+        secure=request.is_secure,
+    )
+
+    return response
+
+
+@app.route("/logout")
+def logout():
+    session_token = request.cookies.get("session_token")
+
+    if session_token in sessions:
+        sessions.pop(session_token)
+
+    response = make_response(redirect(url_for("news")))
+    response.delete_cookie("session_token")
+
+    return response
+
+
+@app.route("/cookie_check")
+def cookie_check():
+    response = make_response(render_template("cookie_check.html"))
+    response.set_cookie("visible_cookie", "JavaScript can read this one")
+    response.set_cookie(
+        "hidden_cookie",
+        "JavaScript cannot read this one",
+        httponly=True,
+        samesite="Lax",
+        secure=request.is_secure,
+    )
+
+    return response
 
 
 @app.route("/contact")

@@ -3,34 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CyberNews Tracker</title>
+  <title>Cookie Check - CyberNews Tracker</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <header>
     <h1>CyberNews Tracker</h1>
-    <p>Welcome, {{ username }}.</p>
+    <p>Cookie visibility test.</p>
     <nav>
       <a href="{{ url_for('news') }}">News</a>
       <a href="{{ url_for('contact') }}">Contact</a>
-      <a href="{{ url_for('cookie_check') }}">Cookie Check</a>
       <a href="{{ url_for('login') }}">Login</a>
-      <a href="{{ url_for('logout') }}">Logout</a>
     </nav>
   </header>
 
   <main>
-    <p>Last updated: {{ last_updated }}</p>
-
-    <section>
-      {% for article in articles %}
-        <article>
-          <h2>{{ article.title }}</h2>
-          <p>{{ article.summary }}</p>
-          <p><strong>Date:</strong> {{ article.date }}</p>
-        </article>
-      {% endfor %}
-    </section>
+    <h2>Cookie Check</h2>
+    <p>Open the browser console and run:</p>
+    <pre>document.cookie</pre>
+    <p>You should see <code>visible_cookie</code>, but not <code>hidden_cookie</code> or <code>session_token</code>.</p>
   </main>
 
   <footer>

@@ -3,34 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CyberNews Tracker</title>
+  <title>Login - CyberNews Tracker</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <header>
     <h1>CyberNews Tracker</h1>
-    <p>Welcome, {{ username }}.</p>
+    <p>Login to create a server-side session.</p>
     <nav>
       <a href="{{ url_for('news') }}">News</a>
       <a href="{{ url_for('contact') }}">Contact</a>
       <a href="{{ url_for('cookie_check') }}">Cookie Check</a>
-      <a href="{{ url_for('login') }}">Login</a>
-      <a href="{{ url_for('logout') }}">Logout</a>
     </nav>
   </header>
 
   <main>
-    <p>Last updated: {{ last_updated }}</p>
+    <h2>Login</h2>
 
-    <section>
-      {% for article in articles %}
-        <article>
-          <h2>{{ article.title }}</h2>
-          <p>{{ article.summary }}</p>
-          <p><strong>Date:</strong> {{ article.date }}</p>
-        </article>
-      {% endfor %}
-    </section>
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form action="{{ url_for('login') }}" method="POST">
+      <label for="username">Username:</label>
+      <input type="text" name="username" id="username" required>
+
+      <label for="role">Role:</label>
+      <input type="text" name="role" id="role" value="analyst" required>
+
+      <button type="submit">Login</button>
+    </form>
   </main>
 
   <footer>
