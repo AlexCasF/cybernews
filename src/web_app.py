@@ -1,9 +1,27 @@
 from datetime import datetime
 
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 
 app = Flask(__name__)
+app.secret_key = "dev-secret-key"
+
+USERS = {
+    "alice": {"password": "alicepass", "role": "user"},
+    "bob": {"password": "bobpass", "role": "admin"},
+}
+
+
+def get_current_user():
+    username = session.get("username")
+
+    if not username or username not in USERS:
+        return None
+
+    return {
+        "username": username,
+        "role": USERS[username]["role"],
+    }
 
 
 def get_mock_articles():
@@ -110,8 +128,33 @@ def home():
         severities=get_article_severities(),
         intelligence_items=get_intelligence_items(),
         system_status=get_system_status(),
+        current_user=get_current_user(),
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),
     )
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = ""
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        user = USERS.get(username)
+
+        if user and password == user["password"]:
+            session["username"] = username
+            return redirect(url_for("home"))
+
+        error = "Invalid username or password."
+
+    return render_template("login.html", error=error, current_user=get_current_user())
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("home"))
 
 
 @app.route("/api/articles")

@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 5: Admin Report Form
+Step 5b: Admin Report Form
 
 Status: TODO
 
@@ -65,7 +65,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: normalize article data shape
+Commit: 5d28126 Week 2: normalize article data shape
 
 Tested:
 
@@ -84,7 +84,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add news filters
+Commit: 4d105f2 Week 2: add news filters
 
 Tested:
 
@@ -100,7 +100,28 @@ Notes:
 - Added a small JavaScript filter function.
 - Added an empty message for no matching articles.
 
-### Step 5: Admin Report Form
+### Step 5a: Basic Demo Login
+
+Status: DONE
+
+Commit: Week 2: add basic demo login
+
+Tested:
+
+- Checked `/login` returns the login form.
+- Checked valid demo login redirects to the dashboard.
+- Checked invalid login keeps the user on the login page with an error.
+- Checked `/logout` clears the demo session.
+- Checked admin-only navigation appears for `bob`.
+
+Notes:
+
+- Added hardcoded demo users.
+- Added Flask session-based login and logout.
+- Added login/logout navigation states.
+- Added admin-only navigation visibility for the future admin reports page.
+
+### Step 5b: Admin Report Form
 
 Status: TODO
 

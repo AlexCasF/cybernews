@@ -18,8 +18,22 @@
       <a href="#headlines">Headlines</a>
       <a href="#intelligence">Intelligence</a>
       <a href="#system">System</a>
+      {% if current_user and current_user.role == "admin" %}
+        <a href="#admin">Admin Reports</a>
+      {% endif %}
+      {% if current_user %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Login</a>
+      {% endif %}
     </nav>
   </header>
+
+  {% if current_user %}
+    <aside class="user-bar">
+      Signed in as <strong>{{ current_user.username }}</strong> ({{ current_user.role }})
+    </aside>
+  {% endif %}
 
   <main class="page-shell">
     {% block content %}{% endblock %}

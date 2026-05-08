@@ -53,6 +53,12 @@ body {
   color: #9ee8e5;
 }
 
+.user-bar {
+  padding: 10px 20px;
+  color: #172026;
+  background: #c8f5f2;
+}
+
 .page-shell {
   max-width: 960px;
   margin: 0 auto;
@@ -203,6 +209,50 @@ body {
   color: #5a6872;
   background: #f5f7f8;
   border: 1px dashed #b9c6cc;
+}
+
+.auth-panel {
+  max-width: 520px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: bold;
+}
+
+.auth-form input,
+.auth-form button {
+  padding: 10px;
+  font: inherit;
+}
+
+.auth-form button {
+  cursor: pointer;
+  color: white;
+  background: #14212b;
+  border: 0;
+}
+
+.error-message {
+  color: #a31717;
+  font-weight: bold;
+}
+
+.demo-logins {
+  margin-top: 18px;
+  padding: 12px;
+  background: #f5f7f8;
+  border: 1px solid #dbe3e7;
+}
+
+.demo-logins p {
+  margin: 4px 0;
 }
 
 @media (max-width: 700px) {
