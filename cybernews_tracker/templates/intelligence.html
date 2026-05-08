@@ -1,0 +1,68 @@
+{% extends "index.html" %}
+
+{% block title %}Intelligence - CyberNews Tracker{% endblock %}
+
+{% block header_text %}
+  <p>Logged in as {{ current_user.username }} ({{ current_user.role }}).</p>
+{% endblock %}
+
+{% block content %}
+  <h2>Intelligence Division</h2>
+  <p>Use test token <code>analyst-token</code> or <code>admin-token</code>.</p>
+
+  <button id="fetchIntelligenceButton">Fetch Intelligence</button>
+  <section id="reportsContainer"></section>
+
+  <script>
+    const fetchIntelligenceButton = document.getElementById("fetchIntelligenceButton");
+    const reportsContainer = document.getElementById("reportsContainer");
+
+    function appendReport(report) {
+      const reportBox = document.createElement("div");
+      const title = document.createElement("h3");
+      const summary = document.createElement("p");
+      const details = document.createElement("p");
+      const notes = document.createElement("p");
+
+      reportBox.className = "report-box";
+      title.textContent = report.title;
+      summary.textContent = report.summary;
+      details.textContent = "Clearance: " + report.clearance + " | Analyst: " + report.analyst + " | Time: " + report.timestamp;
+      notes.textContent = report.internal_notes;
+
+      reportBox.appendChild(title);
+      reportBox.appendChild(summary);
+      reportBox.appendChild(details);
+      reportBox.appendChild(notes);
+      reportsContainer.appendChild(reportBox);
+    }
+
+    fetchIntelligenceButton.addEventListener("click", async function () {
+      const token = prompt("Enter Bearer token:");
+
+      if (!token) {
+        alert("Access denied. Token is required.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/intelligence-feed", {
+          headers: {
+            "Authorization": "Bearer " + token
+          }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.error || "Access denied.");
+          return;
+        }
+
+        appendReport(data);
+      } catch (error) {
+        alert("Intelligence feed unavailable. Please try again later.");
+      }
+    });
+  </script>
+{% endblock %}

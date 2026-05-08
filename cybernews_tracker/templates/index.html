@@ -16,6 +16,7 @@
       <a href="{{ url_for('cookie_check') }}">Cookie Check</a>
       {% if current_user %}
         <a href="{{ url_for('dashboard') }}">User Dashboard</a>
+        <a href="{{ url_for('intelligence') }}">Intelligence</a>
       {% endif %}
       {% if current_user and current_user.role == "admin" %}
         <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>

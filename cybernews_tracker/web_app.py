@@ -32,6 +32,10 @@ LOCAL_NEWS = [
         "url": "#",
     },
 ]
+ACTIVE_TOKENS = {
+    "analyst-token": {"username": "alice", "role": "analyst"},
+    "admin-token": {"username": "bob", "role": "admin"},
+}
 
 
 def get_current_user():
@@ -125,6 +129,45 @@ def api_live_news():
         )
 
     return jsonify({"articles": articles})
+
+
+@app.route("/intelligence")
+def intelligence():
+    current_user = get_current_user()
+
+    if not current_user:
+        return "Access denied. Please log in first.", 403
+
+    return render_template("intelligence.html", current_user=current_user)
+
+
+@app.route("/api/intelligence-feed")
+def api_intelligence_feed():
+    authorization = request.headers.get("Authorization", "")
+
+    if not authorization.startswith("Bearer "):
+        return jsonify({"error": "Missing Bearer token."}), 401
+
+    token = authorization.replace("Bearer ", "", 1)
+    token_user = ACTIVE_TOKENS.get(token)
+
+    if not token_user:
+        return jsonify({"error": "Access denied. Invalid token."}), 403
+
+    report = {
+        "title": "Suspicious Login Campaign Detected",
+        "summary": "Multiple failed login attempts were detected against public services.",
+        "clearance": token_user["role"],
+        "analyst": token_user["username"],
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+
+    if token_user["role"] == "admin":
+        report["internal_notes"] = "Admin view: block source IP ranges and notify incident response."
+    else:
+        report["internal_notes"] = "Analyst view: monitor affected accounts and escalate unusual activity."
+
+    return jsonify(report)
 
 
 @app.route("/login", methods=["GET", "POST"])

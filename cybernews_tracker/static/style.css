@@ -49,6 +49,13 @@ article h2 {
   font-weight: bold;
 }
 
+.report-box {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: white;
+  border: 1px solid #ddd;
+}
+
 form {
   display: grid;
   gap: 10px;
