@@ -123,6 +123,12 @@ body {
   margin-bottom: 14px;
 }
 
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .panel-heading span {
   color: #5a6872;
 }
@@ -149,7 +155,8 @@ body {
   border: 1px solid #b9c6cc;
 }
 
-.filter-bar button {
+.filter-bar button,
+.panel-action-button {
   align-self: end;
   padding: 9px 12px;
   font: inherit;
@@ -159,7 +166,8 @@ body {
   border: 0;
 }
 
-.filter-bar button:disabled {
+.filter-bar button:disabled,
+.panel-action-button:disabled {
   cursor: wait;
   opacity: 0.7;
 }

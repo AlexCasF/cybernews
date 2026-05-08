@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 10c: BSI Advisory Refresh
+Step 11: Connect Admin Reports To Dashboard
 
 Status: TODO
 
@@ -232,7 +232,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add BSI advisory API
+Commit: 9d0d902 Week 2: add BSI advisory API
 
 Tested:
 
@@ -257,7 +257,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: show BSI advisories on dashboard
+Commit: 36a766e Week 2: show BSI advisories on dashboard
 
 Tested:
 
@@ -276,18 +276,24 @@ Notes:
 
 ### Step 10c: BSI Advisory Refresh
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: add BSI advisory refresh
 
 Tested:
 
-- -
+- Checked `/` returns the dashboard page with the BSI refresh button.
+- Checked dashboard HTML contains the BSI JavaScript renderer.
+- Checked `/api/bsi-advisories` returns live advisory JSON.
+- Checked `/health` still returns the health message.
 
 Notes:
 
 - Planned: add a refresh button for BSI advisories.
 - Use JavaScript to fetch `/api/bsi-advisories`.
+- Added a Refresh BSI button to the BSI Advisories panel.
+- Added browser-side rendering for refreshed BSI advisories.
+- Kept the dashboard display limited to four BSI advisories.
 
 ### Step 11: Connect Admin Reports To Dashboard
 

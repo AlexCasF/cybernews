@@ -95,29 +95,32 @@
   <section id="bsi" class="panel">
     <div class="panel-heading">
       <h3>BSI Advisories</h3>
-      <span>{{ bsi_advisories|length }} shown</span>
+      <div class="panel-actions">
+        <span id="bsiCount">{{ bsi_advisories|length }} shown</span>
+        <button id="refreshBsiButton" class="panel-action-button" type="button">Refresh BSI</button>
+      </div>
     </div>
 
-    <p class="news-message">{{ bsi_message }}</p>
+    <p id="bsiMessage" class="news-message">{{ bsi_message }}</p>
 
-    {% if bsi_advisories %}
-      <div class="item-list">
-        {% for advisory in bsi_advisories %}
-          <article class="bsi-item">
-            <div>
-              <h4>
-                <a href="{{ advisory.url }}">{{ advisory.title }}</a>
-              </h4>
-              <p>{{ advisory.source }} | {{ advisory.published }}</p>
-              <p>{{ advisory.summary }}</p>
-            </div>
-            <span class="priority severity-{{ advisory.severity|lower }}">{{ advisory.severity }}</span>
-          </article>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p class="empty-message">No BSI advisories are available right now.</p>
-    {% endif %}
+    <div id="bsiList" class="item-list">
+      {% for advisory in bsi_advisories %}
+        <article class="bsi-item">
+          <div>
+            <h4>
+              <a href="{{ advisory.url }}">{{ advisory.title }}</a>
+            </h4>
+            <p>{{ advisory.source }} | {{ advisory.published }}</p>
+            <p>{{ advisory.summary }}</p>
+          </div>
+          <span class="priority severity-{{ advisory.severity|lower }}">{{ advisory.severity }}</span>
+        </article>
+      {% endfor %}
+    </div>
+
+    <p id="emptyBsiMessage" class="empty-message" {% if bsi_advisories %}hidden{% endif %}>
+      No BSI advisories are available right now.
+    </p>
   </section>
 
   <section id="system" class="panel">
@@ -146,6 +149,11 @@
     const articleCount = document.getElementById("articleCount");
     const newsMessage = document.getElementById("newsMessage");
     const emptyArticlesMessage = document.getElementById("emptyArticlesMessage");
+    const refreshBsiButton = document.getElementById("refreshBsiButton");
+    const bsiList = document.getElementById("bsiList");
+    const bsiCount = document.getElementById("bsiCount");
+    const bsiMessage = document.getElementById("bsiMessage");
+    const emptyBsiMessage = document.getElementById("emptyBsiMessage");
 
     function applyArticleFilters() {
       const selectedCategory = categoryFilter.value;
@@ -230,8 +238,69 @@
       refreshLiveNewsButton.disabled = false;
     }
 
+    function createBsiCard(advisory) {
+      const card = document.createElement("article");
+      const content = document.createElement("div");
+      const heading = document.createElement("h4");
+      const link = document.createElement("a");
+      const meta = document.createElement("p");
+      const summary = document.createElement("p");
+      const priority = document.createElement("span");
+      const severity = advisory.severity || "Medium";
+
+      card.className = "bsi-item";
+      link.href = advisory.url || "#";
+      link.textContent = advisory.title || "Untitled advisory";
+      meta.textContent = `${advisory.source || "BSI WID"} | ${advisory.published || "Unknown date"}`;
+      summary.textContent = advisory.summary || "No summary available.";
+      priority.className = `priority severity-${severity.toLowerCase()}`;
+      priority.textContent = severity;
+
+      heading.appendChild(link);
+      content.appendChild(heading);
+      content.appendChild(meta);
+      content.appendChild(summary);
+      card.appendChild(content);
+      card.appendChild(priority);
+
+      return card;
+    }
+
+    function renderBsiAdvisories(advisories) {
+      bsiList.innerHTML = "";
+
+      advisories.forEach((advisory) => {
+        bsiList.appendChild(createBsiCard(advisory));
+      });
+
+      bsiCount.textContent = `${advisories.length} shown`;
+      emptyBsiMessage.hidden = advisories.length > 0;
+    }
+
+    async function refreshBsiAdvisories() {
+      refreshBsiButton.disabled = true;
+      bsiMessage.textContent = "Loading BSI advisories...";
+
+      try {
+        const response = await fetch("/api/bsi-advisories");
+
+        if (!response.ok) {
+          throw new Error("BSI advisory request failed.");
+        }
+
+        const data = await response.json();
+        renderBsiAdvisories(data.advisories.slice(0, 4));
+        bsiMessage.textContent = data.message;
+      } catch (error) {
+        bsiMessage.textContent = "BSI advisories unavailable right now. Please try again later.";
+      }
+
+      refreshBsiButton.disabled = false;
+    }
+
     categoryFilter.addEventListener("change", applyArticleFilters);
     severityFilter.addEventListener("change", applyArticleFilters);
     refreshLiveNewsButton.addEventListener("click", refreshLiveNews);
+    refreshBsiButton.addEventListener("click", refreshBsiAdvisories);
   </script>
 {% endblock %}
