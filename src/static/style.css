@@ -155,14 +155,16 @@ body {
 }
 
 .news-item,
-.queue-item {
+.queue-item,
+.report-item {
   padding: 12px;
   background: #f5f7f8;
   border: 1px solid #dbe3e7;
 }
 
 .news-item h4,
-.queue-item h4 {
+.queue-item h4,
+.report-item h4 {
   margin: 0 0 6px;
 }
 
@@ -176,7 +178,8 @@ body {
 }
 
 .news-item p,
-.queue-item p {
+.queue-item p,
+.report-item p {
   margin: 0;
   color: #5a6872;
 }
@@ -220,19 +223,31 @@ body {
   gap: 14px;
 }
 
-.auth-form label {
+.auth-form label,
+.report-form label {
   display: grid;
   gap: 6px;
   font-weight: bold;
 }
 
+.report-form,
+.report-item {
+  display: grid;
+  gap: 14px;
+}
+
 .auth-form input,
-.auth-form button {
+.auth-form button,
+.report-form input,
+.report-form select,
+.report-form textarea,
+.report-form button {
   padding: 10px;
   font: inherit;
 }
 
-.auth-form button {
+.auth-form button,
+.report-form button {
   cursor: pointer;
   color: white;
   background: #14212b;

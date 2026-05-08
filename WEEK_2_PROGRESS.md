@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 5b: Admin Report Form
+Step 6: Password Hashing
 
 Status: TODO
 
@@ -104,7 +104,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add basic demo login
+Commit: ffe1feb Week 2: add basic demo login
 
 Tested:
 
@@ -123,17 +123,23 @@ Notes:
 
 ### Step 5b: Admin Report Form
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: add admin report form
 
 Tested:
 
-- -
+- Checked logged-out users are redirected from `/admin/reports` to `/login`.
+- Checked regular user `alice` receives a 403 response.
+- Checked admin user `bob` can open `/admin/reports`.
+- Checked admin user `bob` can create a report.
 
 Notes:
 
-- -
+- Added an admin-only report form.
+- Stored reports in memory for now.
+- Added a saved reports list on the admin page.
+- Updated the admin navigation link.
 
 ### Step 6: Password Hashing
 

@@ -19,7 +19,7 @@
       <a href="#intelligence">Intelligence</a>
       <a href="#system">System</a>
       {% if current_user and current_user.role == "admin" %}
-        <a href="#admin">Admin Reports</a>
+        <a href="{{ url_for('admin_reports') }}">Admin Reports</a>
       {% endif %}
       {% if current_user %}
         <a href="{{ url_for('logout') }}">Logout</a>

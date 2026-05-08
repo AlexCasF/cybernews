@@ -10,6 +10,7 @@ USERS = {
     "alice": {"password": "alicepass", "role": "user"},
     "bob": {"password": "bobpass", "role": "admin"},
 }
+ADMIN_REPORTS = []
 
 
 def get_current_user():
@@ -22,6 +23,10 @@ def get_current_user():
         "username": username,
         "role": USERS[username]["role"],
     }
+
+
+def user_is_admin(user):
+    return user and user["role"] == "admin"
 
 
 def get_mock_articles():
@@ -155,6 +160,46 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("home"))
+
+
+@app.route("/admin/reports", methods=["GET", "POST"])
+def admin_reports():
+    current_user = get_current_user()
+
+    if not current_user:
+        return redirect(url_for("login"))
+
+    if not user_is_admin(current_user):
+        return "Access denied. Admins only.", 403
+
+    error = ""
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        severity = request.form.get("severity", "").strip()
+        summary = request.form.get("summary", "").strip()
+
+        if title and severity and summary:
+            ADMIN_REPORTS.append(
+                {
+                    "id": len(ADMIN_REPORTS) + 1,
+                    "title": title,
+                    "severity": severity,
+                    "summary": summary,
+                    "created_by": current_user["username"],
+                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                }
+            )
+            return redirect(url_for("admin_reports"))
+
+        error = "Please fill in all report fields."
+
+    return render_template(
+        "admin_reports.html",
+        reports=ADMIN_REPORTS,
+        error=error,
+        current_user=current_user,
+    )
 
 
 @app.route("/api/articles")

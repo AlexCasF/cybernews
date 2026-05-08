@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}CyberNews Admin Reports{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <p class="eyebrow">Admin workspace</p>
+    <h2>Admin Reports</h2>
+    <p>Create simple intelligence reports for the dashboard team.</p>
+  </section>
+
+  <section class="panel">
+    <h3>Create Report</h3>
+
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" class="report-form">
+      <label for="title">
+        Title
+        <input id="title" name="title" type="text" required>
+      </label>
+
+      <label for="severity">
+        Severity
+        <select id="severity" name="severity" required>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+          <option value="Critical">Critical</option>
+        </select>
+      </label>
+
+      <label for="summary">
+        Summary
+        <textarea id="summary" name="summary" rows="4" required></textarea>
+      </label>
+
+      <button type="submit">Add Report</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h3>Saved Reports</h3>
+      <span>{{ reports|length }} total</span>
+    </div>
+
+    {% if reports %}
+      <div class="item-list">
+        {% for report in reports %}
+          <article class="report-item">
+            <div>
+              <h4>{{ report.title }}</h4>
+              <p>{{ report.summary }}</p>
+              <p>Created by {{ report.created_by }} at {{ report.created_at }}</p>
+            </div>
+            <span class="priority">{{ report.severity }}</span>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-message">No reports have been created yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}
