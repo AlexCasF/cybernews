@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 12: Threat Graph Mock Data
+Step 13: Threat Graph Page
 
 Status: TODO
 
@@ -299,7 +299,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: show admin reports on dashboard
+Commit: 963f3ee Week 2: show admin reports on dashboard
 
 Tested:
 
@@ -318,17 +318,23 @@ Notes:
 
 ### Step 12: Threat Graph Mock Data
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: add threat graph data API
 
 Tested:
 
-- -
+- Checked `/api/threat-graph` returns `200`.
+- Checked the graph response contains `nodes`, `edges`, and a message.
+- Checked every edge points to an existing node.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Added simple mock threat graph data.
+- Added threat, technique, impact, target, and defense node examples.
+- Added simple relationship edges like `uses`, `targets`, and `reduces risk of`.
+- Added `/api/threat-graph` as the JSON endpoint for the future graph page.
 
 ### Step 13: Threat Graph Page
 

@@ -322,6 +322,66 @@ def get_dashboard_intelligence_reports():
     ]
 
 
+def get_threat_graph_data():
+    return {
+        "nodes": [
+            {
+                "id": "parcel-phishing",
+                "label": "Parcel Phishing Campaign",
+                "type": "Threat",
+                "severity": "Medium",
+            },
+            {
+                "id": "fake-delivery-emails",
+                "label": "Fake Delivery Emails",
+                "type": "Technique",
+                "severity": "Medium",
+            },
+            {
+                "id": "credential-theft",
+                "label": "Credential Theft",
+                "type": "Impact",
+                "severity": "High",
+            },
+            {
+                "id": "affected-users",
+                "label": "Affected Users",
+                "type": "Target",
+                "severity": "Medium",
+            },
+            {
+                "id": "awareness-training",
+                "label": "Awareness Training",
+                "type": "Defense",
+                "severity": "Low",
+            },
+        ],
+        "edges": [
+            {
+                "source": "parcel-phishing",
+                "target": "fake-delivery-emails",
+                "label": "uses",
+            },
+            {
+                "source": "fake-delivery-emails",
+                "target": "affected-users",
+                "label": "targets",
+            },
+            {
+                "source": "fake-delivery-emails",
+                "target": "credential-theft",
+                "label": "can lead to",
+            },
+            {
+                "source": "awareness-training",
+                "target": "credential-theft",
+                "label": "reduces risk of",
+            },
+        ],
+        "message": "Mock threat graph data loaded.",
+    }
+
+
 def get_system_status():
     return [
         {"name": "Local feed", "state": "Ready"},
@@ -440,6 +500,11 @@ def api_live_news():
 @app.route("/api/bsi-advisories")
 def api_bsi_advisories():
     return jsonify(get_bsi_advisories())
+
+
+@app.route("/api/threat-graph")
+def api_threat_graph():
+    return jsonify(get_threat_graph_data())
 
 
 @app.route("/health")
