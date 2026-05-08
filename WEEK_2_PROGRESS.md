@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 7: Audit Log
+Step 8: Intelligence Report Cards
 
 Status: TODO
 
@@ -145,7 +145,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: hash demo passwords
+Commit: 24e5fcc Week 2: hash demo passwords
 
 Tested:
 
@@ -163,17 +163,24 @@ Notes:
 
 ### Step 7: Audit Log
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: add login audit log
 
 Tested:
 
-- -
+- Checked failed login attempts are recorded.
+- Checked successful `alice` login is recorded.
+- Checked successful `bob` login is recorded.
+- Checked audit log appears on `/admin/reports` for admin users.
+- Checked regular user `alice` still cannot access `/admin/reports`.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Added an in-memory `AUDIT_LOG`.
+- Recorded username, result, role, and timestamp for login attempts.
+- Displayed the audit log on the admin reports page.
 
 ### Step 8: Intelligence Report Cards
 

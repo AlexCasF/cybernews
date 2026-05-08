@@ -64,4 +64,36 @@
       <p class="empty-message">No reports have been created yet.</p>
     {% endif %}
   </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h3>Login Audit Log</h3>
+      <span>{{ audit_log|length }} events</span>
+    </div>
+
+    {% if audit_log %}
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Username</th>
+            <th>Result</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in audit_log|reverse %}
+            <tr>
+              <td>{{ event.timestamp }}</td>
+              <td>{{ event.username }}</td>
+              <td>{{ event.result }}</td>
+              <td>{{ event.role or "-" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-message">No login attempts have been recorded yet.</p>
+    {% endif %}
+  </section>
 {% endblock %}

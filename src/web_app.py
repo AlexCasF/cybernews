@@ -18,6 +18,22 @@ USERS = {
     },
 }
 ADMIN_REPORTS = []
+AUDIT_LOG = []
+
+
+def get_timestamp():
+    return datetime.now().strftime("%Y-%m-%d %H:%M")
+
+
+def record_login_attempt(username, success, role=""):
+    AUDIT_LOG.append(
+        {
+            "timestamp": get_timestamp(),
+            "username": username or "unknown",
+            "result": "success" if success else "failed",
+            "role": role,
+        }
+    )
 
 
 def get_current_user():
@@ -155,9 +171,11 @@ def login():
         user = USERS.get(username)
 
         if user and check_password_hash(user["password_hash"], password):
+            record_login_attempt(username, True, user["role"])
             session["username"] = username
             return redirect(url_for("home"))
 
+        record_login_attempt(username, False)
         error = "Invalid username or password."
 
     return render_template("login.html", error=error, current_user=get_current_user())
@@ -194,7 +212,7 @@ def admin_reports():
                     "severity": severity,
                     "summary": summary,
                     "created_by": current_user["username"],
-                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "created_at": get_timestamp(),
                 }
             )
             return redirect(url_for("admin_reports"))
@@ -204,6 +222,7 @@ def admin_reports():
     return render_template(
         "admin_reports.html",
         reports=ADMIN_REPORTS,
+        audit_log=AUDIT_LOG,
         error=error,
         current_user=current_user,
     )

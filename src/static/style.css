@@ -270,6 +270,23 @@ body {
   margin: 4px 0;
 }
 
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.audit-table th,
+.audit-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #dbe3e7;
+}
+
+.audit-table th {
+  color: #172026;
+  background: #f5f7f8;
+}
+
 @media (max-width: 700px) {
   .site-header {
     align-items: flex-start;
@@ -284,5 +301,10 @@ body {
   .queue-item {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .audit-table {
+    display: block;
+    overflow-x: auto;
   }
 }
