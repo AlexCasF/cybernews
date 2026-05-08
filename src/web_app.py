@@ -260,14 +260,18 @@ def get_bsi_advisories():
     }
 
 
-def get_dashboard_stats(articles):
+def get_dashboard_stats(articles, intelligence_reports):
     return [
         {
             "label": "Tracked headlines",
             "value": str(len(articles)),
             "note": "from demo sources",
         },
-        {"label": "Intel reports", "value": "3", "note": "ready for analyst review"},
+        {
+            "label": "Intel reports",
+            "value": str(len(intelligence_reports)),
+            "note": "ready for analyst review",
+        },
         {
             "label": "System status",
             "value": "Online",
@@ -302,6 +306,22 @@ def get_intelligence_reports():
     ]
 
 
+def get_dashboard_intelligence_reports():
+    if not ADMIN_REPORTS:
+        return get_intelligence_reports()
+
+    return [
+        {
+            "title": report["title"],
+            "severity": report["severity"],
+            "source": f"Admin report by {report['created_by']}",
+            "summary": report["summary"],
+            "action": f"Created at {report['created_at']}. Review and assign next steps.",
+        }
+        for report in reversed(ADMIN_REPORTS)
+    ]
+
+
 def get_system_status():
     return [
         {"name": "Local feed", "state": "Ready"},
@@ -321,16 +341,17 @@ def get_article_severities():
 @app.route("/")
 def home():
     articles = get_mock_articles()
+    intelligence_reports = get_dashboard_intelligence_reports()
     bsi_data = get_bsi_advisories()
 
     return render_template(
         "dashboard.html",
         page_title="Dashboard",
-        stats=get_dashboard_stats(articles),
+        stats=get_dashboard_stats(articles, intelligence_reports),
         articles=articles,
         categories=get_article_categories(articles),
         severities=get_article_severities(),
-        intelligence_reports=get_intelligence_reports(),
+        intelligence_reports=intelligence_reports,
         bsi_advisories=bsi_data["advisories"][:4],
         bsi_message=bsi_data["message"],
         system_status=get_system_status(),

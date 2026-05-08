@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 11: Connect Admin Reports To Dashboard
+Step 12: Threat Graph Mock Data
 
 Status: TODO
 
@@ -278,7 +278,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add BSI advisory refresh
+Commit: c9a5ee2 Week 2: add BSI advisory refresh
 
 Tested:
 
@@ -297,17 +297,24 @@ Notes:
 
 ### Step 11: Connect Admin Reports To Dashboard
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: show admin reports on dashboard
 
 Tested:
 
-- -
+- Checked `/` shows the fallback demo intelligence reports when no admin reports exist.
+- Checked admin user `bob` can create a report.
+- Checked `/` shows the admin-created report after it is submitted.
+- Checked the dashboard intel report count updates from admin report data.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Planned: show admin-created reports on the main dashboard.
+- Kept the existing demo intelligence reports as fallback data.
+- Added a small helper that normalizes admin reports for dashboard display.
+- Admin reports are still stored in memory for now.
 
 ### Step 12: Threat Graph Mock Data
 
