@@ -1,14 +1,21 @@
 from datetime import datetime
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash
 
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key"
 
 USERS = {
-    "alice": {"password": "alicepass", "role": "user"},
-    "bob": {"password": "bobpass", "role": "admin"},
+    "alice": {
+        "password_hash": "scrypt:32768:8:1$xfwMCTRrSH4FHpxC$71e60605e56b791e7e77a86445d316c1e86d705119ba37bd454566e45713b68d41c45a76c46ce9a7e5cd54e1653ed3210f1bf4a0d3dad2af13a745cb6aed2cb9",
+        "role": "user",
+    },
+    "bob": {
+        "password_hash": "scrypt:32768:8:1$5XuElFcWxCS0LADI$c1320b95dca5b078efcdca3a5570a6cba150b452a069af919e117cea541f8b9a0992859145b81060d63f5a509ebe3c8ab21fa6d9cad7256cd3f9719ca5debe2c",
+        "role": "admin",
+    },
 }
 ADMIN_REPORTS = []
 
@@ -147,7 +154,7 @@ def login():
         password = request.form.get("password", "")
         user = USERS.get(username)
 
-        if user and password == user["password"]:
+        if user and check_password_hash(user["password_hash"], password):
             session["username"] = username
             return redirect(url_for("home"))
 

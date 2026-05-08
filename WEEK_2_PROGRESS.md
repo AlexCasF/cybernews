@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 6: Password Hashing
+Step 7: Audit Log
 
 Status: TODO
 
@@ -125,7 +125,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add admin report form
+Commit: c928ae3 Week 2: add admin report form
 
 Tested:
 
@@ -143,17 +143,23 @@ Notes:
 
 ### Step 6: Password Hashing
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: hash demo passwords
 
 Tested:
 
-- -
+- Checked `alice / alicepass` can still log in.
+- Checked `bob / bobpass` can still log in.
+- Checked wrong passwords are rejected.
+- Checked admin report access still works for `bob`.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Replaced plain-text passwords in `USERS` with password hashes.
+- Updated login to use Werkzeug `check_password_hash()`.
+- Kept the visible demo credentials on the login page for testing.
 
 ### Step 7: Audit Log
 
