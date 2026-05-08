@@ -205,6 +205,24 @@ body {
   height: 320px;
 }
 
+.visual-node circle {
+  stroke: #14212b;
+  stroke-width: 2;
+}
+
+.visual-node text {
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-anchor: middle;
+  fill: #172026;
+}
+
+.visual-node-type {
+  font-size: 0.7rem;
+  font-weight: normal;
+  fill: #5a6872;
+}
+
 .news-item,
 .bsi-item,
 .intel-card,

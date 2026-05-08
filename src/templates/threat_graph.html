@@ -65,8 +65,22 @@
     const graphMessage = document.getElementById("graphMessage");
     const nodeList = document.getElementById("nodeList");
     const edgeList = document.getElementById("edgeList");
+    const threatGraphSvg = document.getElementById("threatGraphSvg");
     const selectedNodeStatus = document.getElementById("selectedNodeStatus");
     const nodeDetails = document.getElementById("nodeDetails");
+    const nodePositions = {
+      "parcel-phishing": { x: 140, y: 160 },
+      "fake-delivery-emails": { x: 310, y: 90 },
+      "credential-theft": { x: 500, y: 90 },
+      "affected-users": { x: 500, y: 230 },
+      "awareness-training": { x: 680, y: 160 },
+    };
+    const severityColors = {
+      Critical: "#5b1020",
+      High: "#a31717",
+      Medium: "#ffd166",
+      Low: "#28d7d0",
+    };
 
     function showNodeDetails(node, edges, nodesById) {
       const connectedEdges = edges.filter((edge) => {
@@ -151,10 +165,47 @@
       return card;
     }
 
+    function createSvgElement(name) {
+      return document.createElementNS("http://www.w3.org/2000/svg", name);
+    }
+
+    function renderVisualNodes(nodes) {
+      threatGraphSvg.innerHTML = "";
+
+      nodes.forEach((node) => {
+        const position = nodePositions[node.id] || { x: 400, y: 160 };
+        const group = createSvgElement("g");
+        const circle = createSvgElement("circle");
+        const label = createSvgElement("text");
+        const type = createSvgElement("text");
+
+        group.classList.add("visual-node");
+        circle.setAttribute("cx", position.x);
+        circle.setAttribute("cy", position.y);
+        circle.setAttribute("r", "28");
+        circle.setAttribute("fill", severityColors[node.severity] || "#c8f5f2");
+
+        label.setAttribute("x", position.x);
+        label.setAttribute("y", position.y + 48);
+        label.textContent = node.label;
+
+        type.setAttribute("x", position.x);
+        type.setAttribute("y", position.y + 64);
+        type.classList.add("visual-node-type");
+        type.textContent = node.type;
+
+        group.appendChild(circle);
+        group.appendChild(label);
+        group.appendChild(type);
+        threatGraphSvg.appendChild(group);
+      });
+    }
+
     function renderThreatGraph(data) {
       const nodesById = {};
       nodeList.innerHTML = "";
       edgeList.innerHTML = "";
+      renderVisualNodes(data.nodes);
 
       data.nodes.forEach((node) => {
         nodesById[node.id] = node.label;

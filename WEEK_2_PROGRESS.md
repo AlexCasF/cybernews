@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 15b: Visual Graph Nodes
+Step 15c: Visual Graph Relationships
 
 Status: TODO
 
@@ -383,7 +383,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add visual graph shell
+Commit: cf7eae3 Week 2: add visual graph shell
 
 Tested:
 
@@ -404,19 +404,26 @@ Notes:
 
 ### Step 15b: Visual Graph Nodes
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: draw threat graph nodes
 
 Tested:
 
-- -
+- Checked `/threat-graph` returns `200`.
+- Checked the page contains the visual node renderer.
+- Checked the page contains fixed node positions.
+- Checked the page contains severity color mapping.
+- Checked `/api/threat-graph` still returns graph JSON.
+- Checked `/health` still returns the health message.
 
 Notes:
 
 - Planned: draw fixed-position SVG node circles from graph data.
 - Use simple severity colors and node labels.
 - Do not draw relationship lines yet.
+- Added SVG circles and labels for graph nodes.
+- Relationship lines are still planned for the next step.
 
 ### Step 15c: Visual Graph Relationships
 
