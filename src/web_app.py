@@ -1,5 +1,6 @@
 import json
 import os
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from urllib.parse import urlencode
 from urllib.request import urlopen
@@ -24,6 +25,7 @@ USERS = {
 ADMIN_REPORTS = []
 AUDIT_LOG = []
 NEWSAPI_URL = "https://newsapi.org/v2/everything"
+BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
 
 
 def get_timestamp():
@@ -191,6 +193,68 @@ def get_live_news_articles():
     }
 
 
+def normalize_bsi_severity(severity):
+    severity_map = {
+        "kritisch": "Critical",
+        "hoch": "High",
+        "mittel": "Medium",
+        "niedrig": "Low",
+    }
+
+    return severity_map.get(severity.lower(), "Unknown")
+
+
+def get_element_text(parent, name, default=""):
+    element = parent.find(name)
+
+    if element is None or element.text is None:
+        return default
+
+    return element.text.strip()
+
+
+def normalize_bsi_item(item, index):
+    title = get_element_text(item, "title", "Untitled advisory")
+    severity = get_element_text(item, "category", "unknown")
+
+    return {
+        "id": f"bsi-{index}",
+        "title": title,
+        "summary": get_element_text(item, "description", "No summary available."),
+        "source": "BSI WID",
+        "url": get_element_text(item, "link", "#"),
+        "published": get_element_text(item, "pubDate", "Unknown date"),
+        "category": "Vulnerability Advisory",
+        "severity": normalize_bsi_severity(severity),
+    }
+
+
+def get_bsi_advisories():
+    try:
+        with urlopen(BSI_RSS_URL, timeout=8) as response:
+            rss_data = response.read()
+
+        root = ET.fromstring(rss_data)
+        items = root.findall("./channel/item")
+    except Exception:
+        return {
+            "advisories": [],
+            "source": "fallback",
+            "message": "BSI advisories are unavailable right now.",
+        }
+
+    advisories = [
+        normalize_bsi_item(item, index + 1)
+        for index, item in enumerate(items[:8])
+    ]
+
+    return {
+        "advisories": advisories,
+        "source": "bsi",
+        "message": "BSI advisories loaded.",
+    }
+
+
 def get_dashboard_stats(articles):
     return [
         {
@@ -342,6 +406,11 @@ def api_articles():
 @app.route("/api/live-news")
 def api_live_news():
     return jsonify(get_live_news_articles())
+
+
+@app.route("/api/bsi-advisories")
+def api_bsi_advisories():
+    return jsonify(get_bsi_advisories())
 
 
 @app.route("/health")

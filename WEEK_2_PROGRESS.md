@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 10: BSI Vulnerability Feed
+Step 10b: Dashboard BSI Section
 
 Status: TODO
 
@@ -207,7 +207,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add live news feed
+Commit: 90ed855 Week 2: add live news feed
 
 Tested:
 
@@ -228,7 +228,32 @@ Notes:
 - Added NewsAPI integration with local fallback.
 - Added browser-side refresh for live news.
 
-### Step 10: BSI Vulnerability Feed
+### Step 10a: BSI Advisory API
+
+Status: DONE
+
+Commit: Week 2: add BSI advisory API
+
+Tested:
+
+- Checked `/api/bsi-advisories` returns `200`.
+- Checked `/api/bsi-advisories` returns normalized advisory fields.
+- Checked BSI severity values are mapped to app severity labels.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Source research completed before implementation.
+- BSI WID RSS is the preferred second source.
+- Feed URL tested: `https://wid.cert-bund.de/content/public/securityAdvisory/rss`.
+- No API key is needed.
+- RSS fields map to `title`, `url`, `summary`, `severity`, and `published`.
+- Severity values are German: `niedrig`, `mittel`, `hoch`, `kritisch`.
+- This source is better for vulnerability advisories than generic news.
+- This step only adds the JSON API route.
+- Added RSS parsing with Python standard library XML tools.
+
+### Step 10b: Dashboard BSI Section
 
 Status: TODO
 
@@ -240,13 +265,23 @@ Tested:
 
 Notes:
 
-- Source research completed before implementation.
-- BSI WID RSS is the preferred second source.
-- Feed URL tested: `https://wid.cert-bund.de/content/public/securityAdvisory/rss`.
-- No API key is needed.
-- RSS fields map to `title`, `url`, `summary`, `severity`, and `published`.
-- Severity values are German: `niedrig`, `mittel`, `hoch`, `kritisch`.
-- This source is better for vulnerability advisories than generic news.
+- Planned: show BSI advisories on the dashboard.
+- No JavaScript refresh yet.
+
+### Step 10c: BSI Advisory Refresh
+
+Status: TODO
+
+Commit: -
+
+Tested:
+
+- -
+
+Notes:
+
+- Planned: add a refresh button for BSI advisories.
+- Use JavaScript to fetch `/api/bsi-advisories`.
 
 ### Step 11: Connect Admin Reports To Dashboard
 

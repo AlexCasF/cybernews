@@ -227,12 +227,12 @@ Test:
 - Temporarily test missing API key behavior.
 - Confirm `/` and `/health` still work.
 
-### Step 10: BSI Vulnerability Feed
+### Step 10a: BSI Advisory API
 
 Commit idea:
 
 ```text
-Week 2: add BSI vulnerability feed
+Week 2: add BSI advisory API
 ```
 
 Work:
@@ -242,8 +242,8 @@ Work:
 - Parse RSS/XML with Python standard library tools.
 - Normalize vulnerability advisory items into a simple shared shape.
 - Map BSI severity values like `niedrig`, `mittel`, `hoch`, and `kritisch`.
-- Show the data in a small dashboard section or API endpoint.
-- Keep the UI simple.
+- Add `/api/bsi-advisories`.
+- Do not add dashboard UI yet.
 
 Normalized fields:
 
@@ -265,8 +265,50 @@ Research notes:
 Test:
 
 - Check the new API route.
-- Confirm dashboard data still renders.
-- Confirm fallback behavior if the source is unavailable.
+- Confirm normalized JSON fields are present.
+- Confirm `/health` still works.
+
+### Step 10b: Dashboard BSI Section
+
+Commit idea:
+
+```text
+Week 2: show BSI advisories on dashboard
+```
+
+Work:
+
+- Add a small BSI Advisories section to the dashboard.
+- Render advisories from the existing API/helper.
+- Keep it read-only.
+- Do not add JavaScript refresh yet.
+
+Test:
+
+- Open `/`.
+- Confirm the BSI section appears.
+- Confirm `/api/bsi-advisories` still works.
+- Confirm `/health` still works.
+
+### Step 10c: BSI Advisory Refresh
+
+Commit idea:
+
+```text
+Week 2: add BSI advisory refresh
+```
+
+Work:
+
+- Add a refresh button for BSI advisories.
+- Fetch `/api/bsi-advisories` with JavaScript.
+- Render updated advisories without reloading.
+
+Test:
+
+- Click the refresh button.
+- Confirm the advisory list updates.
+- Confirm error/empty messages work.
 
 ### Step 11: Connect Admin Reports To Dashboard
 
