@@ -111,6 +111,7 @@ body {
 
 .panel-heading,
 .news-item,
+.bsi-item,
 .status-list li {
   display: flex;
   align-items: center;
@@ -174,6 +175,7 @@ body {
 }
 
 .news-item,
+.bsi-item,
 .intel-card,
 .report-item {
   padding: 12px;
@@ -194,21 +196,25 @@ body {
 }
 
 .news-item h4,
+.bsi-item h4,
 .intel-card h4,
 .report-item h4 {
   margin: 0;
 }
 
+.bsi-item a,
 .news-item a {
   color: #172026;
   text-decoration: none;
 }
 
+.bsi-item a:hover,
 .news-item a:hover {
   color: #006e72;
 }
 
 .news-item p,
+.bsi-item p,
 .intel-card p,
 .report-item p {
   margin: 6px 0 0;
@@ -239,6 +245,11 @@ body {
 .severity-high {
   color: white;
   background: #a31717;
+}
+
+.severity-critical {
+  color: white;
+  background: #5b1020;
 }
 
 .severity-medium {
@@ -354,6 +365,7 @@ body {
   }
 
   .news-item,
+  .bsi-item,
   .intel-card {
     align-items: flex-start;
     flex-direction: column;

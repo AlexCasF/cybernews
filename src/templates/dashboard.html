@@ -92,6 +92,34 @@
     </div>
   </section>
 
+  <section id="bsi" class="panel">
+    <div class="panel-heading">
+      <h3>BSI Advisories</h3>
+      <span>{{ bsi_advisories|length }} shown</span>
+    </div>
+
+    <p class="news-message">{{ bsi_message }}</p>
+
+    {% if bsi_advisories %}
+      <div class="item-list">
+        {% for advisory in bsi_advisories %}
+          <article class="bsi-item">
+            <div>
+              <h4>
+                <a href="{{ advisory.url }}">{{ advisory.title }}</a>
+              </h4>
+              <p>{{ advisory.source }} | {{ advisory.published }}</p>
+              <p>{{ advisory.summary }}</p>
+            </div>
+            <span class="priority severity-{{ advisory.severity|lower }}">{{ advisory.severity }}</span>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-message">No BSI advisories are available right now.</p>
+    {% endif %}
+  </section>
+
   <section id="system" class="panel">
     <div class="panel-heading">
       <h3>System Status</h3>

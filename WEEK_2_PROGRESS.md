@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 10b: Dashboard BSI Section
+Step 10c: BSI Advisory Refresh
 
 Status: TODO
 
@@ -255,18 +255,24 @@ Notes:
 
 ### Step 10b: Dashboard BSI Section
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: show BSI advisories on dashboard
 
 Tested:
 
-- -
+- Checked `/` returns the dashboard page with a BSI Advisories section.
+- Checked dashboard shows BSI advisory titles, source, dates, summaries, and severity labels.
+- Checked BSI title metadata tags are removed from displayed titles.
+- Checked `/api/bsi-advisories` still returns live advisory JSON.
+- Checked `/health` still returns the health message.
 
 Notes:
 
 - Planned: show BSI advisories on the dashboard.
 - No JavaScript refresh yet.
+- Added a read-only BSI Advisories dashboard section.
+- Limited the dashboard to four advisories to keep the page readable.
 
 ### Step 10c: BSI Advisory Refresh
 

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from urllib.parse import urlencode
@@ -213,13 +214,17 @@ def get_element_text(parent, name, default=""):
     return element.text.strip()
 
 
+def clean_bsi_title(title):
+    return re.sub(r"^(\[[^\]]+\]\s*)+", "", title).strip()
+
+
 def normalize_bsi_item(item, index):
     title = get_element_text(item, "title", "Untitled advisory")
     severity = get_element_text(item, "category", "unknown")
 
     return {
         "id": f"bsi-{index}",
-        "title": title,
+        "title": clean_bsi_title(title),
         "summary": get_element_text(item, "description", "No summary available."),
         "source": "BSI WID",
         "url": get_element_text(item, "link", "#"),
@@ -316,6 +321,7 @@ def get_article_severities():
 @app.route("/")
 def home():
     articles = get_mock_articles()
+    bsi_data = get_bsi_advisories()
 
     return render_template(
         "dashboard.html",
@@ -325,6 +331,8 @@ def home():
         categories=get_article_categories(articles),
         severities=get_article_severities(),
         intelligence_reports=get_intelligence_reports(),
+        bsi_advisories=bsi_data["advisories"][:4],
+        bsi_message=bsi_data["message"],
         system_status=get_system_status(),
         current_user=get_current_user(),
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),
