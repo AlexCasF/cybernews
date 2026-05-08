@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 9: Threat Graph Mock Data
+Step 9: Live News Feed
 
 Status: TODO
 
@@ -186,7 +186,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: display intelligence report cards
+Commit: c5cf36d Week 2: display intelligence report cards
 
 Tested:
 
@@ -203,7 +203,46 @@ Notes:
 - Added a consistent hardcoded intelligence report shape.
 - Renamed the dashboard section to Intelligence Reports.
 
-### Step 9: Threat Graph Mock Data
+### Step 9: Live News Feed
+
+Status: TODO
+
+Commit: -
+
+Tested:
+
+- -
+
+Notes:
+
+- Source research completed before implementation.
+- NewsAPI stays first because `NEWS_API_KEY` already exists.
+- Planned endpoint: `/api/live-news`.
+- Planned upstream endpoint: `https://newsapi.org/v2/everything`.
+- Planned query: `q=cybersecurity`, `language=en`, `sortBy=publishedAt`.
+- NewsAPI is useful for general cybersecurity news but not pure threat intelligence.
+
+### Step 10: BSI Vulnerability Feed
+
+Status: TODO
+
+Commit: -
+
+Tested:
+
+- -
+
+Notes:
+
+- Source research completed before implementation.
+- BSI WID RSS is the preferred second source.
+- Feed URL tested: `https://wid.cert-bund.de/content/public/securityAdvisory/rss`.
+- No API key is needed.
+- RSS fields map to `title`, `url`, `summary`, `severity`, and `published`.
+- Severity values are German: `niedrig`, `mittel`, `hoch`, `kritisch`.
+- This source is better for vulnerability advisories than generic news.
+
+### Step 11: Connect Admin Reports To Dashboard
 
 Status: TODO
 
@@ -217,7 +256,7 @@ Notes:
 
 - -
 
-### Step 10: Threat Graph Page
+### Step 12: Threat Graph Mock Data
 
 Status: TODO
 
@@ -231,7 +270,7 @@ Notes:
 
 - -
 
-### Step 11: Graph Details Panel
+### Step 13: Threat Graph Page
 
 Status: TODO
 
@@ -245,7 +284,7 @@ Notes:
 
 - -
 
-### Step 12: Google Cloud Deployment Prep
+### Step 14: Graph Details Panel
 
 Status: TODO
 
@@ -259,7 +298,7 @@ Notes:
 
 - -
 
-### Step 13: Secret Handling Notes
+### Step 15: Google Cloud Deployment Prep
 
 Status: TODO
 
@@ -273,7 +312,7 @@ Notes:
 
 - -
 
-### Step 14: Firestore Planning Spike
+### Step 16: Secret Handling Notes
 
 Status: TODO
 
@@ -287,7 +326,7 @@ Notes:
 
 - -
 
-### Step 15: Vertex AI Planning Spike
+### Step 17: Firestore Planning Spike
 
 Status: TODO
 
@@ -301,7 +340,21 @@ Notes:
 
 - -
 
-### Step 16: Final Week 2 Polish
+### Step 18: Vertex AI Planning Spike
+
+Status: TODO
+
+Commit: -
+
+Tested:
+
+- -
+
+Notes:
+
+- -
+
+### Step 19: Final Week 2 Polish
 
 Status: TODO
 

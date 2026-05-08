@@ -89,13 +89,16 @@ For now, we should keep the implementation simple and beginner-friendly. The roa
 Collect and display cybersecurity news from sources such as:
 
 - NewsAPI
+- BSI WID RSS
 - The Hacker News
 - SecurityWeek
 - RSS feeds
 
 Near-term idea:
 
-- Improve `/news` with source filters, refresh state, and readable article cards.
+- First connect the current dashboard to live NewsAPI data.
+- Then add one more cybersecurity-specific source, preferably the BSI WID RSS feed.
+- Keep source filters, refresh state, and readable article cards.
 
 ### CVE Intelligence Dashboard
 
@@ -199,6 +202,7 @@ Target sources:
 
 - The Hacker News
 - SecurityWeek
+- BSI WID RSS
 - CISA KEV Catalog
 - EPSS scoring
 - CVE enrichment
@@ -206,7 +210,8 @@ Target sources:
 
 Near-term idea:
 
-- Add one feed at a time.
+- Add NewsAPI first because the key is already available.
+- Add the BSI WID RSS feed next because it is cybersecurity-specific and does not need an API key.
 - Normalize everything into a simple shared article shape:
 
 ```text
@@ -217,6 +222,63 @@ url
 published_at
 category
 ```
+
+### Data Source Evaluation
+
+These are possible feeds and research links for CyberNews:
+
+| Source | Fit | Priority | Notes |
+| --- | --- | --- | --- |
+| NewsAPI | General cybersecurity news | Now | Already planned for live dashboard news. Requires `NEWS_API_KEY`. Good for keyword searches like `cybersecurity`. |
+| BSI WID RSS | Vulnerability/security advisories | Next | Strong fit. Official German security advisories, no API key, RSS/XML format, severity values like `niedrig`, `mittel`, `hoch`, `kritisch`. |
+| NewsData.io | General news API alternative | Later | Useful fallback if NewsAPI limits become a problem. Requires another API key. Free latest news is delayed and limited per request. |
+| Hacker News API | Tech community signal | Later | Free and near real-time, but not cybersecurity-specific and awkward to search by keyword. Better as a "community mentions" source later. |
+| jaegeral/security-apis | Research catalog | Reference | Not a feed itself. Useful list for finding later APIs such as CVE, IP reputation, malware analysis, and threat intelligence sources. |
+| NewsCatcher alternatives article | Research article | Reference | Good background for open-source news collection ideas, not an immediate data source for the app. |
+
+Detailed findings:
+
+- **NewsAPI**
+  - Requires an API key.
+  - Good first live source because `NEWS_API_KEY` is already available.
+  - Best endpoint for CyberNews: `/v2/everything?q=cybersecurity&language=en&sortBy=publishedAt`.
+  - Useful fields: `source.name`, `title`, `description`, `url`, `publishedAt`.
+  - Limitation: this is general news search, not pure threat intelligence.
+- **BSI WID RSS**
+  - Best second source.
+  - Feed URL tested: `https://wid.cert-bund.de/content/public/securityAdvisory/rss`
+  - No API key needed.
+  - RSS fields map cleanly to our data model: `title`, `link`, `description`, `category`, `pubDate`.
+  - Severity values are German: `niedrig`, `mittel`, `hoch`, `kritisch`.
+  - Strong fit for vulnerability and advisory data.
+  - Limitation: content is German, so the UI should either show it as-is or label it clearly as BSI advisories.
+- **NewsData.io**
+  - General news API alternative.
+  - Requires another API key.
+  - The latest endpoint can query recent articles with parameters such as `q`, `country`, `language`, `domain`, and `category`.
+  - Free latest-news results are delayed and limited per request.
+  - Useful if NewsAPI limits become a problem, but not needed right now.
+- **Hacker News API**
+  - Free public API with near real-time Hacker News data.
+  - No current rate limit is documented.
+  - Useful fields include `id`, `title`, `url`, `score`, `time`, and `by`.
+  - Limitation: it is not cybersecurity-specific and keyword search is awkward.
+  - Better future use: "community signal" or "developer discussion" panel.
+- **jaegeral/security-apis**
+  - A curated list of public JSON security APIs.
+  - Not a direct data feed.
+  - Useful later for discovering CVE, hash lookup, IP reputation, DShield, GreyNoise, malware analysis, and other security APIs.
+- **NewsCatcher alternatives article**
+  - Useful research for open-source news collection.
+  - Mentions options such as `newscatcher` and `pygooglenews`.
+  - Not an immediate dependency for this app.
+
+Recommended implementation order:
+
+1. NewsAPI live news.
+2. BSI WID RSS vulnerability advisories.
+3. Admin-created reports shown on the dashboard.
+4. Then graph/correlation based on the normalized data.
 
 ## SOC Dashboard Ideas
 
@@ -284,6 +346,7 @@ For Google Cloud, possible paths are:
 
 Near-term plan:
 
+- Build live news and vulnerability feeds before graph rendering.
 - Start with a simple JSON-style graph model in Firestore or local mock data.
 - Render the graph in the browser.
 - Move to a real graph database only when the data and queries justify it.
@@ -357,15 +420,19 @@ For this school project, we should handle these gradually and avoid overbuilding
 ## Suggested Next Steps
 
 1. Clean up the Flask templates with a shared base layout.
-2. Improve the `/news` dashboard into a polished CyberNews home page.
+2. Improve the dashboard into a polished CyberNews home page.
 3. Add source/category filters for articles.
-4. Add a simple CVE or IOC section with mock data.
-5. Add admin-only controls for adding reports.
-6. Add password hashing.
-7. Add an audit log for login attempts.
-8. Add simple incident tracking.
-9. Add AI-style summaries, mocked first.
-10. Later, replace mock data with real feeds one source at a time.
+4. Add admin-only controls for adding reports.
+5. Add password hashing.
+6. Add an audit log for login attempts.
+7. Add richer intelligence report cards.
+8. Replace mock news with live NewsAPI data.
+9. Add a second live security source, preferably BSI WID RSS.
+10. Connect admin-created reports back to the dashboard.
+11. Add threat graph mock data based on the normalized data shapes.
+12. Add graph rendering once the normal live feeds are useful.
+13. Add simple incident tracking.
+14. Add AI-style summaries, mocked first.
 
 ## Development Principles
 
