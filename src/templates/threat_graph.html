@@ -29,6 +29,17 @@
       </div>
     </div>
   </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h3>Selected Node</h3>
+      <span id="selectedNodeStatus">Nothing selected</span>
+    </div>
+
+    <div id="nodeDetails" class="details-panel">
+      <p>Select a node to view its type, severity, and connected relationships.</p>
+    </div>
+  </section>
 {% endblock %}
 
 {% block scripts %}
@@ -37,8 +48,54 @@
     const graphMessage = document.getElementById("graphMessage");
     const nodeList = document.getElementById("nodeList");
     const edgeList = document.getElementById("edgeList");
+    const selectedNodeStatus = document.getElementById("selectedNodeStatus");
+    const nodeDetails = document.getElementById("nodeDetails");
 
-    function createNodeCard(node) {
+    function showNodeDetails(node, edges, nodesById) {
+      const connectedEdges = edges.filter((edge) => {
+        return edge.source === node.id || edge.target === node.id;
+      });
+
+      nodeDetails.innerHTML = "";
+      selectedNodeStatus.textContent = node.type;
+
+      document.querySelectorAll(".graph-node").forEach((card) => {
+        card.classList.toggle("selected", card.dataset.nodeId === node.id);
+      });
+
+      const title = document.createElement("h4");
+      const type = document.createElement("p");
+      const severity = document.createElement("p");
+      const relationshipTitle = document.createElement("h4");
+      const relationshipList = document.createElement("ul");
+
+      title.textContent = node.label;
+      type.textContent = `Type: ${node.type}`;
+      severity.textContent = `Severity: ${node.severity}`;
+      relationshipTitle.textContent = "Connected Relationships";
+
+      connectedEdges.forEach((edge) => {
+        const item = document.createElement("li");
+        const source = nodesById[edge.source] || edge.source;
+        const target = nodesById[edge.target] || edge.target;
+        item.textContent = `${source} -> ${edge.label} -> ${target}`;
+        relationshipList.appendChild(item);
+      });
+
+      if (connectedEdges.length === 0) {
+        const item = document.createElement("li");
+        item.textContent = "No relationships found for this node.";
+        relationshipList.appendChild(item);
+      }
+
+      nodeDetails.appendChild(title);
+      nodeDetails.appendChild(type);
+      nodeDetails.appendChild(severity);
+      nodeDetails.appendChild(relationshipTitle);
+      nodeDetails.appendChild(relationshipList);
+    }
+
+    function createNodeCard(node, edges, nodesById) {
       const card = document.createElement("article");
       const heading = document.createElement("div");
       const title = document.createElement("h4");
@@ -46,6 +103,7 @@
       const type = document.createElement("p");
 
       card.className = "graph-node";
+      card.dataset.nodeId = node.id;
       heading.className = "graph-node-heading";
       title.textContent = node.label;
       severity.className = `priority severity-${node.severity.toLowerCase()}`;
@@ -56,6 +114,9 @@
       heading.appendChild(severity);
       card.appendChild(heading);
       card.appendChild(type);
+      card.addEventListener("click", () => {
+        showNodeDetails(node, edges, nodesById);
+      });
 
       return card;
     }
@@ -80,7 +141,10 @@
 
       data.nodes.forEach((node) => {
         nodesById[node.id] = node.label;
-        nodeList.appendChild(createNodeCard(node));
+      });
+
+      data.nodes.forEach((node) => {
+        nodeList.appendChild(createNodeCard(node, data.edges, nodesById));
       });
 
       data.edges.forEach((edge) => {

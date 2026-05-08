@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 14: Graph Details Panel
+Step 15: Google Cloud Deployment Prep
 
 Status: TODO
 
@@ -340,7 +340,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add threat graph page
+Commit: 5b60678 Week 2: add threat graph page
 
 Tested:
 
@@ -360,17 +360,24 @@ Notes:
 
 ### Step 14: Graph Details Panel
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: add graph details panel
 
 Tested:
 
-- -
+- Checked `/threat-graph` returns `200`.
+- Checked the page contains the selected node details panel.
+- Checked the page contains node click handling.
+- Checked `/api/threat-graph` still returns graph JSON.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Added a Selected Node details panel.
+- Clicking a node shows its type, severity, and connected relationships.
+- The selected node receives a simple highlight.
+- This step does not add the visual graph view yet.
 
 ### Step 15: Google Cloud Deployment Prep
 

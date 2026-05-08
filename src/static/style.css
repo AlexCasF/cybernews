@@ -247,6 +247,35 @@ body {
   gap: 12px;
 }
 
+.graph-node {
+  cursor: pointer;
+}
+
+.graph-node:hover,
+.graph-node.selected {
+  border-color: #28d7d0;
+  background: #eefcfb;
+}
+
+.details-panel {
+  padding: 12px;
+  background: #f5f7f8;
+  border: 1px solid #dbe3e7;
+}
+
+.details-panel h4 {
+  margin: 0 0 8px;
+}
+
+.details-panel ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.details-panel li {
+  margin-bottom: 6px;
+}
+
 .intel-source {
   font-size: 0.9rem;
   font-weight: bold;
