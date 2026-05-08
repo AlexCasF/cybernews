@@ -2,17 +2,17 @@
 
 ## Current Step
 
-Setup: Archive Week 1 Files
+Step 2: Dashboard Landing Page
 
-Status: READY FOR REVIEW
+Status: TODO
 
 ## Progress Log
 
 ### Setup: Archive Week 1 Files
 
-Status: READY FOR REVIEW
+Status: DONE
 
-Commit: -
+Commit: Week 2: clean shared page layout
 
 Tested:
 
@@ -26,17 +26,21 @@ Notes:
 
 ### Step 1: Clean Shared Layout
 
-Status: TODO
+Status: READY FOR REVIEW
 
 Commit: -
 
 Tested:
 
-- -
+- Checked `/` returns the dashboard page.
+- Checked `/health` returns the health message.
 
 Notes:
 
-- -
+- Created a fresh Flask app in `src/`.
+- Added a shared `base.html` layout.
+- Added a simple dashboard page using the shared layout.
+- Added basic CSS for the Week 2 product shell.
 
 ### Step 2: Dashboard Landing Page
 

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}CyberNews Dashboard{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <p class="eyebrow">Live workspace</p>
+    <h2>{{ page_title }}</h2>
+    <p>Track cybersecurity headlines, intelligence notes, and system status from one place.</p>
+  </section>
+
+  <section id="headlines" class="panel">
+    <h3>Headlines</h3>
+    <p>News feed integration will be added in the next steps.</p>
+  </section>
+
+  <section id="intelligence" class="panel">
+    <h3>Intelligence</h3>
+    <p>Analyst reports and threat correlation will appear here.</p>
+  </section>
+
+  <section id="system" class="panel">
+    <h3>System</h3>
+    <p>Last updated: {{ last_updated }}</p>
+  </section>
+{% endblock %}
