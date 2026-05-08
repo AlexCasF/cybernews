@@ -361,14 +361,15 @@ Week 2: add threat graph page
 Work:
 
 - Add a basic `/threat-graph` page.
-- Render mock graph data in the browser.
-- Use Cytoscape.js as the first graph library.
+- Fetch mock graph data in the browser.
+- Render nodes and relationships as readable cards/lists first.
+- Do not add the actual visual graph yet.
 
 Test:
 
 - Open `/threat-graph`.
-- Confirm nodes and edges appear.
-- Click or hover a node if supported.
+- Confirm nodes and relationships appear as readable content.
+- Confirm `/api/threat-graph` still works.
 
 ### Step 14: Graph Details Panel
 
@@ -380,15 +381,97 @@ Week 2: add graph node details
 
 Work:
 
-- Show simple details when a graph node is clicked.
-- Display type, label, and short description.
+- Show simple details when a graph node card is clicked.
+- Display type, label, severity, and connected relationships.
 
 Test:
 
 - Click several nodes.
 - Confirm the details panel updates.
 
-### Step 15: Google Cloud Deployment Prep
+### Step 15a: Visual Graph Shell
+
+Commit idea:
+
+```text
+Week 2: add visual graph shell
+```
+
+Work:
+
+- Add a visual graph panel to `/threat-graph`.
+- Add an empty SVG area or simple graph viewport.
+- Keep the existing node cards and details panel below it.
+- Do not draw nodes or edges yet.
+
+Test:
+
+- Open `/threat-graph`.
+- Confirm the graph panel appears.
+- Confirm the existing node cards still load.
+
+### Step 15b: Visual Graph Nodes
+
+Commit idea:
+
+```text
+Week 2: draw threat graph nodes
+```
+
+Work:
+
+- Draw simple SVG circles for graph nodes.
+- Use fixed positions for now.
+- Add node labels and severity-based colors.
+- Keep node card behavior unchanged.
+
+Test:
+
+- Open `/threat-graph`.
+- Confirm every graph node appears visually.
+- Confirm the readable node list still appears.
+
+### Step 15c: Visual Graph Relationships
+
+Commit idea:
+
+```text
+Week 2: draw threat graph relationships
+```
+
+Work:
+
+- Draw simple SVG lines between related nodes.
+- Add short relationship labels if they remain readable.
+- Keep the layout fixed and beginner-friendly.
+
+Test:
+
+- Open `/threat-graph`.
+- Confirm relationship lines connect the correct nodes.
+- Confirm the relationship list still appears.
+
+### Step 15d: Visual Graph Selection
+
+Commit idea:
+
+```text
+Week 2: connect visual graph selection
+```
+
+Work:
+
+- Make visual graph nodes clickable.
+- Reuse the existing Selected Node details panel.
+- Highlight the selected visual node and matching card.
+
+Test:
+
+- Click visual graph nodes.
+- Confirm the details panel updates.
+- Confirm the matching card selection still works.
+
+### Step 16: Google Cloud Deployment Prep
 
 Commit idea:
 
@@ -407,7 +490,7 @@ Test:
 - Install dependencies from `requirements.txt`.
 - Run the app locally.
 
-### Step 16: Secret Handling Notes
+### Step 17: Secret Handling Notes
 
 Commit idea:
 
@@ -425,7 +508,7 @@ Test:
 
 - Confirm no secrets are in tracked files.
 
-### Step 17: Firestore Planning Spike
+### Step 18: Firestore Planning Spike
 
 Commit idea:
 
@@ -442,7 +525,7 @@ Test:
 
 - Review the model for simplicity.
 
-### Step 18: Vertex AI Planning Spike
+### Step 19: Vertex AI Planning Spike
 
 Commit idea:
 
@@ -460,7 +543,7 @@ Test:
 
 - Confirm the plan does not block the current app.
 
-### Step 19: Final Week 2 Polish
+### Step 20: Final Week 2 Polish
 
 Commit idea:
 

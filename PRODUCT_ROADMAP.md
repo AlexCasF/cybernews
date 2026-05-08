@@ -278,7 +278,9 @@ Recommended implementation order:
 1. NewsAPI live news.
 2. BSI WID RSS vulnerability advisories.
 3. Admin-created reports shown on the dashboard.
-4. Then graph/correlation based on the normalized data.
+4. Threat graph data API.
+5. Readable graph page with node details.
+6. Visual graph rendering in small commits.
 
 ## SOC Dashboard Ideas
 
@@ -348,7 +350,12 @@ Near-term plan:
 
 - Build live news and vulnerability feeds before graph rendering.
 - Start with a simple JSON-style graph model in Firestore or local mock data.
-- Render the graph in the browser.
+- Render the graph in the browser in small steps:
+  - Start with readable node and relationship cards.
+  - Add a visual graph shell.
+  - Draw nodes.
+  - Draw relationships.
+  - Connect visual node selection to the details panel.
 - Move to a real graph database only when the data and queries justify it.
 
 ### Graph Visualization Libraries
@@ -430,9 +437,10 @@ For this school project, we should handle these gradually and avoid overbuilding
 9. Add a second live security source, preferably BSI WID RSS.
 10. Connect admin-created reports back to the dashboard.
 11. Add threat graph mock data based on the normalized data shapes.
-12. Add graph rendering once the normal live feeds are useful.
-13. Add simple incident tracking.
-14. Add AI-style summaries, mocked first.
+12. Add a readable threat graph page with node details.
+13. Add visual graph rendering in small slices.
+14. Add simple incident tracking.
+15. Add AI-style summaries, mocked first.
 
 ## Development Principles
 

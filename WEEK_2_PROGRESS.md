@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 15: Google Cloud Deployment Prep
+Step 15b: Visual Graph Nodes
 
 Status: TODO
 
@@ -362,7 +362,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add graph details panel
+Commit: af1b53e Week 2: add graph details panel
 
 Tested:
 
@@ -379,7 +379,77 @@ Notes:
 - The selected node receives a simple highlight.
 - This step does not add the visual graph view yet.
 
-### Step 15: Google Cloud Deployment Prep
+### Step 15a: Visual Graph Shell
+
+Status: DONE
+
+Commit: Week 2: add visual graph shell
+
+Tested:
+
+- Checked `/threat-graph` returns `200`.
+- Checked the page contains the visual graph panel.
+- Checked the page contains the empty SVG graph viewport.
+- Checked the existing graph data loader still exists.
+- Checked `/api/threat-graph` still returns graph JSON.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Planned: add a visual graph panel before using any graph library.
+- Keep this step as layout only.
+- Keep the existing node cards and details panel below the visual area.
+- Added the visual graph shell above the readable graph data.
+- No graph nodes or relationship lines are drawn yet.
+
+### Step 15b: Visual Graph Nodes
+
+Status: TODO
+
+Commit: -
+
+Tested:
+
+- -
+
+Notes:
+
+- Planned: draw fixed-position SVG node circles from graph data.
+- Use simple severity colors and node labels.
+- Do not draw relationship lines yet.
+
+### Step 15c: Visual Graph Relationships
+
+Status: TODO
+
+Commit: -
+
+Tested:
+
+- -
+
+Notes:
+
+- Planned: draw SVG lines between related nodes.
+- Add relationship labels only if they stay readable.
+
+### Step 15d: Visual Graph Selection
+
+Status: TODO
+
+Commit: -
+
+Tested:
+
+- -
+
+Notes:
+
+- Planned: make visual graph nodes clickable.
+- Reuse the existing Selected Node details panel.
+- Highlight the selected visual node and matching card.
+
+### Step 16: Google Cloud Deployment Prep
 
 Status: TODO
 
@@ -393,7 +463,7 @@ Notes:
 
 - -
 
-### Step 16: Secret Handling Notes
+### Step 17: Secret Handling Notes
 
 Status: TODO
 
@@ -407,7 +477,7 @@ Notes:
 
 - -
 
-### Step 17: Firestore Planning Spike
+### Step 18: Firestore Planning Spike
 
 Status: TODO
 
@@ -421,7 +491,7 @@ Notes:
 
 - -
 
-### Step 18: Vertex AI Planning Spike
+### Step 19: Vertex AI Planning Spike
 
 Status: TODO
 
@@ -435,7 +505,7 @@ Notes:
 
 - -
 
-### Step 19: Final Week 2 Polish
+### Step 20: Final Week 2 Polish
 
 Status: TODO
 
