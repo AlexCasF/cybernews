@@ -94,11 +94,7 @@ def get_dashboard_stats(articles):
             "value": str(len(articles)),
             "note": "from demo sources",
         },
-        {
-            "label": "Open intelligence items",
-            "value": "3",
-            "note": "waiting for analyst review",
-        },
+        {"label": "Intel reports", "value": "3", "note": "ready for analyst review"},
         {
             "label": "System status",
             "value": "Online",
@@ -107,22 +103,28 @@ def get_dashboard_stats(articles):
     ]
 
 
-def get_intelligence_items():
+def get_intelligence_reports():
     return [
         {
-            "title": "Review suspicious login attempts",
-            "priority": "High",
-            "owner": "Analyst team",
+            "title": "Repeated admin login failures",
+            "severity": "High",
+            "source": "Authentication logs",
+            "summary": "Multiple failed admin logins appeared in a short time window.",
+            "action": "Check source IP addresses and confirm whether the attempts were expected.",
         },
         {
-            "title": "Check exposed development server report",
-            "priority": "Medium",
-            "owner": "Admin",
+            "title": "Possible exposed development server",
+            "severity": "Medium",
+            "source": "External scan",
+            "summary": "A development host may be reachable from the public internet.",
+            "action": "Verify firewall rules and remove public access if it is not required.",
         },
         {
-            "title": "Tag phishing stories for weekly summary",
-            "priority": "Low",
-            "owner": "News desk",
+            "title": "Phishing theme increase",
+            "severity": "Low",
+            "source": "News monitoring",
+            "summary": "Several new headlines mention parcel delivery phishing campaigns.",
+            "action": "Prepare a short awareness note for users.",
         },
     ]
 
@@ -154,7 +156,7 @@ def home():
         articles=articles,
         categories=get_article_categories(articles),
         severities=get_article_severities(),
-        intelligence_items=get_intelligence_items(),
+        intelligence_reports=get_intelligence_reports(),
         system_status=get_system_status(),
         current_user=get_current_user(),
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),

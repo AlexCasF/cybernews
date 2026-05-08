@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 8: Intelligence Report Cards
+Step 9: Threat Graph Mock Data
 
 Status: TODO
 
@@ -165,7 +165,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: add login audit log
+Commit: 480e42d Week 2: add login audit log
 
 Tested:
 
@@ -184,17 +184,24 @@ Notes:
 
 ### Step 8: Intelligence Report Cards
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: display intelligence report cards
 
 Tested:
 
-- -
+- Checked `/` returns the dashboard page with intelligence report cards.
+- Checked each report shows severity, source, summary, and recommended action.
+- Manually confirmed report cards are visually distinct from the old queue.
+- Checked login still works for `alice`.
+- Checked admin reports still work for `bob`.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Replaced the simple intelligence queue with richer report cards.
+- Added a consistent hardcoded intelligence report shape.
+- Renamed the dashboard section to Intelligence Reports.
 
 ### Step 9: Threat Graph Mock Data
 

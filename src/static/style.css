@@ -111,7 +111,6 @@ body {
 
 .panel-heading,
 .news-item,
-.queue-item,
 .status-list li {
   display: flex;
   align-items: center;
@@ -155,17 +154,29 @@ body {
 }
 
 .news-item,
-.queue-item,
+.intel-card,
 .report-item {
   padding: 12px;
   background: #f5f7f8;
   border: 1px solid #dbe3e7;
 }
 
+.intel-card {
+  border-left: 5px solid #28d7d0;
+}
+
+.intel-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .news-item h4,
-.queue-item h4,
+.intel-card h4,
 .report-item h4 {
-  margin: 0 0 6px;
+  margin: 0;
 }
 
 .news-item a {
@@ -178,10 +189,22 @@ body {
 }
 
 .news-item p,
-.queue-item p,
+.intel-card p,
 .report-item p {
-  margin: 0;
+  margin: 6px 0 0;
   color: #5a6872;
+}
+
+.intel-source {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.action-box {
+  padding: 10px;
+  color: #172026;
+  background: white;
+  border: 1px solid #dbe3e7;
 }
 
 .tag,
@@ -190,6 +213,19 @@ body {
   font-size: 0.85rem;
   font-weight: bold;
   color: #14212b;
+  background: #c8f5f2;
+}
+
+.severity-high {
+  color: white;
+  background: #a31717;
+}
+
+.severity-medium {
+  background: #ffd166;
+}
+
+.severity-low {
   background: #c8f5f2;
 }
 
@@ -298,7 +334,7 @@ body {
   }
 
   .news-item,
-  .queue-item {
+  .intel-card {
     align-items: flex-start;
     flex-direction: column;
   }

@@ -67,18 +67,22 @@
 
   <section id="intelligence" class="panel">
     <div class="panel-heading">
-      <h3>Intelligence Queue</h3>
-      <span>{{ intelligence_items|length }} open</span>
+      <h3>Intelligence Reports</h3>
+      <span>{{ intelligence_reports|length }} reports</span>
     </div>
 
     <div class="item-list">
-      {% for item in intelligence_items %}
-        <article class="queue-item">
+      {% for report in intelligence_reports %}
+        <article class="intel-card">
           <div>
-            <h4>{{ item.title }}</h4>
-            <p>Owner: {{ item.owner }}</p>
+            <div class="intel-card-heading">
+              <h4>{{ report.title }}</h4>
+              <span class="priority severity-{{ report.severity|lower }}">{{ report.severity }}</span>
+            </div>
+            <p class="intel-source">Source: {{ report.source }}</p>
+            <p>{{ report.summary }}</p>
+            <p class="action-box"><strong>Recommended action:</strong> {{ report.action }}</p>
           </div>
-          <span class="priority">{{ item.priority }}</span>
         </article>
       {% endfor %}
     </div>
