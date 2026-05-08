@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 2: Dashboard Landing Page
+Step 3: Article Data Shape
 
 Status: TODO
 
@@ -12,7 +12,7 @@ Status: TODO
 
 Status: DONE
 
-Commit: Week 2: clean shared page layout
+Commit: 63da564 cleanup root
 
 Tested:
 
@@ -26,9 +26,9 @@ Notes:
 
 ### Step 1: Clean Shared Layout
 
-Status: READY FOR REVIEW
+Status: DONE
 
-Commit: -
+Commit: ec47a2d Week 2: clean shared page layout
 
 Tested:
 
@@ -44,17 +44,22 @@ Notes:
 
 ### Step 2: Dashboard Landing Page
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: improve dashboard landing page
 
 Tested:
 
-- -
+- Checked `/` returns the improved dashboard page.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Added mock dashboard stats.
+- Added mock latest headlines.
+- Added mock intelligence queue items.
+- Added simple system status rows.
+- Kept all data hardcoded for now.
 
 ### Step 3: Article Data Shape
 

@@ -9,18 +9,67 @@
     <p>Track cybersecurity headlines, intelligence notes, and system status from one place.</p>
   </section>
 
+  <section class="stats-grid" aria-label="Dashboard overview">
+    {% for stat in stats %}
+      <article class="stat-card">
+        <p>{{ stat.label }}</p>
+        <strong>{{ stat.value }}</strong>
+        <span>{{ stat.note }}</span>
+      </article>
+    {% endfor %}
+  </section>
+
   <section id="headlines" class="panel">
-    <h3>Headlines</h3>
-    <p>News feed integration will be added in the next steps.</p>
+    <div class="panel-heading">
+      <h3>Latest Headlines</h3>
+      <span>{{ headlines|length }} items</span>
+    </div>
+
+    <div class="item-list">
+      {% for headline in headlines %}
+        <article class="news-item">
+          <div>
+            <h4>{{ headline.title }}</h4>
+            <p>{{ headline.source }} · {{ headline.published }}</p>
+          </div>
+          <span class="tag">{{ headline.category }}</span>
+        </article>
+      {% endfor %}
+    </div>
   </section>
 
   <section id="intelligence" class="panel">
-    <h3>Intelligence</h3>
-    <p>Analyst reports and threat correlation will appear here.</p>
+    <div class="panel-heading">
+      <h3>Intelligence Queue</h3>
+      <span>{{ intelligence_items|length }} open</span>
+    </div>
+
+    <div class="item-list">
+      {% for item in intelligence_items %}
+        <article class="queue-item">
+          <div>
+            <h4>{{ item.title }}</h4>
+            <p>Owner: {{ item.owner }}</p>
+          </div>
+          <span class="priority">{{ item.priority }}</span>
+        </article>
+      {% endfor %}
+    </div>
   </section>
 
   <section id="system" class="panel">
-    <h3>System</h3>
-    <p>Last updated: {{ last_updated }}</p>
+    <div class="panel-heading">
+      <h3>System Status</h3>
+      <span>Updated {{ last_updated }}</span>
+    </div>
+
+    <ul class="status-list">
+      {% for item in system_status %}
+        <li>
+          <span>{{ item.name }}</span>
+          <strong>{{ item.state }}</strong>
+        </li>
+      {% endfor %}
+    </ul>
   </section>
 {% endblock %}
