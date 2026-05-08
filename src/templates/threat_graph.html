@@ -169,9 +169,38 @@
       return document.createElementNS("http://www.w3.org/2000/svg", name);
     }
 
-    function renderVisualNodes(nodes) {
-      threatGraphSvg.innerHTML = "";
+    function renderVisualEdges(edges) {
+      edges.forEach((edge) => {
+        const sourcePosition = nodePositions[edge.source];
+        const targetPosition = nodePositions[edge.target];
 
+        if (!sourcePosition || !targetPosition) {
+          return;
+        }
+
+        const group = createSvgElement("g");
+        const line = createSvgElement("line");
+        const label = createSvgElement("text");
+        const labelX = (sourcePosition.x + targetPosition.x) / 2;
+        const labelY = (sourcePosition.y + targetPosition.y) / 2 - 8;
+
+        group.classList.add("visual-edge");
+        line.setAttribute("x1", sourcePosition.x);
+        line.setAttribute("y1", sourcePosition.y);
+        line.setAttribute("x2", targetPosition.x);
+        line.setAttribute("y2", targetPosition.y);
+
+        label.setAttribute("x", labelX);
+        label.setAttribute("y", labelY);
+        label.textContent = edge.label;
+
+        group.appendChild(line);
+        group.appendChild(label);
+        threatGraphSvg.appendChild(group);
+      });
+    }
+
+    function renderVisualNodes(nodes) {
       nodes.forEach((node) => {
         const position = nodePositions[node.id] || { x: 400, y: 160 };
         const group = createSvgElement("g");
@@ -201,11 +230,17 @@
       });
     }
 
+    function renderVisualGraph(nodes, edges) {
+      threatGraphSvg.innerHTML = "";
+      renderVisualEdges(edges);
+      renderVisualNodes(nodes);
+    }
+
     function renderThreatGraph(data) {
       const nodesById = {};
       nodeList.innerHTML = "";
       edgeList.innerHTML = "";
-      renderVisualNodes(data.nodes);
+      renderVisualGraph(data.nodes, data.edges);
 
       data.nodes.forEach((node) => {
         nodesById[node.id] = node.label;

@@ -205,6 +205,17 @@ body {
   height: 320px;
 }
 
+.visual-edge line {
+  stroke: #7b8b94;
+  stroke-width: 2;
+}
+
+.visual-edge text {
+  font-size: 0.7rem;
+  text-anchor: middle;
+  fill: #5a6872;
+}
+
 .visual-node circle {
   stroke: #14212b;
   stroke-width: 2;

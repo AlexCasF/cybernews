@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 15c: Visual Graph Relationships
+Step 15d: Visual Graph Selection
 
 Status: TODO
 
@@ -406,7 +406,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: draw threat graph nodes
+Commit: 7f5dc18 Week 2: draw threat graph nodes
 
 Tested:
 
@@ -427,18 +427,26 @@ Notes:
 
 ### Step 15c: Visual Graph Relationships
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: draw threat graph relationships
 
 Tested:
 
-- -
+- Checked `/threat-graph` returns `200`.
+- Checked the page contains the visual edge renderer.
+- Checked the page draws edges before nodes.
+- Checked the page contains visual edge CSS.
+- Checked `/api/threat-graph` still returns graph JSON.
+- Checked `/health` still returns the health message.
 
 Notes:
 
 - Planned: draw SVG lines between related nodes.
 - Add relationship labels only if they stay readable.
+- Added SVG lines between graph nodes.
+- Added small relationship labels on the visual graph.
+- Visual node clicking is still planned for the next step.
 
 ### Step 15d: Visual Graph Selection
 
