@@ -89,6 +89,14 @@ def get_system_status():
     ]
 
 
+def get_article_categories(articles):
+    return sorted({article["category"] for article in articles})
+
+
+def get_article_severities():
+    return ["High", "Medium", "Low"]
+
+
 @app.route("/")
 def home():
     articles = get_mock_articles()
@@ -98,6 +106,8 @@ def home():
         page_title="Dashboard",
         stats=get_dashboard_stats(articles),
         articles=articles,
+        categories=get_article_categories(articles),
+        severities=get_article_severities(),
         intelligence_items=get_intelligence_items(),
         system_status=get_system_status(),
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),

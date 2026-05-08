@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 4: News Filtering
+Step 5: Admin Report Form
 
 Status: TODO
 
@@ -82,17 +82,23 @@ Notes:
 
 ### Step 4: News Filtering
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: add news filters
 
 Tested:
 
-- -
+- Checked `/` returns the dashboard page with filter controls.
+- Checked `/api/articles` still returns article JSON.
+- Checked `/health` still returns the health message.
+- Manually confirmed the placeholder articles are affected by the filters.
 
 Notes:
 
-- -
+- Added category and severity dropdown filters.
+- Added article data attributes for browser-side filtering.
+- Added a small JavaScript filter function.
+- Added an empty message for no matching articles.
 
 ### Step 5: Admin Report Form
 

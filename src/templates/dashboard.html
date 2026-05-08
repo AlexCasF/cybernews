@@ -25,9 +25,31 @@
       <span>{{ articles|length }} items</span>
     </div>
 
+    <div class="filter-bar" aria-label="News filters">
+      <label for="categoryFilter">
+        Category
+        <select id="categoryFilter">
+          <option value="All">All</option>
+          {% for category in categories %}
+            <option value="{{ category }}">{{ category }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label for="severityFilter">
+        Severity
+        <select id="severityFilter">
+          <option value="All">All</option>
+          {% for severity in severities %}
+            <option value="{{ severity }}">{{ severity }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
     <div class="item-list">
       {% for article in articles %}
-        <article class="news-item">
+        <article class="news-item" data-category="{{ article.category }}" data-severity="{{ article.severity }}">
           <div>
             <h4>
               <a href="{{ article.url }}">{{ article.title }}</a>
@@ -39,6 +61,8 @@
         </article>
       {% endfor %}
     </div>
+
+    <p id="emptyArticlesMessage" class="empty-message" hidden>No articles match these filters.</p>
   </section>
 
   <section id="intelligence" class="panel">
@@ -75,4 +99,36 @@
       {% endfor %}
     </ul>
   </section>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    const categoryFilter = document.getElementById("categoryFilter");
+    const severityFilter = document.getElementById("severityFilter");
+    const articleCards = document.querySelectorAll(".news-item");
+    const emptyArticlesMessage = document.getElementById("emptyArticlesMessage");
+
+    function applyArticleFilters() {
+      const selectedCategory = categoryFilter.value;
+      const selectedSeverity = severityFilter.value;
+      let visibleCount = 0;
+
+      articleCards.forEach((card) => {
+        const categoryMatches = selectedCategory === "All" || card.dataset.category === selectedCategory;
+        const severityMatches = selectedSeverity === "All" || card.dataset.severity === selectedSeverity;
+        const shouldShow = categoryMatches && severityMatches;
+
+        card.hidden = !shouldShow;
+
+        if (shouldShow) {
+          visibleCount += 1;
+        }
+      });
+
+      emptyArticlesMessage.hidden = visibleCount > 0;
+    }
+
+    categoryFilter.addEventListener("change", applyArticleFilters);
+    severityFilter.addEventListener("change", applyArticleFilters);
+  </script>
 {% endblock %}
