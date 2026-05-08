@@ -9,11 +9,17 @@
 <body>
   <header>
     <h1>CyberNews Tracker</h1>
-    <p>Welcome, {{ username }}.</p>
+    <p>Welcome, {{ username }}{% if current_user %} ({{ current_user.role }}){% endif %}.</p>
     <nav>
       <a href="{{ url_for('news') }}">News</a>
       <a href="{{ url_for('contact') }}">Contact</a>
       <a href="{{ url_for('cookie_check') }}">Cookie Check</a>
+      {% if current_user %}
+        <a href="{{ url_for('dashboard') }}">User Dashboard</a>
+      {% endif %}
+      {% if current_user and current_user.role == "admin" %}
+        <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+      {% endif %}
       <a href="{{ url_for('login') }}">Login</a>
       <a href="{{ url_for('logout') }}">Logout</a>
     </nav>

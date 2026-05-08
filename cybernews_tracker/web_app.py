@@ -7,6 +7,10 @@ from flask import Flask, make_response, redirect, render_template, request, url_
 
 app = Flask(__name__)
 sessions = {}
+USERS = {
+    "alice": {"password": "alicepass", "role": "user"},
+    "bob": {"password": "bobpass", "role": "admin"},
+}
 
 
 def get_current_user():
@@ -53,6 +57,7 @@ def news():
     return render_template(
         "news.html",
         username=username,
+        current_user=current_user,
         articles=articles,
         last_updated=last_updated,
     )
@@ -64,15 +69,17 @@ def login():
         return render_template("login.html")
 
     username = request.form.get("username")
-    role = request.form.get("role")
+    password = request.form.get("password")
 
-    if not username:
-        return render_template("login.html", error="Please enter a username.")
+    user = USERS.get(username)
+
+    if not user or user["password"] != password:
+        return render_template("login.html", error="Invalid username or password.")
 
     session_token = secrets.token_urlsafe(24)
     sessions[session_token] = {
         "username": username,
-        "role": role,
+        "role": user["role"],
         "login_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 
@@ -86,6 +93,29 @@ def login():
     )
 
     return response
+
+
+@app.route("/dashboard")
+def dashboard():
+    current_user = get_current_user()
+
+    if not current_user:
+        return "Access denied. Please log in first.", 403
+
+    return render_template("dashboard.html", current_user=current_user)
+
+
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    current_user = get_current_user()
+
+    if not current_user:
+        return "Access denied. Please log in first.", 403
+
+    if current_user["role"] != "admin":
+        return "Access denied. Admins only.", 403
+
+    return render_template("admin_dashboard.html", current_user=current_user)
 
 
 @app.route("/logout")
