@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 3: Article Data Shape
+Step 4: News Filtering
 
 Status: TODO
 
@@ -46,7 +46,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: improve dashboard landing page
+Commit: 56aff74 Week 2: improve dashboard landing page
 
 Tested:
 
@@ -63,17 +63,22 @@ Notes:
 
 ### Step 3: Article Data Shape
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: normalize article data shape
 
 Tested:
 
-- -
+- Checked `/` returns the dashboard page with normalized articles.
+- Checked `/api/articles` returns article JSON.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Moved mock article data into `get_mock_articles()`.
+- Added consistent article fields: id, title, summary, source, url, published, category, and severity.
+- Added `/api/articles` for JSON article data.
+- Updated the dashboard to use the normalized article data.
 
 ### Step 4: News Filtering
 

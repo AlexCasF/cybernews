@@ -22,17 +22,20 @@
   <section id="headlines" class="panel">
     <div class="panel-heading">
       <h3>Latest Headlines</h3>
-      <span>{{ headlines|length }} items</span>
+      <span>{{ articles|length }} items</span>
     </div>
 
     <div class="item-list">
-      {% for headline in headlines %}
+      {% for article in articles %}
         <article class="news-item">
           <div>
-            <h4>{{ headline.title }}</h4>
-            <p>{{ headline.source }} · {{ headline.published }}</p>
+            <h4>
+              <a href="{{ article.url }}">{{ article.title }}</a>
+            </h4>
+            <p>{{ article.source }} | {{ article.published }} | {{ article.severity }}</p>
+            <p>{{ article.summary }}</p>
           </div>
-          <span class="tag">{{ headline.category }}</span>
+          <span class="tag">{{ article.category }}</span>
         </article>
       {% endfor %}
     </div>

@@ -1,17 +1,51 @@
 from datetime import datetime
 
-from flask import Flask, render_template
+from flask import Flask, jsonify, render_template
 
 
 app = Flask(__name__)
 
 
-@app.route("/")
-def home():
-    stats = [
+def get_mock_articles():
+    return [
+        {
+            "id": 1,
+            "title": "Critical VPN bug exploited by ransomware group",
+            "summary": "Administrators are urged to patch affected VPN gateways quickly.",
+            "source": "CyberDaily",
+            "url": "#",
+            "published": "2026-05-08",
+            "category": "Vulnerability",
+            "severity": "High",
+        },
+        {
+            "id": 2,
+            "title": "Phishing campaign uses fake parcel tracking emails",
+            "summary": "Attackers are copying delivery notices to steal account credentials.",
+            "source": "ThreatWire",
+            "url": "#",
+            "published": "2026-05-08",
+            "category": "Phishing",
+            "severity": "Medium",
+        },
+        {
+            "id": 3,
+            "title": "New malware hides inside browser extensions",
+            "summary": "Researchers found extensions collecting browser data in the background.",
+            "source": "Malware Lab",
+            "url": "#",
+            "published": "2026-05-07",
+            "category": "Malware",
+            "severity": "Medium",
+        },
+    ]
+
+
+def get_dashboard_stats(articles):
+    return [
         {
             "label": "Tracked headlines",
-            "value": "8",
+            "value": str(len(articles)),
             "note": "from demo sources",
         },
         {
@@ -26,28 +60,9 @@ def home():
         },
     ]
 
-    headlines = [
-        {
-            "title": "Critical VPN bug exploited by ransomware group",
-            "source": "CyberDaily",
-            "category": "Vulnerability",
-            "published": "2026-05-08",
-        },
-        {
-            "title": "Phishing campaign uses fake parcel tracking emails",
-            "source": "ThreatWire",
-            "category": "Phishing",
-            "published": "2026-05-08",
-        },
-        {
-            "title": "New malware hides inside browser extensions",
-            "source": "Malware Lab",
-            "category": "Malware",
-            "published": "2026-05-07",
-        },
-    ]
 
-    intelligence_items = [
+def get_intelligence_items():
+    return [
         {
             "title": "Review suspicious login attempts",
             "priority": "High",
@@ -65,21 +80,33 @@ def home():
         },
     ]
 
-    system_status = [
+
+def get_system_status():
+    return [
         {"name": "Local feed", "state": "Ready"},
         {"name": "Live feed", "state": "Planned"},
         {"name": "Authentication", "state": "Planned"},
     ]
 
+
+@app.route("/")
+def home():
+    articles = get_mock_articles()
+
     return render_template(
         "dashboard.html",
         page_title="Dashboard",
-        stats=stats,
-        headlines=headlines,
-        intelligence_items=intelligence_items,
-        system_status=system_status,
+        stats=get_dashboard_stats(articles),
+        articles=articles,
+        intelligence_items=get_intelligence_items(),
+        system_status=get_system_status(),
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),
     )
+
+
+@app.route("/api/articles")
+def api_articles():
+    return jsonify(get_mock_articles())
 
 
 @app.route("/health")
