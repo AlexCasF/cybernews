@@ -19,7 +19,7 @@
       <svg
         id="threatGraphSvg"
         class="threat-graph-svg"
-        viewBox="0 0 800 320"
+        viewBox="0 0 1000 460"
         role="img"
         aria-label="Threat graph visual area"
       ></svg>
@@ -69,11 +69,13 @@
     const selectedNodeStatus = document.getElementById("selectedNodeStatus");
     const nodeDetails = document.getElementById("nodeDetails");
     const nodePositions = {
-      "parcel-phishing": { x: 140, y: 160 },
-      "fake-delivery-emails": { x: 310, y: 90 },
-      "credential-theft": { x: 500, y: 90 },
-      "affected-users": { x: 500, y: 230 },
-      "awareness-training": { x: 680, y: 160 },
+      "parcel-phishing": { x: 120, y: 190 },
+      "fake-delivery-emails": { x: 280, y: 110 },
+      "credential-theft": { x: 470, y: 110 },
+      "affected-users": { x: 470, y: 270 },
+      "awareness-training": { x: 640, y: 190 },
+      "cisa-kev-catalog": { x: 90, y: 370 },
+      "first-epss": { x: 900, y: 370 },
     };
     const severityColors = {
       Critical: "#5b1020",
@@ -81,6 +83,37 @@
       Medium: "#ffd166",
       Low: "#28d7d0",
     };
+
+    function getFallbackPosition(index) {
+      const fallbackPositions = [
+        { x: 180, y: 70 },
+        { x: 380, y: 360 },
+        { x: 620, y: 360 },
+        { x: 820, y: 70 },
+      ];
+
+      return fallbackPositions[index % fallbackPositions.length];
+    }
+
+    function getVisualPositions(nodes) {
+      const positions = { ...nodePositions };
+      const cveNodes = nodes.filter((node) => node.type === "CVE");
+      const unknownNodes = nodes.filter((node) => !positions[node.id] && node.type !== "CVE");
+
+      cveNodes.forEach((node, index) => {
+        const spacing = 520 / Math.max(cveNodes.length - 1, 1);
+        positions[node.id] = {
+          x: 240 + spacing * index,
+          y: 350,
+        };
+      });
+
+      unknownNodes.forEach((node, index) => {
+        positions[node.id] = getFallbackPosition(index);
+      });
+
+      return positions;
+    }
 
     function showNodeDetails(node, edges, nodesById) {
       const connectedEdges = edges.filter((edge) => {
@@ -169,10 +202,10 @@
       return document.createElementNS("http://www.w3.org/2000/svg", name);
     }
 
-    function renderVisualEdges(edges) {
+    function renderVisualEdges(edges, visualPositions) {
       edges.forEach((edge) => {
-        const sourcePosition = nodePositions[edge.source];
-        const targetPosition = nodePositions[edge.target];
+        const sourcePosition = visualPositions[edge.source];
+        const targetPosition = visualPositions[edge.target];
 
         if (!sourcePosition || !targetPosition) {
           return;
@@ -200,9 +233,9 @@
       });
     }
 
-    function renderVisualNodes(nodes, edges, nodesById) {
+    function renderVisualNodes(nodes, edges, nodesById, visualPositions) {
       nodes.forEach((node) => {
-        const position = nodePositions[node.id] || { x: 400, y: 160 };
+        const position = visualPositions[node.id] || { x: 400, y: 160 };
         const group = createSvgElement("g");
         const circle = createSvgElement("circle");
         const label = createSvgElement("text");
@@ -236,8 +269,10 @@
 
     function renderVisualGraph(nodes, edges, nodesById) {
       threatGraphSvg.innerHTML = "";
-      renderVisualEdges(edges);
-      renderVisualNodes(nodes, edges, nodesById);
+      const visualPositions = getVisualPositions(nodes);
+
+      renderVisualEdges(edges, visualPositions);
+      renderVisualNodes(nodes, edges, nodesById, visualPositions);
     }
 
     function renderThreatGraph(data) {

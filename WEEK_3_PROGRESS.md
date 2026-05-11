@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 7: CVE Graph Nodes
+Step 8: CVE Graph Visual Positions
 
 Status: DONE
 
@@ -201,3 +201,23 @@ Notes:
 - Added CISA KEV Catalog and FIRST EPSS source nodes.
 - Added simple `listed in` and `scored by` relationships.
 - Kept product/vendor graph edges for a later follow-up commit.
+
+### Step 8: CVE Graph Visual Positions
+
+Status: DONE
+
+Commit: Week 3: position CVE graph nodes
+
+Tested:
+
+- Checked `/threat-graph` returns `200`.
+- Checked the graph page includes dynamic visual position logic.
+- Checked `/api/threat-graph` still returns `200`.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added fixed visual positions for CISA KEV and FIRST EPSS source nodes.
+- Added automatic row positioning for live CVE nodes.
+- Added fallback positions for future unknown graph nodes.
+- Increased the visual graph height so CVE nodes have room.
