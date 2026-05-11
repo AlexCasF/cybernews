@@ -28,6 +28,7 @@ USERS = {
 ADMIN_REPORTS = []
 AUDIT_LOG = []
 AI_JOBS = {}
+REPORTS = {}
 NEWSAPI_URL = "https://newsapi.org/v2/everything"
 BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
@@ -886,6 +887,30 @@ def create_ai_job(payload, current_user):
     return job, ""
 
 
+def create_report(payload, current_user):
+    report_json = payload.get("report_json")
+
+    if not isinstance(report_json, dict):
+        return None, "report_json must be an object."
+
+    report_id = str(uuid4())
+    created_at = get_timestamp()
+    title = report_json.get("title") or "Threat Intelligence Report"
+
+    report = {
+        "report_id": report_id,
+        "title": title,
+        "source_job_id": payload.get("source_job_id", ""),
+        "report_json": report_json,
+        "created_by": current_user["username"] if current_user else "guest",
+        "created_at": created_at,
+        "updated_at": created_at,
+    }
+    REPORTS[report_id] = report
+
+    return report, ""
+
+
 def get_graph_severity_from_epss_label(epss_label):
     if epss_label == "Very High":
         return "Critical"
@@ -1216,6 +1241,31 @@ def api_get_ai_job(job_id):
         return jsonify({"error": "AI job not found."}), 404
 
     return jsonify(job)
+
+
+@app.route("/api/reports", methods=["POST"])
+def api_create_report():
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body is required."}), 400
+
+    report, error = create_report(payload, get_current_user())
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify(report), 201
+
+
+@app.route("/api/reports/<report_id>")
+def api_get_report(report_id):
+    report = REPORTS.get(report_id)
+
+    if not report:
+        return jsonify({"error": "Report not found."}), 404
+
+    return jsonify(report)
 
 
 @app.route("/api/articles")

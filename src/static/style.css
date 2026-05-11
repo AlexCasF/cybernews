@@ -249,6 +249,18 @@ body {
   margin-bottom: 12px;
 }
 
+.workbench-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.workbench-actions span {
+  color: #5a6872;
+}
+
 .workbench-tab {
   color: #172026;
   background: #dbe3e7;

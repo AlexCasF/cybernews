@@ -355,3 +355,24 @@ Notes:
 - Connected generated report JSON to the sandboxed dashboard iframe.
 - Kept report rendering client-side and escaped instead of trusting raw HTML.
 - Replaced the old static briefing frame with a Report Preview placeholder.
+
+### Save Generated Reports
+
+Status: DONE
+
+Commit: save generated reports
+
+Tested:
+
+- Checked `POST /api/reports` saves report JSON.
+- Checked `GET /api/reports/<report_id>` returns a saved report.
+- Checked invalid report save requests return a JSON error.
+- Checked the Workbench report tab includes a Save report button.
+- Checked `/` and `/health` still return `200`.
+
+Notes:
+
+- Added an in-memory `REPORTS` store.
+- Added basic report create and retrieve API routes.
+- Added a Save report button for generated Workbench reports.
+- Reports still reset when the Flask server restarts; persistent storage comes later.

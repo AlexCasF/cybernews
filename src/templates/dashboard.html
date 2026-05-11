@@ -127,6 +127,10 @@
       </div>
 
       <div class="workbench-section" data-section="report" hidden>
+        <div class="workbench-actions">
+          <button id="saveReportButton" class="panel-action-button" type="button" hidden>Save report</button>
+          <span id="saveReportMessage"></span>
+        </div>
         <div id="aiReportBox" class="workbench-box">
           <p>No report has been generated yet.</p>
         </div>
@@ -304,7 +308,11 @@
     const aiResultBox = document.getElementById("aiResultBox");
     const aiReportBox = document.getElementById("aiReportBox");
     const aiJsonOutput = document.getElementById("aiJsonOutput");
+    const saveReportButton = document.getElementById("saveReportButton");
+    const saveReportMessage = document.getElementById("saveReportMessage");
     const analystReportFrame = document.getElementById("analystReportFrame");
+    let latestReportJson = null;
+    let latestReportJobId = "";
     const aiActionLabels = {
       analyze: "Analyze",
       generate_report: "Generate report",
@@ -551,11 +559,21 @@
       aiReportBox.innerHTML = "";
 
       if (!reportJson) {
+        latestReportJson = null;
+        latestReportJobId = "";
+        saveReportButton.hidden = true;
+        saveReportMessage.textContent = "";
+
         const emptyReport = document.createElement("p");
         emptyReport.textContent = "No report was generated for this job.";
         aiReportBox.appendChild(emptyReport);
         return;
       }
+
+      latestReportJson = reportJson;
+      saveReportButton.hidden = false;
+      saveReportButton.disabled = false;
+      saveReportMessage.textContent = "";
 
       const title = document.createElement("h4");
       const subtitle = document.createElement("p");
@@ -594,6 +612,7 @@
       aiSelectedEntity.textContent = `${job.entity_type}: ${job.entity_id}`;
       aiSelectedAction.textContent = aiActionLabels[job.action] || job.action;
       aiResultBox.innerHTML = "";
+      latestReportJobId = job.job_id;
 
       const summaryTitle = document.createElement("h4");
       const summary = document.createElement("p");
@@ -639,7 +658,41 @@
       renderAiReport(job.report_json);
       updateReportPreview(job.report_json);
       aiJsonOutput.textContent = JSON.stringify(job, null, 2);
-      setWorkbenchTab("result");
+      setWorkbenchTab(job.action === "generate_report" ? "report" : "result");
+    }
+
+    async function saveCurrentReport() {
+      if (!latestReportJson) {
+        saveReportMessage.textContent = "No report is ready to save.";
+        return;
+      }
+
+      saveReportButton.disabled = true;
+      saveReportMessage.textContent = "Saving report...";
+
+      try {
+        const response = await fetch("/api/reports", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            source_job_id: latestReportJobId,
+            report_json: latestReportJson,
+          }),
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Report save failed.");
+        }
+
+        saveReportMessage.textContent = `Saved as report ${data.report_id}.`;
+      } catch (error) {
+        saveReportMessage.textContent = error.message;
+      }
+
+      saveReportButton.disabled = false;
     }
 
     async function runArticleAiAction(button) {
@@ -1008,6 +1061,7 @@
     refreshSecurityFeedsButton.addEventListener("click", refreshSecurityFeeds);
     refreshBsiButton.addEventListener("click", refreshBsiAdvisories);
     refreshKevButton.addEventListener("click", refreshKevVulnerabilities);
+    saveReportButton.addEventListener("click", saveCurrentReport);
 
     articleList.addEventListener("click", (event) => {
       const button = event.target.closest(".ai-action-button");
