@@ -32,7 +32,7 @@ Do not start Vertex AI, Next.js, FastAPI, or Firestore migration until the norma
 Commit idea:
 
 ```text
-Week 3: add CISA KEV API
+add CISA KEV API
 ```
 
 Work:
@@ -68,7 +68,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: show KEV vulnerabilities
+show KEV vulnerabilities
 ```
 
 Work:
@@ -88,7 +88,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: add KEV refresh
+add KEV refresh
 ```
 
 Work:
@@ -107,7 +107,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: add EPSS scoring API
+add EPSS scoring API
 ```
 
 Work:
@@ -126,7 +126,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: show EPSS scores on KEV cards
+show EPSS scores on KEV cards
 ```
 
 Work:
@@ -145,7 +145,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: add CVE nodes to threat graph
+add CVE nodes to threat graph
 ```
 
 Work:
@@ -165,7 +165,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: normalize RSS news sources
+normalize RSS news sources
 ```
 
 Work:
@@ -185,7 +185,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: add security RSS feeds
+add security RSS feeds
 ```
 
 Work:
@@ -204,7 +204,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: document IOC source plan
+document IOC source plan
 ```
 
 Work:
@@ -222,7 +222,7 @@ Test:
 Commit idea:
 
 ```text
-Week 3: add mock AI enrichment
+add mock AI enrichment
 ```
 
 Work:

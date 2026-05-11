@@ -12,7 +12,7 @@ Status: DONE
 
 Status: DONE
 
-Commit: Week 3: document data source plan
+Commit: document data source plan
 
 Tested:
 
@@ -30,7 +30,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: add CISA KEV API
+Commit: add CISA KEV API
 
 Tested:
 
@@ -48,7 +48,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: show KEV vulnerabilities
+Commit: show KEV vulnerabilities
 
 Tested:
 
@@ -69,7 +69,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: make dashboard layout responsive
+Commit: make dashboard layout responsive
 
 Tested:
 
@@ -88,7 +88,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: add KEV refresh
+Commit: add KEV refresh
 
 Tested:
 
@@ -108,7 +108,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: simplify dashboard navigation
+Commit: simplify dashboard navigation
 
 Tested:
 
@@ -126,7 +126,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: add EPSS scoring API
+Commit: add EPSS scoring API
 
 Tested:
 
@@ -145,7 +145,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: enrich KEV API with EPSS
+Commit: enrich KEV API with EPSS
 
 Tested:
 
@@ -165,7 +165,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: show EPSS risk labels
+Commit: show EPSS risk labels
 
 Tested:
 
@@ -185,7 +185,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: add CVE nodes to threat graph
+Commit: add CVE nodes to threat graph
 
 Tested:
 
@@ -206,7 +206,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: position CVE graph nodes
+Commit: position CVE graph nodes
 
 Tested:
 
@@ -226,7 +226,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: finish pre-AI integrations
+Commit: finish pre-AI integrations
 
 Tested:
 
@@ -256,7 +256,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: seed AI workbench jobs
+Commit: seed AI workbench jobs
 
 Tested:
 
@@ -278,7 +278,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: add AI workbench panel
+Commit: add AI workbench panel
 
 Tested:
 
@@ -299,7 +299,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: add AI actions menu
+Commit: add AI actions menu
 
 Tested:
 
@@ -319,7 +319,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 3: add action-specific AI mock results
+Commit: add action-specific AI mock results
 
 Tested:
 
