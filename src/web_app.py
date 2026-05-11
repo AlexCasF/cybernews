@@ -13,6 +13,7 @@ from werkzeug.security import check_password_hash
 
 from src.ai_service import (
     analyze_article,
+    explain_cve_risk,
     extract_article_cves,
     extract_article_iocs,
     generate_article_report,
@@ -39,6 +40,7 @@ NEWSAPI_URL = "https://newsapi.org/v2/everything"
 BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 EPSS_URL = "https://api.first.org/data/v1/epss"
+NVD_CVE_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 SECURITY_RSS_SOURCES = [
     {
         "name": "The Hacker News",
@@ -557,6 +559,208 @@ def get_epss_score(cve_id):
         "message": "EPSS score loaded.",
         "status": 200,
     }
+
+
+def get_nvd_cve(cve_id):
+    query = urlencode({"cveId": cve_id})
+    headers = {"User-Agent": "CyberNewsSchoolProject/1.0"}
+    nvd_api_key = os.getenv("NVD_API_KEY")
+
+    if nvd_api_key:
+        headers["apiKey"] = nvd_api_key
+
+    try:
+        request_data = Request(f"{NVD_CVE_URL}?{query}", headers=headers)
+
+        with urlopen(request_data, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return {
+            "found": False,
+            "error": "NVD data is unavailable right now.",
+        }
+
+    vulnerabilities = data.get("vulnerabilities", [])
+
+    if not vulnerabilities:
+        return {
+            "found": False,
+            "error": f"No NVD record found for {cve_id}.",
+        }
+
+    cve_data = vulnerabilities[0].get("cve", {})
+    metrics = cve_data.get("metrics", {})
+
+    return {
+        "found": True,
+        "cve_id": cve_data.get("id", cve_id),
+        "published": cve_data.get("published", "Unknown date"),
+        "last_modified": cve_data.get("lastModified", "Unknown date"),
+        "status": cve_data.get("vulnStatus", "Unknown"),
+        "description": get_nvd_description(cve_data),
+        "cvss": get_nvd_cvss(metrics),
+        "affected_products": get_nvd_affected_products(cve_data),
+        "references": get_nvd_references(cve_data),
+        "source": "NVD",
+    }
+
+
+def get_nvd_description(cve_data):
+    for description in cve_data.get("descriptions", []):
+        if description.get("lang") == "en":
+            return description.get("value", "")
+
+    return "No description available."
+
+
+def get_nvd_cvss(metrics):
+    for metric_name in ("cvssMetricV31", "cvssMetricV30", "cvssMetricV2"):
+        metric_entries = metrics.get(metric_name, [])
+
+        if not metric_entries:
+            continue
+
+        metric_data = metric_entries[0].get("cvssData", {})
+
+        return {
+            "version": metric_data.get("version", "Unknown"),
+            "score": metric_data.get("baseScore"),
+            "severity": metric_data.get("baseSeverity") or metric_entries[0].get("baseSeverity"),
+            "vector": metric_data.get("vectorString", ""),
+        }
+
+    return {
+        "version": "Unknown",
+        "score": None,
+        "severity": "Unknown",
+        "vector": "",
+    }
+
+
+def get_nvd_affected_products(cve_data):
+    products = []
+
+    for configuration in cve_data.get("configurations", []):
+        for node in configuration.get("nodes", []):
+            for match in node.get("cpeMatch", []):
+                criteria = match.get("criteria", "")
+                parts = criteria.split(":")
+
+                if len(parts) >= 6:
+                    vendor = parts[3].replace("_", " ")
+                    product = parts[4].replace("_", " ")
+                    label = f"{vendor} {product}".strip()
+
+                    if label and label not in products:
+                        products.append(label)
+
+    return products[:8]
+
+
+def get_nvd_references(cve_data):
+    references = []
+    reference_data = cve_data.get("references", [])
+
+    if isinstance(reference_data, dict):
+        reference_data = reference_data.get("referenceData", [])
+
+    for reference in reference_data:
+        url = reference.get("url", "")
+
+        if url.startswith(("https://", "http://")):
+            references.append(url)
+
+    return references[:5]
+
+
+def get_kev_entry(cve_id):
+    try:
+        request_data = Request(
+            CISA_KEV_URL,
+            headers={"User-Agent": "CyberNewsSchoolProject/1.0"},
+        )
+
+        with urlopen(request_data, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return {
+            "is_known_exploited": False,
+            "error": "CISA KEV data is unavailable right now.",
+        }
+
+    for vulnerability in data.get("vulnerabilities", []):
+        if vulnerability.get("cveID", "").upper() == cve_id.upper():
+            return {
+                "is_known_exploited": True,
+                "vendor": vulnerability.get("vendorProject", "Unknown vendor"),
+                "product": vulnerability.get("product", "Unknown product"),
+                "title": vulnerability.get("vulnerabilityName", "Untitled vulnerability"),
+                "date_added": vulnerability.get("dateAdded", "Unknown date"),
+                "due_date": vulnerability.get("dueDate", "Unknown date"),
+                "known_ransomware_use": vulnerability.get("knownRansomwareCampaignUse", "Unknown"),
+                "required_action": vulnerability.get("requiredAction", "Review vendor guidance."),
+                "source": "CISA KEV",
+            }
+
+    return {
+        "is_known_exploited": False,
+        "source": "CISA KEV",
+    }
+
+
+def classify_cve_risk(nvd_data, epss_data, kev_data):
+    cvss_score = ((nvd_data.get("cvss") or {}).get("score"))
+    epss_label = epss_data.get("epss_label", "Unknown")
+
+    if kev_data.get("is_known_exploited") and epss_label in {"High", "Very High"}:
+        return "critical"
+
+    if isinstance(cvss_score, (int, float)) and cvss_score >= 9:
+        return "critical"
+
+    if kev_data.get("is_known_exploited"):
+        return "high"
+
+    if isinstance(cvss_score, (int, float)) and cvss_score >= 7:
+        return "high"
+
+    if epss_label == "Very High":
+        return "high"
+
+    if epss_label in {"Medium", "High"}:
+        return "medium"
+
+    return "low"
+
+
+def build_cve_enrichment(cve_id):
+    clean_cve_id = cve_id.upper()
+    nvd_data = get_nvd_cve(clean_cve_id)
+    epss_data = get_epss_score(clean_cve_id)
+    epss_data.pop("status", None)
+    kev_data = get_kev_entry(clean_cve_id)
+
+    enrichment = {
+        "cve_id": clean_cve_id,
+        "risk_classification": classify_cve_risk(nvd_data, epss_data, kev_data),
+        "nvd": nvd_data,
+        "epss": epss_data,
+        "kev": kev_data,
+        "ai_explanation": None,
+    }
+
+    try:
+        enrichment["ai_explanation"] = explain_cve_risk(enrichment)
+    except Exception as error:
+        enrichment["ai_explanation"] = {
+            "reasoning": "AI explanation is unavailable. Use the deterministic NVD, EPSS, and CISA KEV values above.",
+            "recommended_action": "Review deterministic enrichment data before prioritizing.",
+            "assumptions": [str(error)],
+            "confidence": 0.0,
+            "model": "unavailable",
+        }
+
+    return enrichment
 
 
 def get_dashboard_stats(articles, intelligence_reports, kev_vulnerabilities):
@@ -1415,6 +1619,14 @@ def api_epss(cve_id):
     result = get_epss_score(cve_id.upper())
     status = result.pop("status")
     return jsonify(result), status
+
+
+@app.route("/api/cve-enrichment/<cve_id>")
+def api_cve_enrichment(cve_id):
+    if not re.fullmatch(r"CVE-\d{4}-\d{4,}", cve_id.upper()):
+        return jsonify({"error": "Invalid CVE ID format."}), 400
+
+    return jsonify(build_cve_enrichment(cve_id))
 
 
 @app.route("/api/threat-graph")

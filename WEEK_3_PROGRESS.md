@@ -561,3 +561,22 @@ Notes:
 - IOC and CVE extraction now use Gemini for article entities.
 - Report JSON supports `source_links` with only `http://` and `https://` URLs.
 - Mock fallback remains in place if Vertex AI is unavailable.
+
+### CVE Enrichment API
+
+Status: DONE
+
+Commit: add CVE enrichment API
+
+Tested:
+
+- Checked `/api/cve-enrichment/CVE-2021-44228` returns NVD data.
+- Checked the response includes EPSS and CISA KEV data.
+- Checked Gemini returns an explanation based only on deterministic values.
+- Checked invalid CVE IDs return `400`.
+
+Notes:
+
+- Added NVD CVE API lookup.
+- Combined NVD, CISA KEV, and EPSS into one CVE detail object.
+- Added an optional `NVD_API_KEY` environment variable for higher NVD API rate limits.

@@ -170,6 +170,17 @@ EXTRACTED_CVES_SCHEMA = {
     "required": ["extracted_cves", "evidence", "confidence"],
 }
 
+CVE_RISK_EXPLANATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "reasoning": {"type": "string"},
+        "recommended_action": {"type": "string"},
+        "assumptions": {"type": "array", "items": {"type": "string"}},
+        "confidence": {"type": "number"},
+    },
+    "required": ["reasoning", "recommended_action", "assumptions", "confidence"],
+}
+
 
 def is_vertex_ready():
     return genai is not None and os.getenv("USE_VERTEX_AI", "1") == "1"
@@ -239,6 +250,21 @@ def extract_article_cves(entity_id, selected_text):
         EXTRACTED_CVES_SCHEMA,
     )
     return normalize_cve_result(result), model
+
+
+def explain_cve_risk(enrichment):
+    result, model = run_simple_extraction(
+        build_cve_risk_prompt(enrichment),
+        CVE_RISK_EXPLANATION_SCHEMA,
+    )
+
+    return {
+        "reasoning": str(result.get("reasoning", "")),
+        "recommended_action": str(result.get("recommended_action", "")),
+        "assumptions": list(result.get("assumptions", [])),
+        "confidence": float(result.get("confidence", 0.0)),
+        "model": model,
+    }
 
 
 def run_simple_extraction(prompt, schema):
@@ -343,6 +369,22 @@ Article ID:
 
 Article text:
 {selected_text}
+""".strip()
+
+
+def build_cve_risk_prompt(enrichment):
+    return f"""
+Explain the risk of this CVE for a security analyst.
+
+Rules:
+- Return valid JSON only.
+- Use only the deterministic data below.
+- Do not invent CVSS, EPSS, KEV, vendor, product, exploit, patch, or ransomware data.
+- If data is missing, say it is missing.
+- Keep the recommendation practical.
+
+Deterministic CVE data:
+{json.dumps(enrichment, indent=2)}
 """.strip()
 
 

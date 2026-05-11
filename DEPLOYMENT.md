@@ -30,6 +30,7 @@ Sources:
 
 - `SECRET_KEY`: required for production session security.
 - `NEWS_API_KEY`: optional, enables live NewsAPI headlines.
+- `NVD_API_KEY`: optional, increases NVD API rate limits for CVE enrichment.
 - `GOOGLE_CLOUD_PROJECT`: Google Cloud project used by Vertex AI.
 - `VERTEX_AI_LOCATION`: Vertex AI location, currently `global`.
 - `GEMINI_MODEL`: Gemini model name, currently `gemini-2.5-flash`.
