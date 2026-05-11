@@ -396,3 +396,23 @@ Notes:
 - Added a lightweight saved reports list API.
 - Added Saved Reports UI inside the Workbench Report tab.
 - Loading a saved report reuses the same safe report renderer and sandboxed preview.
+
+### Cloud Run Deployment Prep
+
+Status: DONE
+
+Commit: prepare Cloud Run deployment
+
+Tested:
+
+- Checked the app can be compiled by Python.
+- Checked `/health` returns `CyberNews is running.`
+- Checked `python src/web_app.py` respects the `PORT` environment variable.
+- Checked deployment docs include Cloud Run setup commands.
+
+Notes:
+
+- Added a `Procfile` for Cloud Run's Python buildpack start command.
+- Added `.gcloudignore` so local-only project files are not uploaded.
+- Added `.env.example` to document required environment variables without secrets.
+- Updated direct app startup so debug mode is opt-in with `FLASK_DEBUG=1`.

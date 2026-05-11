@@ -1,54 +1,123 @@
 # CyberNews Deployment Notes
 
-## Local Setup
+This project is prepared for Google Cloud Run using Python buildpacks.
 
-Install dependencies:
+Cloud Run deploys from source with `gcloud run deploy --source .`, then starts the app with the `Procfile` command:
 
-```bash
-pip install -r requirements.txt
+```text
+web: gunicorn --bind 0.0.0.0:$PORT src.web_app:app
 ```
 
-Run locally:
+Cloud Run provides the `PORT` environment variable automatically, and the app must listen on that port.
 
-```bash
-python -m flask --app src/web_app.py run --port 5050
-```
+Sources:
+
+- https://cloud.google.com/run/docs/deploying-source-code
+- https://cloud.google.com/run/docs/container-contract
+
+## Required Files
+
+- `requirements.txt` lists Python dependencies.
+- `Procfile` tells Cloud Run how to start Gunicorn.
+- `.gcloudignore` keeps local-only files out of the source upload.
+- `.env.example` documents local environment variables without real secrets.
 
 ## Environment Variables
 
-- `NEWS_API_KEY`: used for live NewsAPI headlines.
-- `SECRET_KEY`: used by Flask to protect sessions.
+- `SECRET_KEY`: required for production session security.
+- `NEWS_API_KEY`: optional, enables live NewsAPI headlines.
+- `PORT`: provided by Cloud Run automatically.
+- `FLASK_DEBUG`: local-only; do not set this to `1` in production.
 
-Do not commit real secret values.
+For a simple school demo, Cloud Run environment variables are fine. Later, move secrets such as `SECRET_KEY` and API keys into Secret Manager.
 
-For local PowerShell testing:
+## Local Smoke Test
+
+PowerShell:
 
 ```powershell
-$env:NEWS_API_KEY = "your-newsapi-key"
-$env:SECRET_KEY = "your-local-secret-key"
+pip install -r requirements.txt
+$env:PORT = "5050"
+$env:FLASK_DEBUG = "1"
+python src/web_app.py
 ```
 
-For Cloud Run:
+Open:
 
-- Store real values outside Git.
-- Start with Cloud Run environment variables for a simple school demo.
-- Later, move sensitive values into Google Secret Manager.
-- Keep `SECRET_KEY` different between local development and production.
-
-## Cloud Run Start Command
-
-For Google Cloud Run, use:
-
-```bash
-gunicorn --bind 0.0.0.0:$PORT src.web_app:app
+```text
+http://127.0.0.1:5050/
+http://127.0.0.1:5050/health
 ```
 
-Cloud Run provides the `PORT` variable automatically.
+The health route should return:
 
-## Pre-Deploy Checklist
+```text
+CyberNews is running.
+```
 
-- Confirm `requirements.txt` installs successfully.
-- Confirm `/health` returns `CyberNews is running.`
-- Confirm `NEWS_API_KEY` is set if live news should work.
-- Confirm `SECRET_KEY` is set before deploying publicly.
-- Confirm no real API keys or secrets are committed.
+## Cloud Run First Deploy
+
+Replace `PROJECT_ID`, region, and secret values with your own.
+
+PowerShell:
+
+```powershell
+gcloud auth login
+gcloud config set project PROJECT_ID
+
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+
+gcloud run deploy cybernews `
+  --source . `
+  --region europe-west1 `
+  --allow-unauthenticated `
+  --set-env-vars SECRET_KEY="replace-with-a-long-random-secret",NEWS_API_KEY="replace-with-newsapi-key"
+```
+
+If you do not have a NewsAPI key ready, deploy with only `SECRET_KEY`. The dashboard will still work, but live NewsAPI headlines will fall back to local demo data.
+
+## Update Environment Variables Later
+
+```powershell
+gcloud run services update cybernews `
+  --region europe-west1 `
+  --set-env-vars SECRET_KEY="replace-with-a-long-random-secret",NEWS_API_KEY="replace-with-newsapi-key"
+```
+
+## Redeploy After Code Changes
+
+Run the same deploy command again:
+
+```powershell
+gcloud run deploy cybernews `
+  --source . `
+  --region europe-west1 `
+  --allow-unauthenticated
+```
+
+## After Deploy
+
+Open the Cloud Run service URL and check:
+
+- `/health`
+- `/`
+- `/api/reports`
+- Live source buttons on the dashboard
+- AI Workbench report save/load flow
+
+## Current Limitation
+
+Some data is still stored in memory:
+
+- AI jobs
+- saved reports
+- admin-created reports
+- audit log
+
+This is acceptable for the current demo, but it resets when the service restarts or scales down. The next production step is persistent storage, probably Firestore for the school/demo version.
+
+## Delete the Demo Service
+
+```powershell
+gcloud run services delete cybernews --region europe-west1
+```

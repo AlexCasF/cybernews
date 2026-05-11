@@ -5,3 +5,4 @@ WEEK_2_PLAN.md
 exercises/
 __pycache__/
 *.pyc
+.env
