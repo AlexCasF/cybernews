@@ -599,16 +599,28 @@
       });
     }
 
+    async function readJsonResponse(response, fallbackMessage) {
+      const contentType = response.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        throw new Error(fallbackMessage);
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || fallbackMessage);
+      }
+
+      return data;
+    }
+
     async function refreshSavedReports() {
       refreshReportsButton.disabled = true;
 
       try {
         const response = await fetch("/api/reports");
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Could not load saved reports.");
-        }
+        const data = await readJsonResponse(response, "Could not load saved reports.");
 
         renderSavedReports(data.reports);
       } catch (error) {
@@ -628,11 +640,7 @@
 
       try {
         const response = await fetch(`/api/reports/${reportId}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Could not load saved report.");
-        }
+        const data = await readJsonResponse(response, "Could not load saved report.");
 
         latestReportJson = data.report_json;
         latestReportJobId = data.source_job_id || "";
@@ -775,11 +783,7 @@
             report_json: latestReportJson,
           }),
         });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Report save failed.");
-        }
+        const data = await readJsonResponse(response, "Report save failed.");
 
         saveReportMessage.textContent = `Saved as report ${data.report_id}.`;
         refreshSavedReports();
@@ -826,11 +830,7 @@
           }),
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "AI job failed.");
-        }
+        const data = await readJsonResponse(response, "AI service returned an unexpected server response.");
 
         renderAiJob(data);
       } catch (error) {

@@ -33,8 +33,11 @@ def save_ai_job(job):
     db = get_firestore_client()
 
     if db:
-        db.collection("ai_jobs").document(job["job_id"]).set(job)
-        return
+        try:
+            db.collection("ai_jobs").document(job["job_id"]).set(job)
+            return
+        except Exception:
+            pass
 
     MEMORY_AI_JOBS[job["job_id"]] = job
 
@@ -43,7 +46,10 @@ def get_ai_job(job_id):
     db = get_firestore_client()
 
     if db:
-        document = db.collection("ai_jobs").document(job_id).get()
+        try:
+            document = db.collection("ai_jobs").document(job_id).get()
+        except Exception:
+            return MEMORY_AI_JOBS.get(job_id)
 
         if document.exists:
             return document.to_dict()
@@ -57,8 +63,11 @@ def save_report(report):
     db = get_firestore_client()
 
     if db:
-        db.collection("reports").document(report["report_id"]).set(report)
-        return
+        try:
+            db.collection("reports").document(report["report_id"]).set(report)
+            return
+        except Exception:
+            pass
 
     MEMORY_REPORTS[report["report_id"]] = report
 
@@ -67,7 +76,10 @@ def get_report(report_id):
     db = get_firestore_client()
 
     if db:
-        document = db.collection("reports").document(report_id).get()
+        try:
+            document = db.collection("reports").document(report_id).get()
+        except Exception:
+            return MEMORY_REPORTS.get(report_id)
 
         if document.exists:
             return document.to_dict()
@@ -81,7 +93,10 @@ def list_reports():
     db = get_firestore_client()
 
     if db:
-        reports = [document.to_dict() for document in db.collection("reports").stream()]
+        try:
+            reports = [document.to_dict() for document in db.collection("reports").stream()]
+        except Exception:
+            reports = list(MEMORY_REPORTS.values())
     else:
         reports = list(MEMORY_REPORTS.values())
 

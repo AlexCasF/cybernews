@@ -472,3 +472,20 @@ Notes:
 - Added a small Gemini service for article analysis only.
 - Kept mock fallback if Vertex AI or the SDK is unavailable.
 - Other AI actions still use the mock implementation for now.
+
+### AI Error Handling Patch
+
+Status: DONE
+
+Commit: handle AI service errors cleanly
+
+Tested:
+
+- Fixed Cloud Run environment variables after a malformed update.
+- Checked live `/api/ai/jobs` returns a Gemini result from Cloud Run.
+- Checked Firestore smoke-test data was removed.
+
+Notes:
+
+- Added safer Firestore fallback if a Firestore operation fails at runtime.
+- Added a clearer AI Workbench error if the server ever returns non-JSON.
