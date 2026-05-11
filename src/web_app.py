@@ -265,7 +265,7 @@ def get_dashboard_stats(articles, intelligence_reports):
         {
             "label": "Tracked headlines",
             "value": str(len(articles)),
-            "note": "from demo sources",
+            "note": "shown on the dashboard",
         },
         {
             "label": "Intel reports",
@@ -384,9 +384,11 @@ def get_threat_graph_data():
 
 def get_system_status():
     return [
-        {"name": "Local feed", "state": "Ready"},
-        {"name": "Live feed", "state": "Planned"},
-        {"name": "Authentication", "state": "Planned"},
+        {"name": "Local dashboard", "state": "Ready"},
+        {"name": "Live news refresh", "state": "Ready"},
+        {"name": "BSI advisory feed", "state": "Ready"},
+        {"name": "Demo authentication", "state": "Ready"},
+        {"name": "Threat graph", "state": "Ready"},
     ]
 
 

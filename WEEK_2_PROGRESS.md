@@ -2,9 +2,9 @@
 
 ## Current Step
 
-Step 20: Final Week 2 Polish
+Week 2 Complete
 
-Status: TODO
+Status: DONE
 
 ## Progress Log
 
@@ -494,7 +494,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: document cloud security data and AI plan
+Commit: f01e186 Week 2: document cloud security data and AI plan
 
 Tested:
 
@@ -512,7 +512,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: document cloud security data and AI plan
+Commit: f01e186 Week 2: document cloud security data and AI plan
 
 Tested:
 
@@ -529,7 +529,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: document cloud security data and AI plan
+Commit: f01e186 Week 2: document cloud security data and AI plan
 
 Tested:
 
@@ -544,14 +544,22 @@ Notes:
 
 ### Step 20: Final Week 2 Polish
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: polish app for demo
 
 Tested:
 
-- -
+- Checked visitor dashboard, login page, and threat graph page.
+- Checked `alice` login and logout.
+- Checked `bob` admin report creation.
+- Checked `/api/live-news`, `/api/bsi-advisories`, `/api/threat-graph`, and `/health`.
+- Checked navigation links point to real routes or dashboard anchors.
+- Checked `README.md` run instructions were added.
 
 Notes:
 
-- -
+- Added a root README for demo and local setup.
+- Updated dashboard navigation anchor links so they work from every page.
+- Updated system status wording to match implemented features.
+- Clarified that local demo headlines can be refreshed with live NewsAPI headlines.

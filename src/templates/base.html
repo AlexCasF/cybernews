@@ -15,10 +15,10 @@
 
     <nav class="site-nav" aria-label="Main navigation">
       <a href="{{ url_for('home') }}">Dashboard</a>
-      <a href="#headlines">Headlines</a>
-      <a href="#intelligence">Intelligence</a>
+      <a href="{{ url_for('home') }}#headlines">Headlines</a>
+      <a href="{{ url_for('home') }}#intelligence">Intelligence</a>
       <a href="{{ url_for('threat_graph') }}">Threat Graph</a>
-      <a href="#system">System</a>
+      <a href="{{ url_for('home') }}#system">System</a>
       {% if current_user and current_user.role == "admin" %}
         <a href="{{ url_for('admin_reports') }}">Admin Reports</a>
       {% endif %}
