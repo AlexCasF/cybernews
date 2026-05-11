@@ -827,13 +827,18 @@
         return;
       }
 
-      if (!analystReportFrame.contentWindow) {
-        saveReportMessage.textContent = "Report preview is not ready yet.";
+      const printWindow = window.open("", "_blank");
+
+      if (!printWindow) {
+        saveReportMessage.textContent = "Please allow pop-ups to print this report.";
         return;
       }
 
-      analystReportFrame.contentWindow.focus();
-      analystReportFrame.contentWindow.print();
+      printWindow.document.open();
+      printWindow.document.write(buildReportPreviewHtml(latestReportJson));
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
     }
 
     async function runArticleAiAction(button) {

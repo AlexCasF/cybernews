@@ -703,3 +703,22 @@ Notes:
 - Replaced the single source select with a checkbox dropdown.
 - All sources are selected by default.
 - Analysts can filter by one source or several sources at the same time.
+
+### Quick Product Fixes
+
+Status: DONE
+
+Commit: remove demo news and fix report print
+
+Tested:
+
+- Checked Python compilation.
+- Checked `/` renders successfully.
+- Checked `/api/live-news` no longer returns local demo articles when NewsAPI is unavailable.
+- Checked `/api/articles` returns the aggregated feed instead of old mock entries.
+
+Notes:
+
+- Removed hardcoded demo news entries from the feed fallback path.
+- Kept real RSS/advisory sources in the unified feed.
+- Changed report print export to open a printable report window from the structured report JSON.

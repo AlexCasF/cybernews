@@ -131,41 +131,6 @@ def user_is_admin(user):
     return user and user["role"] == "admin"
 
 
-def get_mock_articles():
-    return [
-        {
-            "id": 1,
-            "title": "Critical VPN bug exploited by ransomware group",
-            "summary": "Administrators are urged to patch affected VPN gateways quickly.",
-            "source": "CyberDaily",
-            "url": "#",
-            "published": "2026-05-08",
-            "category": "Vulnerability",
-            "severity": "High",
-        },
-        {
-            "id": 2,
-            "title": "Phishing campaign uses fake parcel tracking emails",
-            "summary": "Attackers are copying delivery notices to steal account credentials.",
-            "source": "ThreatWire",
-            "url": "#",
-            "published": "2026-05-08",
-            "category": "Phishing",
-            "severity": "Medium",
-        },
-        {
-            "id": 3,
-            "title": "New malware hides inside browser extensions",
-            "summary": "Researchers found extensions collecting browser data in the background.",
-            "source": "Malware Lab",
-            "url": "#",
-            "published": "2026-05-07",
-            "category": "Malware",
-            "severity": "Medium",
-        },
-    ]
-
-
 def guess_article_category(text):
     lower_text = text.lower()
 
@@ -213,9 +178,9 @@ def get_live_news_articles():
 
     if not api_key:
         return {
-            "articles": get_mock_articles(),
-            "source": "fallback",
-            "message": "NEWS_API_KEY is missing. Showing local demo articles.",
+            "articles": [],
+            "source": "newsapi",
+            "message": "NEWS_API_KEY is missing. NewsAPI articles are unavailable.",
         }
 
     query = urlencode(
@@ -233,16 +198,16 @@ def get_live_news_articles():
             data = json.loads(response.read().decode("utf-8"))
     except Exception:
         return {
-            "articles": get_mock_articles(),
-            "source": "fallback",
-            "message": "Live news is unavailable. Showing local demo articles.",
+            "articles": [],
+            "source": "newsapi",
+            "message": "NewsAPI is unavailable right now.",
         }
 
     if data.get("status") != "ok":
         return {
-            "articles": get_mock_articles(),
-            "source": "fallback",
-            "message": "NewsAPI returned an error. Showing local demo articles.",
+            "articles": [],
+            "source": "newsapi",
+            "message": "NewsAPI returned an error.",
         }
 
     live_articles = [
@@ -253,9 +218,9 @@ def get_live_news_articles():
 
     if not live_articles:
         return {
-            "articles": get_mock_articles(),
-            "source": "fallback",
-            "message": "No live articles were found. Showing local demo articles.",
+            "articles": [],
+            "source": "newsapi",
+            "message": "No NewsAPI articles were found.",
         }
 
     return {
@@ -1798,7 +1763,7 @@ def api_get_report(report_id):
 
 @app.route("/api/articles")
 def api_articles():
-    return jsonify(get_mock_articles())
+    return jsonify(get_aggregated_news_feed())
 
 
 @app.route("/api/live-news")
