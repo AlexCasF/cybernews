@@ -11,6 +11,8 @@ from uuid import uuid4
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
+from src.storage import get_ai_job, get_report, list_reports, save_ai_job, save_report
+
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
@@ -27,8 +29,6 @@ USERS = {
 }
 ADMIN_REPORTS = []
 AUDIT_LOG = []
-AI_JOBS = {}
-REPORTS = {}
 NEWSAPI_URL = "https://newsapi.org/v2/everything"
 BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
@@ -882,7 +882,7 @@ def create_ai_job(payload, current_user):
         "created_at": created_at,
         "completed_at": created_at,
     }
-    AI_JOBS[job_id] = job
+    save_ai_job(job)
 
     return job, ""
 
@@ -906,7 +906,7 @@ def create_report(payload, current_user):
         "created_at": created_at,
         "updated_at": created_at,
     }
-    REPORTS[report_id] = report
+    save_report(report)
 
     return report, ""
 
@@ -1235,7 +1235,7 @@ def api_create_ai_job():
 
 @app.route("/api/ai/jobs/<job_id>")
 def api_get_ai_job(job_id):
-    job = AI_JOBS.get(job_id)
+    job = get_ai_job(job_id)
 
     if not job:
         return jsonify({"error": "AI job not found."}), 404
@@ -1260,11 +1260,7 @@ def api_create_report():
 
 @app.route("/api/reports")
 def api_list_reports():
-    reports = sorted(
-        REPORTS.values(),
-        key=lambda report: report["created_at"],
-        reverse=True,
-    )
+    reports = list_reports()
 
     return jsonify(
         {
@@ -1284,7 +1280,7 @@ def api_list_reports():
 
 @app.route("/api/reports/<report_id>")
 def api_get_report(report_id):
-    report = REPORTS.get(report_id)
+    report = get_report(report_id)
 
     if not report:
         return jsonify({"error": "Report not found."}), 404

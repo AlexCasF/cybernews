@@ -35,6 +35,8 @@ Sources:
 
 For a simple school demo, Cloud Run environment variables are fine. Later, move secrets such as `SECRET_KEY` and API keys into Secret Manager.
 
+The app uses Firestore automatically when Google Cloud credentials are available. Locally, it falls back to in-memory storage if Firestore cannot be reached.
+
 ## Local Smoke Test
 
 PowerShell:
@@ -122,17 +124,21 @@ Open the Cloud Run service URL and check:
 - `/api/reports`
 - Live source buttons on the dashboard
 - AI Workbench report save/load flow
+- Firestore collections named `reports` and `ai_jobs`
 
 ## Current Limitation
 
-Some data is still stored in memory:
+These data types are now stored in Firestore when deployed to Cloud Run:
 
 - AI jobs
 - saved reports
+
+Some data is still stored in memory:
+
 - admin-created reports
 - audit log
 
-This is acceptable for the current demo, but it resets when the service restarts or scales down. The next production step is persistent storage, probably Firestore for the school/demo version.
+The remaining in-memory data is acceptable for the current demo, but it resets when the service restarts or scales down.
 
 ## Delete the Demo Service
 

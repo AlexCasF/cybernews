@@ -434,3 +434,22 @@ Notes:
 - Added a simple Python 3.12 slim image.
 - Added `.dockerignore` to keep local-only files out of the container context.
 - Kept `Procfile` in place so source deploys still work too.
+
+### Firestore Persistence
+
+Status: DONE
+
+Commit: persist reports and AI jobs in Firestore
+
+Tested:
+
+- Checked the app imports with the new storage module.
+- Checked `/health` returns `CyberNews is running.`
+- Checked AI jobs can still be created and retrieved.
+- Checked reports can still be saved, listed, and retrieved.
+
+Notes:
+
+- Added Firestore storage for saved reports and AI jobs.
+- Kept a memory fallback for local development without Google Cloud credentials.
+- Left admin reports and audit log in memory for now.
