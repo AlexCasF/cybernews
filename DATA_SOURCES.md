@@ -14,6 +14,7 @@ This file tracks useful free or low-cost data sources for CyberNews.
 | FIRST EPSS | Public REST API | Free, no key | Integrated | Adds exploit probability scores to CISA KEV CVEs. |
 | The Hacker News | Public Atom feed | No key needed | Integrated | Extra cybersecurity news source for the dashboard. |
 | SecurityWeek | Public RSS feed | No key needed | Integrated | Extra cybersecurity news source for the dashboard. |
+| BleepingComputer | Public RSS feed | No key needed | Integrated | Extra cybersecurity and malware news source for the unified feed. |
 
 ## Best Next Sources
 
@@ -27,7 +28,7 @@ This file tracks useful free or low-cost data sources for CyberNews.
 | --- | --- | --- | --- | --- |
 | The Hacker News | Public feed | No key needed | Cybersecurity news | Integrated as a normalized RSS/Atom source. |
 | SecurityWeek | Public RSS feed | No key needed | Cybersecurity news | Integrated as a normalized RSS source. |
-| BleepingComputer | Public RSS feed | No key needed | Cybersecurity and malware news | Useful extra source if the dashboard needs more volume. |
+| BleepingComputer | Public RSS feed | No key needed | Cybersecurity and malware news | Integrated as a normalized RSS source. |
 | Hacker News API/RSS | Public API/RSS | Free, no key | Community signal | Use later as a "developer discussion" signal, not primary threat intelligence. |
 | NewsData.io | REST API with key | Has a free tier, but limited | NewsAPI fallback | Keep as a backup option if NewsAPI limits become a problem. |
 

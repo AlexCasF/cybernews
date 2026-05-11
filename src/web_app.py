@@ -51,6 +51,10 @@ SECURITY_RSS_SOURCES = [
         "name": "SecurityWeek",
         "url": "https://www.securityweek.com/feed/",
     },
+    {
+        "name": "BleepingComputer",
+        "url": "https://www.bleepingcomputer.com/feed/",
+    },
 ]
 AI_ACTIONS = {
     "summarize",

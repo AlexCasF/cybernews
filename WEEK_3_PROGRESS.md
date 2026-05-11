@@ -616,3 +616,20 @@ Notes:
 - Replaced separate RSS and BSI dashboard panels with one unified feed.
 - Kept KEV vulnerabilities as a separate vulnerability intelligence panel.
 - Made the unified feed scrollable.
+
+### BleepingComputer RSS Source
+
+Status: DONE
+
+Commit: add BleepingComputer feed
+
+Tested:
+
+- Checked the BleepingComputer RSS feed returns XML.
+- Checked `/api/security-feeds` includes BleepingComputer articles.
+- Checked `/api/aggregated-news` includes BleepingComputer items.
+
+Notes:
+
+- Added BleepingComputer as another public RSS source.
+- It flows through the existing normalized RSS parser and unified feed.
