@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 17: Secret Handling Notes
+Step 20: Final Week 2 Polish
 
 Status: TODO
 
@@ -452,7 +452,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: finish graph selection and prep deployment
+Commit: 40b5c66 Week 2: finish graph selection and prep deployment
 
 Tested:
 
@@ -475,7 +475,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: finish graph selection and prep deployment
+Commit: 40b5c66 Week 2: finish graph selection and prep deployment
 
 Tested:
 
@@ -492,45 +492,55 @@ Notes:
 
 ### Step 17: Secret Handling Notes
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: document cloud security data and AI plan
 
 Tested:
 
-- -
+- Checked `DEPLOYMENT.md` documents local and Cloud Run environment variables.
+- Checked `DEPLOYMENT.md` warns not to commit real secrets.
+- Checked tracked files do not contain the local `NEWS_API_KEY` value.
 
 Notes:
 
-- -
+- Added practical notes for `NEWS_API_KEY` and `SECRET_KEY`.
+- Documented local PowerShell environment variable setup.
+- Documented using Cloud Run environment variables first and Secret Manager later.
 
 ### Step 18: Firestore Planning Spike
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: document cloud security data and AI plan
 
 Tested:
 
-- -
+- Reviewed the model for small, beginner-readable collections.
+- Confirmed the plan does not require a database migration yet.
 
 Notes:
 
-- -
+- Added a Firestore data model draft to the product roadmap.
+- Planned collections: `articles`, `advisories`, `reports`, `audit_events`, `graph_nodes`, and `graph_edges`.
+- Documented that secrets do not belong in Firestore.
 
 ### Step 19: Vertex AI Planning Spike
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: document cloud security data and AI plan
 
 Tested:
 
-- -
+- Reviewed the flow to keep it optional and mocked first.
+- Confirmed the plan does not block the current Flask app.
 
 Notes:
 
-- -
+- Added a simple Vertex AI summary flow to the product roadmap.
+- First implementation should use mocked summaries.
+- Later implementation can summarize one article, advisory, or report at a time.
 
 ### Step 20: Final Week 2 Polish
 

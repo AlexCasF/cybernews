@@ -82,6 +82,18 @@ This school project currently uses:
 
 For now, we should keep the implementation simple and beginner-friendly. The roadmap can guide feature choices without forcing a large framework migration too early.
 
+## Google Cloud Direction
+
+Near-term Google Cloud target:
+
+- **Cloud Run:** host the Flask app.
+- **Environment variables:** keep simple demo settings outside Git.
+- **Secret Manager later:** store production secrets such as `NEWS_API_KEY` and `SECRET_KEY`.
+- **Firestore later:** persist articles, advisories, reports, audit events, and graph data.
+- **Vertex AI later:** generate summaries and analyst notes.
+
+For the first live version, Cloud Run plus environment variables is enough. Firestore and Vertex AI should be added only after the current app is stable.
+
 ## Core Features To Build Toward
 
 ### News Aggregation
@@ -168,6 +180,17 @@ Near-term idea:
 
 - First create a mock AI summary button.
 - Later connect a real AI API once the basic workflow is clear.
+
+Simple Vertex AI flow:
+
+1. User opens an article, advisory, or report.
+2. User clicks `Generate Summary`.
+3. The app first returns a mocked summary while the workflow is being designed.
+4. Later, the backend sends the text to Vertex AI.
+5. Vertex AI returns a short analyst summary and recommended next steps.
+6. The app shows the result in a small summary card.
+
+Keep this optional until the normal dashboard, feeds, and graph are stable.
 
 ## Authentication And Security
 
@@ -345,6 +368,26 @@ For Google Cloud, possible paths are:
 - **Firestore first:** Store simple node and edge documents while the project is small.
 - **Neo4j Aura later:** Use a real managed graph database through Google Cloud Marketplace if graph queries become central.
 - **JanusGraph + Bigtable much later:** Powerful, but too complex for this school project stage.
+
+### Firestore Data Model Draft
+
+Start with simple collections:
+
+| Collection | Purpose | Example fields |
+| --- | --- | --- |
+| `articles` | Saved NewsAPI-style articles | `title`, `summary`, `source`, `url`, `published`, `category`, `severity` |
+| `advisories` | Saved BSI advisories | `title`, `summary`, `source`, `url`, `published`, `severity` |
+| `reports` | Admin-created intelligence reports | `title`, `summary`, `severity`, `created_by`, `created_at` |
+| `audit_events` | Login and access events | `timestamp`, `username`, `result`, `role` |
+| `graph_nodes` | Threat graph nodes | `label`, `type`, `severity`, `source_id` |
+| `graph_edges` | Threat graph relationships | `source`, `target`, `label` |
+
+Rules for the first Firestore version:
+
+- Keep documents small and readable.
+- Store only app data, not secrets.
+- Keep user passwords out of Firestore until real account handling is designed.
+- Keep graph nodes and edges simple before adding a real graph database.
 
 Near-term plan:
 

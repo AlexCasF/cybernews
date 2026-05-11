@@ -501,6 +501,8 @@ Week 2: document secret handling
 Work:
 
 - Document that API keys belong in environment variables or Secret Manager.
+- Document `NEWS_API_KEY` and `SECRET_KEY`.
+- Explain local environment variables versus Cloud Run environment variables.
 - Do not commit real keys.
 - Keep the note short and practical.
 
@@ -519,6 +521,7 @@ Week 2: document Firestore data model
 Work:
 
 - Sketch Firestore collections for articles, reports, users, and graph nodes.
+- Include advisories, audit events, graph nodes, and graph edges.
 - Do not migrate the app yet unless needed.
 
 Test:
@@ -537,6 +540,7 @@ Work:
 
 - Document where Vertex AI could generate summaries.
 - Start with mocked AI summaries before calling the real service.
+- Keep the first summary target simple: one article, advisory, or report at a time.
 - Keep the first AI feature optional.
 
 Test:
