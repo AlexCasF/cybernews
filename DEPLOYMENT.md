@@ -1,6 +1,6 @@
 # CyberNews Deployment Notes
 
-This project is prepared for Google Cloud Run using Python buildpacks.
+This project is prepared for Google Cloud Run using either Python buildpacks or the included `Dockerfile`.
 
 Cloud Run deploys from source with `gcloud run deploy --source .`, then starts the app with the `Procfile` command:
 
@@ -9,6 +9,8 @@ web: gunicorn --bind 0.0.0.0:$PORT src.web_app:app
 ```
 
 Cloud Run provides the `PORT` environment variable automatically, and the app must listen on that port.
+
+For Cloud Build CI/CD, use the `Dockerfile`. It installs `requirements.txt`, copies `src/`, and starts the same Gunicorn command.
 
 Sources:
 
@@ -20,6 +22,8 @@ Sources:
 - `requirements.txt` lists Python dependencies.
 - `Procfile` tells Cloud Run how to start Gunicorn.
 - `.gcloudignore` keeps local-only files out of the source upload.
+- `Dockerfile` gives Cloud Build a predictable container build.
+- `.dockerignore` keeps local-only files out of the container image.
 - `.env.example` documents local environment variables without real secrets.
 
 ## Environment Variables
@@ -75,6 +79,20 @@ gcloud run deploy cybernews `
 ```
 
 If you do not have a NewsAPI key ready, deploy with only `SECRET_KEY`. The dashboard will still work, but live NewsAPI headlines will fall back to local demo data.
+
+## Cloud Build CI/CD Notes
+
+When setting up a Cloud Build trigger in the Google Cloud Console:
+
+- Repository: this GitHub repository.
+- Event: push to `main`.
+- Build type: Dockerfile.
+- Dockerfile location: `Dockerfile`.
+- Image name example: `europe-west1-docker.pkg.dev/PROJECT_ID/cybernews/cybernews:$COMMIT_SHA`.
+
+Then configure the trigger or a follow-up deploy step to deploy that image to Cloud Run.
+
+For first setup, the Console flow is easier. Later we can add a `cloudbuild.yaml` when we want the build and deploy steps versioned in Git.
 
 ## Update Environment Variables Later
 

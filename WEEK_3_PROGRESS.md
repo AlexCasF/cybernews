@@ -416,3 +416,21 @@ Notes:
 - Added `.gcloudignore` so local-only project files are not uploaded.
 - Added `.env.example` to document required environment variables without secrets.
 - Updated direct app startup so debug mode is opt-in with `FLASK_DEBUG=1`.
+
+### Dockerfile For Cloud Build
+
+Status: DONE
+
+Commit: add Dockerfile for Cloud Build
+
+Tested:
+
+- Checked the Dockerfile starts Gunicorn on Cloud Run's `PORT`.
+- Checked only application source and requirements are copied into the image.
+- Checked deployment docs mention the Dockerfile-based Cloud Build path.
+
+Notes:
+
+- Added a simple Python 3.12 slim image.
+- Added `.dockerignore` to keep local-only files out of the container context.
+- Kept `Procfile` in place so source deploys still work too.
