@@ -178,8 +178,9 @@ Use AI for:
 
 Near-term idea:
 
-- First create a mock AI summary button.
+- First create a sandboxed Analyst Briefing viewport for mock AI reports.
 - Later connect a real AI API once the basic workflow is clear.
+- Display AI-generated HTML only inside the sandboxed iframe until sanitizing and storage rules are clear.
 
 Simple Vertex AI flow:
 
@@ -187,8 +188,8 @@ Simple Vertex AI flow:
 2. User clicks `Generate Summary`.
 3. The app first returns a mocked summary while the workflow is being designed.
 4. Later, the backend sends the text to Vertex AI.
-5. Vertex AI returns a short analyst summary and recommended next steps.
-6. The app shows the result in a small summary card.
+5. Vertex AI returns a short analyst summary, recommended next steps, and optional safe report HTML.
+6. The app shows the result in the sandboxed Analyst Briefing viewport.
 
 Keep this optional until the normal dashboard, feeds, and graph are stable.
 
@@ -274,11 +275,11 @@ These are the most useful sources right now:
 | --- | --- | --- | --- |
 | NewsAPI | General cybersecurity news | Integrated | Requires `NEWS_API_KEY`. Free developer plan is useful for local development, but limited and not production-ready. |
 | BSI WID RSS | Vulnerability/security advisories | Integrated | Official German advisory feed, no API key, RSS/XML format, severity values like `niedrig`, `mittel`, `hoch`, `kritisch`. |
-| CISA KEV Catalog | Known exploited CVEs | Next | Official public JSON source for vulnerabilities known to be exploited in the wild. No key needed. |
-| FIRST EPSS | Exploit probability scoring | Next after KEV | Public API that returns EPSS score and percentile for CVE IDs. No key needed. |
+| CISA KEV Catalog | Known exploited CVEs | Integrated | Official public JSON source for vulnerabilities known to be exploited in the wild. No key needed. |
+| FIRST EPSS | Exploit probability scoring | Integrated | Public API that returns EPSS score and percentile for CVE IDs. No key needed. |
 | NVD CVE API | CVE details and CVSS data | Later | Free public API. API key is recommended for better limits. Useful after KEV and EPSS are stable. |
-| The Hacker News | Cybersecurity news RSS | Later | Public feed, useful for cyber news volume. Normalize after vulnerability data. |
-| SecurityWeek | Cybersecurity news RSS | Later | Public RSS feed, useful for cyber news volume. Normalize after vulnerability data. |
+| The Hacker News | Cybersecurity news RSS | Integrated | Public feed, useful for cyber news volume. |
+| SecurityWeek | Cybersecurity news RSS | Integrated | Public RSS feed, useful for cyber news volume. |
 | BleepingComputer | Cybersecurity and malware news RSS | Later | Public RSS feed, useful as an extra news source. |
 | Hacker News API/RSS | Tech community signal | Later | Free public API/RSS, but not cybersecurity-specific. Better as a community signal panel. |
 | URLhaus / MalwareBazaar | IOC and malware intelligence | Later | Free community/fair-use data. Useful later for malicious URLs and hashes. Do not download malware samples in this school app. |
@@ -286,14 +287,8 @@ These are the most useful sources right now:
 
 Recommended implementation order:
 
-1. CISA KEV JSON API.
-2. CISA KEV dashboard panel.
-3. FIRST EPSS scoring for CVEs.
-4. EPSS labels and filtering.
-5. CVE nodes in the threat graph.
-6. The Hacker News and SecurityWeek RSS normalization.
-7. IOC source spike with URLhaus, MalwareBazaar, or OpenPhish.
-8. Mock AI enrichment before real Vertex AI calls.
+1. IOC source spike with URLhaus, MalwareBazaar, or OpenPhish.
+2. Mock AI enrichment before real Vertex AI calls.
 
 ## SOC Dashboard Ideas
 
@@ -319,13 +314,19 @@ Keep the design practical:
 
 ## Threat Correlation Concepts
 
-Threat correlation should connect different security entities into a graph:
+Threat correlation should connect different security entities. It can be shown as a visual graph, or as AI-generated analyst reports and small HTML visuals in the sandboxed briefing viewport.
 
 ```text
 Article -> CVE -> IOC -> Incident -> Actor -> MITRE Technique -> Affected Asset
 ```
 
 This would make CyberNews feel more like an intelligence platform than a normal news dashboard.
+
+Current direction:
+
+- Keep graph-style data in the backend because relationships are useful.
+- Do not make the visual graph the main product focus yet.
+- Use the sandboxed Analyst Briefing viewport on the dashboard for generated reports, correlation summaries, and simple visuals.
 
 ### Graph Database Idea
 
@@ -459,14 +460,10 @@ For this school project, we should handle these gradually and avoid overbuilding
 
 ## Suggested Next Steps
 
-1. Add CISA KEV JSON API.
-2. Show known exploited vulnerabilities on the dashboard.
-3. Add FIRST EPSS scoring for CVEs.
-4. Connect CVEs into the threat graph.
-5. Add The Hacker News and SecurityWeek RSS sources.
-6. Add simple incident tracking.
-7. Add IOC source research and a small safe IOC feed.
-8. Add AI-style summaries, mocked first.
+1. Review IOC source safety before adding URLhaus, MalwareBazaar, or OpenPhish.
+2. Add AI-style summaries, mocked first.
+3. Add simple incident tracking.
+4. Connect AI summaries to articles, advisories, and CVEs.
 
 ## Development Principles
 

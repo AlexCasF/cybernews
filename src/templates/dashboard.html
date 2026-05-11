@@ -19,6 +19,27 @@
     {% endfor %}
   </section>
 
+  <section id="analyst-briefing" class="panel analyst-viewport">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Sandboxed preview</p>
+        <h3>Analyst Briefing Viewport</h3>
+      </div>
+      <span>AI-ready</span>
+    </div>
+
+    <p class="news-message">
+      Future AI-generated reports and visuals will render inside this isolated frame.
+    </p>
+
+    <iframe
+      class="analyst-frame"
+      src="{{ url_for('analyst_briefing_frame') }}"
+      title="Sandboxed analyst briefing"
+      sandbox
+    ></iframe>
+  </section>
+
   <div class="dashboard-grid">
     <section id="headlines" class="panel">
       <div class="panel-heading">
@@ -68,6 +89,37 @@
       </div>
 
       <p id="emptyArticlesMessage" class="empty-message" hidden>No articles match these filters.</p>
+    </section>
+
+    <section id="security-feeds" class="panel">
+      <div class="panel-heading">
+        <h3>Security RSS Feeds</h3>
+        <div class="panel-actions">
+          <span id="securityFeedCount">{{ security_rss_articles|length }} shown</span>
+          <button id="refreshSecurityFeedsButton" class="panel-action-button" type="button">Refresh RSS</button>
+        </div>
+      </div>
+
+      <p id="securityFeedMessage" class="news-message">{{ security_rss_message }}</p>
+
+      <div id="securityFeedList" class="item-list">
+        {% for article in security_rss_articles %}
+          <article class="news-item">
+            <div>
+              <h4>
+                <a href="{{ article.url }}">{{ article.title }}</a>
+              </h4>
+              <p>{{ article.source }} | {{ article.published }} | {{ article.severity }}</p>
+              <p>{{ article.summary }}</p>
+            </div>
+            <span class="tag">{{ article.category }}</span>
+          </article>
+        {% endfor %}
+      </div>
+
+      <p id="emptySecurityFeedMessage" class="empty-message" {% if security_rss_articles %}hidden{% endif %}>
+        No security RSS articles are available right now.
+      </p>
     </section>
 
     <section id="intelligence" class="panel">
@@ -195,6 +247,11 @@
     const kevCount = document.getElementById("kevCount");
     const kevMessage = document.getElementById("kevMessage");
     const emptyKevMessage = document.getElementById("emptyKevMessage");
+    const refreshSecurityFeedsButton = document.getElementById("refreshSecurityFeedsButton");
+    const securityFeedList = document.getElementById("securityFeedList");
+    const securityFeedCount = document.getElementById("securityFeedCount");
+    const securityFeedMessage = document.getElementById("securityFeedMessage");
+    const emptySecurityFeedMessage = document.getElementById("emptySecurityFeedMessage");
 
     function applyArticleFilters() {
       const selectedCategory = categoryFilter.value;
@@ -277,6 +334,65 @@
       }
 
       refreshLiveNewsButton.disabled = false;
+    }
+
+    function createSecurityFeedCard(article) {
+      const card = document.createElement("article");
+      const content = document.createElement("div");
+      const heading = document.createElement("h4");
+      const link = document.createElement("a");
+      const meta = document.createElement("p");
+      const summary = document.createElement("p");
+      const tag = document.createElement("span");
+
+      card.className = "news-item";
+      link.href = article.url || "#";
+      link.textContent = article.title || "Untitled article";
+      meta.textContent = `${article.source || "Security RSS"} | ${article.published || "Unknown date"} | ${article.severity || "Low"}`;
+      summary.textContent = article.summary || "No summary available.";
+      tag.className = "tag";
+      tag.textContent = article.category || "News";
+
+      heading.appendChild(link);
+      content.appendChild(heading);
+      content.appendChild(meta);
+      content.appendChild(summary);
+      card.appendChild(content);
+      card.appendChild(tag);
+
+      return card;
+    }
+
+    function renderSecurityFeedArticles(articles) {
+      securityFeedList.innerHTML = "";
+
+      articles.forEach((article) => {
+        securityFeedList.appendChild(createSecurityFeedCard(article));
+      });
+
+      securityFeedCount.textContent = `${articles.length} shown`;
+      emptySecurityFeedMessage.hidden = articles.length > 0;
+    }
+
+    async function refreshSecurityFeeds() {
+      refreshSecurityFeedsButton.disabled = true;
+      securityFeedMessage.textContent = "Loading security RSS feeds...";
+
+      try {
+        const response = await fetch("/api/security-feeds");
+
+        if (!response.ok) {
+          throw new Error("Security RSS request failed.");
+        }
+
+        const data = await response.json();
+        renderSecurityFeedArticles(data.articles.slice(0, 6));
+        securityFeedMessage.textContent = data.message;
+      } catch (error) {
+        securityFeedMessage.textContent = "Security RSS feeds unavailable right now. Please try again later.";
+      }
+
+      refreshSecurityFeedsButton.disabled = false;
     }
 
     function createBsiCard(advisory) {
@@ -425,6 +541,7 @@
     categoryFilter.addEventListener("change", applyArticleFilters);
     severityFilter.addEventListener("change", applyArticleFilters);
     refreshLiveNewsButton.addEventListener("click", refreshLiveNews);
+    refreshSecurityFeedsButton.addEventListener("click", refreshSecurityFeeds);
     refreshBsiButton.addEventListener("click", refreshBsiAdvisories);
     refreshKevButton.addEventListener("click", refreshKevVulnerabilities);
   </script>

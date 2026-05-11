@@ -19,7 +19,7 @@
       <svg
         id="threatGraphSvg"
         class="threat-graph-svg"
-        viewBox="0 0 1000 460"
+        viewBox="0 0 1200 560"
         role="img"
         aria-label="Threat graph visual area"
       ></svg>
@@ -74,8 +74,8 @@
       "credential-theft": { x: 470, y: 110 },
       "affected-users": { x: 470, y: 270 },
       "awareness-training": { x: 640, y: 190 },
-      "cisa-kev-catalog": { x: 90, y: 370 },
-      "first-epss": { x: 900, y: 370 },
+      "cisa-kev-catalog": { x: 650, y: 500 },
+      "first-epss": { x: 1120, y: 500 },
     };
     const severityColors = {
       Critical: "#5b1020",
@@ -87,8 +87,8 @@
     function getFallbackPosition(index) {
       const fallbackPositions = [
         { x: 180, y: 70 },
-        { x: 380, y: 360 },
-        { x: 620, y: 360 },
+        { x: 380, y: 440 },
+        { x: 620, y: 440 },
         { x: 820, y: 70 },
       ];
 
@@ -98,15 +98,45 @@
     function getVisualPositions(nodes) {
       const positions = { ...nodePositions };
       const cveNodes = nodes.filter((node) => node.type === "CVE");
-      const unknownNodes = nodes.filter((node) => !positions[node.id] && node.type !== "CVE");
+      const productNodes = nodes.filter((node) => node.type === "Product");
+      const vendorNodes = nodes.filter((node) => node.type === "Vendor");
+      const positionedTypes = ["CVE", "Product", "Vendor"];
+      const unknownNodes = nodes.filter((node) => !positions[node.id] && !positionedTypes.includes(node.type));
 
-      cveNodes.forEach((node, index) => {
-        const spacing = 520 / Math.max(cveNodes.length - 1, 1);
-        positions[node.id] = {
-          x: 240 + spacing * index,
-          y: 350,
+      function setRowPositions(rowNodes, startX, endX, y) {
+        rowNodes.forEach((node, index) => {
+          const spacing = (endX - startX) / Math.max(rowNodes.length - 1, 1);
+          positions[node.id] = {
+            x: startX + spacing * index,
+            y,
+          };
+        });
+      }
+
+      setRowPositions(vendorNodes, 700, 1080, 120);
+      setRowPositions(productNodes, 700, 1080, 250);
+      setRowPositions(cveNodes, 700, 1080, 400);
+
+      if (cveNodes.length === 1) {
+        positions[cveNodes[0].id] = {
+          x: 890,
+          y: 400,
         };
-      });
+      }
+
+      if (productNodes.length === 1) {
+        positions[productNodes[0].id] = {
+          x: 890,
+          y: 250,
+        };
+      }
+
+      if (vendorNodes.length === 1) {
+        positions[vendorNodes[0].id] = {
+          x: 890,
+          y: 120,
+        };
+      }
 
       unknownNodes.forEach((node, index) => {
         positions[node.id] = getFallbackPosition(index);
@@ -133,10 +163,37 @@
       const relationshipTitle = document.createElement("h4");
       const relationshipList = document.createElement("ul");
 
+      function addDetail(label, value) {
+        if (!value) {
+          return;
+        }
+
+        const detail = document.createElement("p");
+        const strong = document.createElement("strong");
+
+        strong.textContent = `${label}:`;
+        detail.appendChild(strong);
+        detail.append(` ${value}`);
+        nodeDetails.appendChild(detail);
+      }
+
       title.textContent = node.label;
       type.textContent = `Type: ${node.type}`;
       severity.textContent = `Severity: ${node.severity}`;
       relationshipTitle.textContent = "Connected Relationships";
+
+      nodeDetails.appendChild(title);
+      nodeDetails.appendChild(type);
+      nodeDetails.appendChild(severity);
+
+      if (node.type === "CVE") {
+        addDetail("Title", node.title);
+        addDetail("Vendor", node.vendor);
+        addDetail("Product", node.product);
+        addDetail("EPSS", `${node.epss} (${node.epss_label})`);
+        addDetail("Due date", node.due_date);
+        addDetail("Required action", node.required_action);
+      }
 
       connectedEdges.forEach((edge) => {
         const item = document.createElement("li");
@@ -152,9 +209,6 @@
         relationshipList.appendChild(item);
       }
 
-      nodeDetails.appendChild(title);
-      nodeDetails.appendChild(type);
-      nodeDetails.appendChild(severity);
       nodeDetails.appendChild(relationshipTitle);
       nodeDetails.appendChild(relationshipList);
     }

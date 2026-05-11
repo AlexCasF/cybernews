@@ -118,6 +118,18 @@ body {
   margin-bottom: 0;
 }
 
+.analyst-viewport {
+  margin-bottom: 16px;
+}
+
+.analyst-frame {
+  display: block;
+  width: 100%;
+  min-height: 440px;
+  background: white;
+  border: 1px solid #dbe3e7;
+}
+
 .panel-heading,
 .news-item,
 .bsi-item,
@@ -212,7 +224,7 @@ body {
 .threat-graph-svg {
   display: block;
   width: 100%;
-  height: 420px;
+  height: 500px;
 }
 
 .visual-edge line {

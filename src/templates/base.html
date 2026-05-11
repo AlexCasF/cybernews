@@ -15,7 +15,6 @@
 
     <nav class="site-nav" aria-label="Main navigation">
       <a href="{{ url_for('home') }}">Dashboard</a>
-      <a href="{{ url_for('threat_graph') }}">Threat Graph</a>
       {% if current_user and current_user.role == "admin" %}
         <a href="{{ url_for('admin_reports') }}">Admin Reports</a>
       {% endif %}

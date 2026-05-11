@@ -1,3 +1,4 @@
+import html
 import json
 import os
 import re
@@ -29,6 +30,16 @@ NEWSAPI_URL = "https://newsapi.org/v2/everything"
 BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 EPSS_URL = "https://api.first.org/data/v1/epss"
+SECURITY_RSS_SOURCES = [
+    {
+        "name": "The Hacker News",
+        "url": "https://thehackernews.com/feeds/posts/default",
+    },
+    {
+        "name": "SecurityWeek",
+        "url": "https://www.securityweek.com/feed/",
+    },
+]
 
 
 def get_timestamp():
@@ -220,6 +231,11 @@ def clean_bsi_title(title):
     return re.sub(r"^(\[[^\]]+\]\s*)+", "", title).strip()
 
 
+def clean_text(text):
+    without_tags = re.sub(r"<[^>]+>", "", text or "")
+    return html.unescape(without_tags).strip()
+
+
 def normalize_bsi_item(item, index):
     title = get_element_text(item, "title", "Untitled advisory")
     severity = get_element_text(item, "category", "unknown")
@@ -233,6 +249,106 @@ def normalize_bsi_item(item, index):
         "published": get_element_text(item, "pubDate", "Unknown date"),
         "category": "Vulnerability Advisory",
         "severity": normalize_bsi_severity(severity),
+    }
+
+
+def get_atom_link(entry):
+    atom_namespace = "{http://www.w3.org/2005/Atom}"
+    link = entry.find(f"{atom_namespace}link")
+
+    if link is None:
+        return "#"
+
+    return link.get("href") or "#"
+
+
+def normalize_atom_entry(entry, source_name, source_slug, index):
+    atom_namespace = "{http://www.w3.org/2005/Atom}"
+    title = get_element_text(entry, f"{atom_namespace}title", "Untitled article")
+    summary = get_element_text(entry, f"{atom_namespace}summary", "")
+    content = get_element_text(entry, f"{atom_namespace}content", "")
+    published = get_element_text(entry, f"{atom_namespace}published", "")
+    updated = get_element_text(entry, f"{atom_namespace}updated", "Unknown date")
+    clean_summary = clean_text(summary or content) or "No summary available."
+    category = guess_article_category(f"{title} {clean_summary}")
+
+    return {
+        "id": f"{source_slug}-{index}",
+        "title": clean_text(title),
+        "summary": clean_summary,
+        "source": source_name,
+        "url": get_atom_link(entry),
+        "published": (published or updated)[:10],
+        "category": category,
+        "severity": guess_article_severity(category),
+    }
+
+
+def normalize_rss_item(item, source_name, source_slug, index):
+    title = get_element_text(item, "title", "Untitled article")
+    summary = get_element_text(item, "description", "No summary available.")
+    clean_summary = clean_text(summary) or "No summary available."
+    category = guess_article_category(f"{title} {clean_summary}")
+
+    return {
+        "id": f"{source_slug}-{index}",
+        "title": clean_text(title),
+        "summary": clean_summary,
+        "source": source_name,
+        "url": get_element_text(item, "link", "#"),
+        "published": get_element_text(item, "pubDate", "Unknown date"),
+        "category": category,
+        "severity": guess_article_severity(category),
+    }
+
+
+def get_security_rss_articles():
+    articles = []
+    failed_sources = []
+
+    for source in SECURITY_RSS_SOURCES:
+        source_slug = re.sub(r"[^a-z0-9]+", "-", source["name"].lower()).strip("-")
+
+        try:
+            request_data = Request(
+                source["url"],
+                headers={"User-Agent": "CyberNewsSchoolProject/1.0"},
+            )
+
+            with urlopen(request_data, timeout=8) as response:
+                feed_data = response.read()
+
+            root = ET.fromstring(feed_data)
+        except Exception:
+            failed_sources.append(source["name"])
+            continue
+
+        if root.tag.endswith("feed"):
+            atom_namespace = "{http://www.w3.org/2005/Atom}"
+            entries = root.findall(f"{atom_namespace}entry")
+            articles.extend(
+                normalize_atom_entry(entry, source["name"], source_slug, index + 1)
+                for index, entry in enumerate(entries[:4])
+            )
+        else:
+            items = root.findall("./channel/item")
+            articles.extend(
+                normalize_rss_item(item, source["name"], source_slug, index + 1)
+                for index, item in enumerate(items[:4])
+            )
+
+    if articles and failed_sources:
+        message = "Security RSS feeds loaded, but some sources were unavailable."
+    elif articles:
+        message = "Security RSS feeds loaded."
+    else:
+        message = "Security RSS feeds are unavailable right now."
+
+    return {
+        "articles": articles,
+        "failed_sources": failed_sources,
+        "message": message,
+        "source": "security-rss",
     }
 
 
@@ -489,6 +605,19 @@ def get_graph_severity_from_epss_label(epss_label):
     return "Low"
 
 
+def make_graph_id(prefix, value):
+    clean_value = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return f"{prefix}-{clean_value or 'unknown'}"
+
+
+def add_graph_node(nodes, node_ids, node):
+    if node["id"] in node_ids:
+        return
+
+    nodes.append(node)
+    node_ids.add(node["id"])
+
+
 def get_threat_graph_data():
     nodes = [
         {
@@ -544,6 +673,7 @@ def get_threat_graph_data():
             "label": "reduces risk of",
         },
     ]
+    node_ids = {node["id"] for node in nodes}
     kev_vulnerabilities = get_kev_vulnerabilities()["vulnerabilities"][:3]
 
     if kev_vulnerabilities:
@@ -563,23 +693,62 @@ def get_threat_graph_data():
                 },
             ]
         )
+        node_ids.update({"cisa-kev-catalog", "first-epss"})
 
     for vulnerability in kev_vulnerabilities:
         cve_node_id = vulnerability["cve"].lower()
-        nodes.append(
+        product_node_id = make_graph_id("product", vulnerability["product"])
+        vendor_node_id = make_graph_id("vendor", vulnerability["vendor"])
+
+        add_graph_node(
+            nodes,
+            node_ids,
             {
                 "id": cve_node_id,
                 "label": vulnerability["cve"],
                 "type": "CVE",
                 "severity": get_graph_severity_from_epss_label(vulnerability["epss_label"]),
                 "title": vulnerability["title"],
+                "vendor": vulnerability["vendor"],
+                "product": vulnerability["product"],
                 "epss": vulnerability["epss"],
                 "epss_label": vulnerability["epss_label"],
                 "due_date": vulnerability["due_date"],
-            }
+                "required_action": vulnerability["required_action"],
+            },
+        )
+        add_graph_node(
+            nodes,
+            node_ids,
+            {
+                "id": product_node_id,
+                "label": vulnerability["product"],
+                "type": "Product",
+                "severity": get_graph_severity_from_epss_label(vulnerability["epss_label"]),
+            },
+        )
+        add_graph_node(
+            nodes,
+            node_ids,
+            {
+                "id": vendor_node_id,
+                "label": vulnerability["vendor"],
+                "type": "Vendor",
+                "severity": "Low",
+            },
         )
         edges.extend(
             [
+                {
+                    "source": cve_node_id,
+                    "target": product_node_id,
+                    "label": "affects",
+                },
+                {
+                    "source": product_node_id,
+                    "target": vendor_node_id,
+                    "label": "made by",
+                },
                 {
                     "source": cve_node_id,
                     "target": "cisa-kev-catalog",
@@ -604,11 +773,41 @@ def get_system_status():
     return [
         {"name": "Local dashboard", "state": "Ready"},
         {"name": "Live news refresh", "state": "Ready"},
+        {"name": "Security RSS feeds", "state": "Ready"},
         {"name": "BSI advisory feed", "state": "Ready"},
         {"name": "CISA KEV feed", "state": "Ready"},
         {"name": "Demo authentication", "state": "Ready"},
-        {"name": "Threat graph", "state": "Ready"},
+        {"name": "Analyst briefing frame", "state": "Ready"},
+        {"name": "Correlation data", "state": "Ready"},
     ]
+
+
+def get_analyst_briefing():
+    kev_data = get_kev_vulnerabilities()
+    security_rss_data = get_security_rss_articles()
+    bsi_data = get_bsi_advisories()
+
+    vulnerabilities = kev_data["vulnerabilities"]
+    vulnerability = vulnerabilities[0] if vulnerabilities else None
+
+    if vulnerability:
+        summary = (
+            f"{vulnerability['cve']} affects {vulnerability['vendor']} "
+            f"{vulnerability['product']} and is listed by CISA KEV."
+        )
+        primary_action = vulnerability["required_action"]
+    else:
+        summary = "No CISA KEV vulnerability is available right now."
+        primary_action = "Refresh the vulnerability feed before triage."
+
+    return {
+        "generated_at": get_timestamp(),
+        "summary": summary,
+        "primary_action": primary_action,
+        "vulnerability": vulnerability,
+        "articles": security_rss_data["articles"][:3],
+        "advisories": bsi_data["advisories"][:2],
+    }
 
 
 def get_article_categories(articles):
@@ -626,6 +825,7 @@ def home():
     bsi_data = get_bsi_advisories()
     kev_data = get_kev_vulnerabilities()
     kev_vulnerabilities = kev_data["vulnerabilities"][:4]
+    security_rss_data = get_security_rss_articles()
 
     return render_template(
         "dashboard.html",
@@ -639,6 +839,8 @@ def home():
         bsi_message=bsi_data["message"],
         kev_vulnerabilities=kev_vulnerabilities,
         kev_message=kev_data["message"],
+        security_rss_articles=security_rss_data["articles"][:6],
+        security_rss_message=security_rss_data["message"],
         system_status=get_system_status(),
         current_user=get_current_user(),
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -720,6 +922,14 @@ def threat_graph():
     )
 
 
+@app.route("/analyst-briefing/frame")
+def analyst_briefing_frame():
+    return render_template(
+        "analyst_briefing_frame.html",
+        briefing=get_analyst_briefing(),
+    )
+
+
 @app.route("/api/articles")
 def api_articles():
     return jsonify(get_mock_articles())
@@ -733,6 +943,11 @@ def api_live_news():
 @app.route("/api/bsi-advisories")
 def api_bsi_advisories():
     return jsonify(get_bsi_advisories())
+
+
+@app.route("/api/security-feeds")
+def api_security_feeds():
+    return jsonify(get_security_rss_articles())
 
 
 @app.route("/api/kev-vulnerabilities")

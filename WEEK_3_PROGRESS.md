@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 8: CVE Graph Visual Positions
+Pre-AI Integration Bundle
 
 Status: DONE
 
@@ -120,7 +120,7 @@ Tested:
 Notes:
 
 - Removed dashboard section anchors from the main menu.
-- Kept Dashboard, Threat Graph, Admin Reports, and Login/Logout links.
+- Kept Dashboard, Admin Reports, and Login/Logout links.
 
 ### Step 4: EPSS Scoring API
 
@@ -221,3 +221,33 @@ Notes:
 - Added automatic row positioning for live CVE nodes.
 - Added fallback positions for future unknown graph nodes.
 - Increased the visual graph height so CVE nodes have room.
+
+### Pre-AI Integration Bundle
+
+Status: DONE
+
+Commit: Week 3: finish pre-AI integrations
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked `/` includes the sandboxed Analyst Briefing iframe.
+- Checked `/analyst-briefing/frame` returns `200`.
+- Checked `/analyst-briefing/frame` contains no `<script>` tag.
+- Checked `/api/security-feeds` returns `200`.
+- Checked the dashboard includes the Security RSS Feeds panel.
+- Checked `/api/threat-graph` returns CVE, Product, and Vendor nodes.
+- Checked every graph edge points to an existing node.
+- Checked `/threat-graph` includes CVE detail rendering.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added normalized The Hacker News and SecurityWeek feed support.
+- Added a Security RSS Feeds dashboard panel with refresh.
+- Added a sandboxed Analyst Briefing iframe on the dashboard.
+- Added a simple server-rendered briefing frame that uses current feeds as mock AI input.
+- Removed the Threat Graph link from the main navigation while keeping the route available.
+- Added product and vendor graph nodes for CISA KEV CVEs.
+- Added CVE detail fields to the threat graph selected-node panel.
+- Left IOC feed implementation as a documented safety review before AI.
