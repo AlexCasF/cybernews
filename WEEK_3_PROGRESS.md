@@ -251,3 +251,25 @@ Notes:
 - Added product and vendor graph nodes for CISA KEV CVEs.
 - Added CVE detail fields to the threat graph selected-node panel.
 - Left IOC feed implementation as a documented safety review before AI.
+
+### AI Workbench Backend Seed
+
+Status: DONE
+
+Commit: Week 3: seed AI workbench jobs
+
+Tested:
+
+- Checked `AI_WORKBENCH_SPEC.md` exists at the project root.
+- Checked `POST /api/ai/jobs` creates a completed mock AI job.
+- Checked `GET /api/ai/jobs/<job_id>` returns the stored job.
+- Checked invalid AI actions return a JSON error.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added the AI Workbench specification as a root Markdown file.
+- Added an in-memory `AI_JOBS` store as the first simple job model.
+- Added `POST /api/ai/jobs` and `GET /api/ai/jobs/<job_id>`.
+- AI results are mocked for now so the UI can be built before Gemini is connected.
+- CVE and IOC enrichment return schema-shaped mock results for now.
