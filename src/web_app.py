@@ -4,6 +4,7 @@ import os
 import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from uuid import uuid4
@@ -385,6 +386,78 @@ def get_security_rss_articles():
         "failed_sources": failed_sources,
         "message": message,
         "source": "security-rss",
+    }
+
+
+def get_feed_sort_value(published):
+    if not published or published == "Unknown date":
+        return ""
+
+    try:
+        return datetime.fromisoformat(published[:10]).isoformat()
+    except ValueError:
+        pass
+
+    try:
+        return parsedate_to_datetime(published).isoformat()
+    except (TypeError, ValueError):
+        return str(published)
+
+
+def normalize_aggregated_item(item, source_type):
+    title = item.get("title", "Untitled item")
+    url = item.get("url", "#")
+    published = item.get("published", "Unknown date")
+
+    return {
+        "id": f"{source_type}-{item.get('id', title)}",
+        "title": title,
+        "summary": item.get("summary", "No summary available."),
+        "source": item.get("source", source_type),
+        "source_type": source_type,
+        "url": url,
+        "published": published,
+        "published_sort": get_feed_sort_value(published),
+        "category": item.get("category", "News"),
+        "severity": item.get("severity", "Low"),
+    }
+
+
+def get_aggregated_news_feed():
+    feed_items = []
+    messages = []
+    seen_keys = set()
+
+    source_results = [
+        ("newsapi", get_live_news_articles(), "articles"),
+        ("security-rss", get_security_rss_articles(), "articles"),
+        ("bsi", get_bsi_advisories(), "advisories"),
+    ]
+
+    for source_type, result, item_key in source_results:
+        messages.append(result.get("message", ""))
+
+        for item in result.get(item_key, []):
+            normalized = normalize_aggregated_item(item, source_type)
+            dedupe_key = normalized["url"] if normalized["url"] != "#" else normalized["title"].lower()
+
+            if dedupe_key in seen_keys:
+                continue
+
+            seen_keys.add(dedupe_key)
+            feed_items.append(normalized)
+
+    feed_items.sort(
+        key=lambda item: item["published_sort"],
+        reverse=True,
+    )
+
+    return {
+        "items": feed_items,
+        "count": len(feed_items),
+        "messages": [message for message in messages if message],
+        "source": "aggregated-news",
+        "message": "Aggregated news feed loaded.",
     }
 
 
@@ -1607,6 +1680,11 @@ def api_bsi_advisories():
 @app.route("/api/security-feeds")
 def api_security_feeds():
     return jsonify(get_security_rss_articles())
+
+
+@app.route("/api/aggregated-news")
+def api_aggregated_news():
+    return jsonify(get_aggregated_news_feed())
 
 
 @app.route("/api/kev-vulnerabilities")

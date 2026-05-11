@@ -271,3 +271,25 @@ Test:
 - Confirm the preview appears.
 - Click Export PDF / Print.
 - Confirm the browser print dialog opens for the report preview.
+
+### Next News Step: Unified Feed UI
+
+Commit idea:
+
+```text
+show aggregated news feed
+```
+
+Work:
+
+- Replace separate headline, security RSS, and BSI panels with one feed panel.
+- Fetch `/api/aggregated-news`.
+- Keep filtering by category and severity.
+- Add source filtering and simple newest/oldest sorting.
+- Make the feed scrollable so large source lists do not stretch the page.
+
+Test:
+
+- Confirm NewsAPI, RSS, and BSI items appear in one list.
+- Confirm filters affect every item in the unified list.
+- Confirm sorting changes item order.

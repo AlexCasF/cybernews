@@ -580,3 +580,20 @@ Notes:
 - Added NVD CVE API lookup.
 - Combined NVD, CISA KEV, and EPSS into one CVE detail object.
 - Added an optional `NVD_API_KEY` environment variable for higher NVD API rate limits.
+
+### Aggregated News API
+
+Status: DONE
+
+Commit: add aggregated news feed API
+
+Tested:
+
+- Checked `/api/aggregated-news` returns one normalized item list.
+- Checked NewsAPI, security RSS, and BSI advisories are included when available.
+- Checked items include filter fields such as `source_type`, `category`, and `severity`.
+
+Notes:
+
+- Added the first backend step toward a single filterable/sortable feed.
+- Dashboard UI consolidation is planned next.
