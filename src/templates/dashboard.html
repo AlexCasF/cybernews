@@ -70,15 +70,21 @@
           </select>
         </label>
 
-        <label for="sourceFilter">
-          Source
-          <select id="sourceFilter">
-            <option value="All">All</option>
+        <details class="source-filter-menu">
+          <summary>Sources</summary>
+          <div class="source-filter-options">
+            <label>
+              <input id="sourceFilterAll" type="checkbox" value="All" checked>
+              All
+            </label>
             {% for source in feed_sources %}
-              <option value="{{ source.value }}">{{ source.label }}</option>
+              <label>
+                <input class="source-filter-option" type="checkbox" value="{{ source.value }}" checked>
+                {{ source.label }}
+              </label>
             {% endfor %}
-          </select>
-        </label>
+          </div>
+        </details>
 
         <label for="sortFilter">
           Sort
@@ -248,7 +254,8 @@
   <script>
     const categoryFilter = document.getElementById("categoryFilter");
     const severityFilter = document.getElementById("severityFilter");
-    const sourceFilter = document.getElementById("sourceFilter");
+    const sourceFilterAll = document.getElementById("sourceFilterAll");
+    const sourceFilterOptions = Array.from(document.querySelectorAll(".source-filter-option"));
     const sortFilter = document.getElementById("sortFilter");
     const refreshLiveNewsButton = document.getElementById("refreshLiveNewsButton");
     const articleList = document.getElementById("articleList");
@@ -281,17 +288,49 @@
       extract_cves: "Extract CVEs",
     };
 
+    function getSelectedSources() {
+      if (sourceFilterAll.checked) {
+        return ["All"];
+      }
+
+      return sourceFilterOptions
+        .filter((option) => option.checked)
+        .map((option) => option.value);
+    }
+
+    function updateSourceFilterState(changedOption) {
+      if (changedOption === sourceFilterAll) {
+        sourceFilterAll.checked = true;
+        sourceFilterOptions.forEach((option) => {
+          option.checked = true;
+        });
+      } else {
+        const checkedCount = sourceFilterOptions.filter((option) => option.checked).length;
+
+        if (checkedCount === 0) {
+          sourceFilterAll.checked = true;
+          sourceFilterOptions.forEach((option) => {
+            option.checked = true;
+          });
+        } else {
+          sourceFilterAll.checked = checkedCount === sourceFilterOptions.length;
+        }
+      }
+
+      applyArticleFilters();
+    }
+
     function applyArticleFilters() {
       const selectedCategory = categoryFilter.value;
       const selectedSeverity = severityFilter.value;
-      const selectedSource = sourceFilter.value;
+      const selectedSources = getSelectedSources();
       const articleCards = document.querySelectorAll(".news-item");
       let visibleCount = 0;
 
       articleCards.forEach((card) => {
         const categoryMatches = selectedCategory === "All" || card.dataset.category === selectedCategory;
         const severityMatches = selectedSeverity === "All" || card.dataset.severity === selectedSeverity;
-        const sourceMatches = selectedSource === "All" || card.dataset.sourceType === selectedSource;
+        const sourceMatches = selectedSources.includes("All") || selectedSources.includes(card.dataset.sourceType);
         const shouldShow = categoryMatches && severityMatches && sourceMatches;
 
         card.hidden = !shouldShow;
@@ -1070,7 +1109,14 @@
 
     categoryFilter.addEventListener("change", applyArticleFilters);
     severityFilter.addEventListener("change", applyArticleFilters);
-    sourceFilter.addEventListener("change", applyArticleFilters);
+    sourceFilterAll.addEventListener("change", () => {
+      updateSourceFilterState(sourceFilterAll);
+    });
+    sourceFilterOptions.forEach((option) => {
+      option.addEventListener("change", () => {
+        updateSourceFilterState(option);
+      });
+    });
     sortFilter.addEventListener("change", () => {
       renderArticles(getCurrentArticlesFromDom());
     });

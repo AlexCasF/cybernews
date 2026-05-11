@@ -684,3 +684,22 @@ Notes:
 
 - Removed the dashboard's 20-item server-side slice.
 - The scrollable feed now handles the larger list on the page.
+
+### Multi-Source Feed Filter
+
+Status: DONE
+
+Commit: add multi-source feed filter
+
+Tested:
+
+- Checked `/` renders successfully.
+- Checked the dashboard source filter renders checkbox options.
+- Checked source options include the current aggregated feed source types.
+- Checked `/api/aggregated-news` still returns the unified feed.
+
+Notes:
+
+- Replaced the single source select with a checkbox dropdown.
+- All sources are selected by default.
+- Analysts can filter by one source or several sources at the same time.
