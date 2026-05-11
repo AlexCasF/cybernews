@@ -508,3 +508,20 @@ Notes:
 - Report generation now uses Gemini for article entities.
 - The report is still rendered from structured JSON, not raw AI HTML.
 - Mock fallback remains in place if Vertex AI is unavailable.
+
+### Report Export Decision
+
+Status: DONE
+
+Commit: document report export plan
+
+Tested:
+
+- Documentation only.
+
+Notes:
+
+- Decided to keep AI reports as structured JSON.
+- The dashboard renders controlled HTML from report JSON into the sandboxed iframe.
+- Dynamic visuals should be represented as structured section types, such as `flowchart` or `source_links`.
+- First PDF export will use browser Print / Save as PDF from the report preview.

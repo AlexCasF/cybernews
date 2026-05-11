@@ -367,11 +367,17 @@ ioc_table
 cve_table
 attack_mapping_table
 entity_links
+source_links
+flowchart
 timeline
 recommendations
 detection_rule
 remediation_plan
 ```
+
+Dynamic visuals should still come from structured JSON. For example, a `flowchart`
+section can contain nodes and edges, and the frontend decides how to render it.
+The model should not generate arbitrary trusted HTML for diagrams or source links.
 
 ## 5. Backend API
 
@@ -577,6 +583,17 @@ allow-same-origin
 
 unless absolutely required.
 
+Current MVP decision:
+
+```text
+AI returns structured report JSON.
+The app renders controlled HTML from that JSON.
+The sandboxed iframe previews the rendered report.
+PDF export starts as browser Print / Save as PDF from the iframe preview.
+```
+
+Raw model-generated HTML is not part of the main MVP path.
+
 ## 11. Prompting Strategy
 
 Each AI action should have a versioned prompt template.
@@ -702,10 +719,11 @@ Implement in this order:
 9. CVE enrichment using existing KEV/EPSS data
 10. Report JSON schema
 11. Safe ReportRenderer
-12. Save/export report
-13. Entity connections table
-14. MITRE ATT&CK candidate mapping
-15. Detection rule draft generation
+12. Save report
+13. Simple print-to-PDF export
+14. Entity connections table
+15. MITRE ATT&CK candidate mapping
+16. Detection rule draft generation
 ```
 
 ## 15. Acceptance Criteria
@@ -722,6 +740,7 @@ The analyst can generate a report from the article.
 The report is rendered as safe clickable HTML.
 The report links back to dashboard entities.
 The analyst can save the report.
+The analyst can print/save the report preview as PDF.
 The analyst can view raw JSON.
 The system does not trust arbitrary raw AI-generated HTML.
 ```
@@ -738,7 +757,7 @@ Full incident case management
 Full graph database migration
 Full STIX/TAXII implementation
 Multi-agent workflows
-PDF export
+Backend PDF generation
 ```
 
 ## 17. Design Principle

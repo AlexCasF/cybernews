@@ -239,7 +239,35 @@ Test:
 - Full Next.js migration
 - FastAPI rewrite
 - Real graph database
-- Firestore migration
-- Real Vertex AI calls
 - WebSockets
 - Malware sample download or analysis
+
+## Current AI / Report Direction
+
+- Keep AI artifacts as structured JSON.
+- Render report JSON into safe dashboard HTML.
+- Preview rendered reports in the sandboxed iframe.
+- Add richer section types later, such as source links, entity links, timelines, and flowcharts.
+- Start PDF export with browser Print / Save as PDF from the report preview.
+- Do not use raw model-generated HTML as the trusted report format.
+
+### Next Report Step: Print To PDF
+
+Commit idea:
+
+```text
+add report print export
+```
+
+Work:
+
+- Add an Export PDF / Print button near the report preview.
+- Use the browser print dialog for the iframe preview.
+- Keep the saved report JSON as the source of truth.
+
+Test:
+
+- Generate a report.
+- Confirm the preview appears.
+- Click Export PDF / Print.
+- Confirm the browser print dialog opens for the report preview.

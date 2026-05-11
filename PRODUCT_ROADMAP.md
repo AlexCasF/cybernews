@@ -184,7 +184,8 @@ Near-term idea:
 
 - First create a sandboxed Analyst Briefing viewport for mock AI reports.
 - Later connect a real AI API once the basic workflow is clear.
-- Display AI-generated HTML only inside the sandboxed iframe until sanitizing and storage rules are clear.
+- Display controlled HTML rendered from structured report JSON inside the sandboxed iframe.
+- Use browser Print / Save as PDF as the first PDF export path.
 
 Simple Vertex AI flow:
 
@@ -192,8 +193,9 @@ Simple Vertex AI flow:
 2. User clicks `Generate Summary`.
 3. The app first returns a mocked summary while the workflow is being designed.
 4. Later, the backend sends the text to Vertex AI.
-5. Vertex AI returns a short analyst summary, recommended next steps, and optional safe report HTML.
-6. The app shows the result in the sandboxed Analyst Briefing viewport.
+5. Vertex AI returns structured JSON for summaries and reports.
+6. The app renders safe report HTML from that JSON in the sandboxed Analyst Briefing viewport.
+7. The analyst can print the preview and save it as a PDF.
 
 Keep this optional until the normal dashboard, feeds, and graph are stable.
 
@@ -330,7 +332,8 @@ Current direction:
 
 - Keep graph-style data in the backend because relationships are useful.
 - Do not make the visual graph the main product focus yet.
-- Use the sandboxed Analyst Briefing viewport on the dashboard for generated reports, correlation summaries, and simple visuals.
+- Use structured report sections for generated reports, correlation summaries, source links, and simple visuals.
+- Render those sections into the sandboxed Analyst Briefing viewport.
 
 ### Graph Database Idea
 
