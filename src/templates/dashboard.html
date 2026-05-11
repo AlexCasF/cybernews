@@ -88,10 +88,10 @@
               <details class="ai-actions-menu">
                 <summary>AI Actions</summary>
                 <div class="ai-actions-list">
-                  <button class="ai-action-button" type="button" data-ai-action="analyze" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title }}">Analyze</button>
-                  <button class="ai-action-button" type="button" data-ai-action="generate_report" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title }}">Generate report</button>
-                  <button class="ai-action-button" type="button" data-ai-action="extract_iocs" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title }}">Extract IOCs</button>
-                  <button class="ai-action-button" type="button" data-ai-action="extract_cves" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title }}">Extract CVEs</button>
+                  <button class="ai-action-button" type="button" data-ai-action="analyze" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Analyze</button>
+                  <button class="ai-action-button" type="button" data-ai-action="generate_report" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Generate report</button>
+                  <button class="ai-action-button" type="button" data-ai-action="extract_iocs" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Extract IOCs</button>
+                  <button class="ai-action-button" type="button" data-ai-action="extract_cves" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Extract CVEs</button>
                 </div>
               </details>
             </div>
@@ -352,6 +352,40 @@
       parent.appendChild(list);
     }
 
+    function renderCveList(parent, cves) {
+      const title = document.createElement("p");
+      const titleLabel = document.createElement("strong");
+      titleLabel.textContent = "Extracted CVEs:";
+      title.appendChild(titleLabel);
+      parent.appendChild(title);
+
+      if (!cves || cves.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No CVEs found.";
+        parent.appendChild(empty);
+        return;
+      }
+
+      addTextList(parent, cves);
+    }
+
+    function renderIocList(parent, iocs) {
+      const title = document.createElement("p");
+      const titleLabel = document.createElement("strong");
+      titleLabel.textContent = "Extracted IOCs:";
+      title.appendChild(titleLabel);
+      parent.appendChild(title);
+
+      if (!iocs || iocs.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No IOCs found.";
+        parent.appendChild(empty);
+        return;
+      }
+
+      addTextList(parent, iocs.map((ioc) => `${ioc.type}: ${ioc.value} (${ioc.confidence})`));
+    }
+
     function getSummaryText(resultJson) {
       if (!resultJson || !resultJson.summary) {
         return "No summary available.";
@@ -427,6 +461,14 @@
       aiResultBox.appendChild(summary);
       aiResultBox.appendChild(confidenceLine);
 
+      if (job.action === "extract_cves" || (resultJson.extracted_cves && resultJson.extracted_cves.length > 0)) {
+        renderCveList(aiResultBox, resultJson.extracted_cves);
+      }
+
+      if (job.action === "extract_iocs" || (resultJson.extracted_iocs && resultJson.extracted_iocs.length > 0)) {
+        renderIocList(aiResultBox, resultJson.extracted_iocs);
+      }
+
       if (recommendations.length > 0) {
         const recommendationsTitle = document.createElement("p");
         const recommendationsLabel = document.createElement("strong");
@@ -454,8 +496,10 @@
       const action = button.dataset.aiAction;
       const entityId = button.dataset.entityId;
       const entityLabel = button.dataset.entityLabel || entityId;
+      const entitySummary = button.dataset.entitySummary || "";
       const actionLabel = aiActionLabels[action] || action;
       const outputFormat = action === "generate_report" ? "both" : "structured_json";
+      const selectedText = `${entityLabel}\n${entitySummary}`;
 
       button.disabled = true;
       aiJobStatus.textContent = "running";
@@ -478,6 +522,7 @@
             action: action,
             entity_type: "article",
             entity_id: entityId,
+            selected_text: selectedText,
             context_depth: "medium",
             output_format: outputFormat,
           }),
@@ -509,7 +554,7 @@
       }
     }
 
-    function createAiActionsMenu(entityId, entityLabel) {
+    function createAiActionsMenu(entityId, entityLabel, entitySummary) {
       const menu = document.createElement("details");
       const summary = document.createElement("summary");
       const list = document.createElement("div");
@@ -525,6 +570,7 @@
         button.dataset.aiAction = action;
         button.dataset.entityId = entityId;
         button.dataset.entityLabel = entityLabel;
+        button.dataset.entitySummary = entitySummary;
         button.textContent = label;
         list.appendChild(button);
       });
@@ -550,6 +596,7 @@
       const tag = document.createElement("span");
       const entityId = article.id || article.url || article.title || "unknown";
       const entityLabel = article.title || entityId;
+      const entitySummary = article.summary || "";
 
       link.href = article.url;
       link.textContent = article.title;
@@ -564,7 +611,7 @@
       content.appendChild(meta);
       content.appendChild(summary);
       actions.appendChild(tag);
-      actions.appendChild(createAiActionsMenu(entityId, entityLabel));
+      actions.appendChild(createAiActionsMenu(entityId, entityLabel, entitySummary));
       card.appendChild(content);
       card.appendChild(actions);
 

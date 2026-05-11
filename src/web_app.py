@@ -619,7 +619,134 @@ def get_dashboard_intelligence_reports():
     ]
 
 
-def build_mock_ai_result(action, entity_type, entity_id):
+def extract_cves_from_text(text):
+    return sorted(set(match.upper() for match in re.findall(r"CVE-\d{4}-\d{4,7}", text, re.IGNORECASE)))
+
+
+def extract_iocs_from_text(text):
+    patterns = [
+        ("ipv4", r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
+        ("url", r"https?://[^\s]+"),
+        ("email", r"\b[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}\b"),
+        ("hash", r"\b[a-fA-F0-9]{32,64}\b"),
+    ]
+    iocs = []
+
+    for ioc_type, pattern in patterns:
+        for match in re.findall(pattern, text):
+            iocs.append(
+                {
+                    "type": ioc_type,
+                    "value": match.rstrip(".,;"),
+                    "confidence": 0.8,
+                }
+            )
+
+    return iocs
+
+
+def build_article_mock_result(action, entity_id, selected_text):
+    text = selected_text or f"article {entity_id}"
+    extracted_cves = extract_cves_from_text(text)
+    extracted_iocs = extract_iocs_from_text(text)
+    first_line = text.splitlines()[0] if text else f"article {entity_id}"
+
+    if action == "extract_iocs":
+        return {
+            "summary": "IOC extraction completed using simple local patterns.",
+            "extracted_cves": [],
+            "extracted_iocs": extracted_iocs,
+            "extracted_entities": {
+                "vendors": [],
+                "products": [],
+                "malware_families": [],
+                "threat_actors": [],
+            },
+            "attack_mappings": [],
+            "recommended_actions": [
+                "Review extracted IOCs before blocking or escalating.",
+                "Confirm every IOC with a trusted reputation source.",
+            ],
+            "confidence": 0.65 if extracted_iocs else 0.35,
+            "evidence": [first_line],
+        }
+
+    if action == "extract_cves":
+        return {
+            "summary": "CVE extraction completed using simple local patterns.",
+            "extracted_cves": extracted_cves,
+            "extracted_iocs": [],
+            "extracted_entities": {
+                "vendors": [],
+                "products": [],
+                "malware_families": [],
+                "threat_actors": [],
+            },
+            "attack_mappings": [],
+            "recommended_actions": [
+                "Enrich extracted CVEs with CISA KEV, EPSS, and NVD data.",
+                "Do not treat missing CVEs as proof that no vulnerability is involved.",
+            ],
+            "confidence": 0.7 if extracted_cves else 0.35,
+            "evidence": [first_line],
+        }
+
+    if action == "generate_report":
+        return {
+            "summary": {
+                "executive": f"Draft report created for article {entity_id}.",
+                "technical": "This report is generated from dashboard article context and mock AI logic.",
+                "key_points": [
+                    first_line,
+                    "Structured report JSON is ready for safe rendering.",
+                ],
+            },
+            "extracted_cves": extracted_cves,
+            "extracted_iocs": extracted_iocs,
+            "extracted_entities": {
+                "vendors": [],
+                "products": [],
+                "malware_families": [],
+                "threat_actors": [],
+            },
+            "attack_mappings": [],
+            "recommended_actions": [
+                "Review the draft report.",
+                "Save only after analyst validation.",
+            ],
+            "confidence": 0.6,
+            "evidence": [first_line],
+        }
+
+    return {
+        "summary": {
+            "executive": f"Article {entity_id} may need analyst review.",
+            "technical": "This mock analysis summarizes article context and checks for simple CVE/IOC patterns.",
+            "key_points": [
+                first_line,
+                f"{len(extracted_cves)} CVE candidate(s) found.",
+                f"{len(extracted_iocs)} IOC candidate(s) found.",
+            ],
+        },
+        "extracted_cves": extracted_cves,
+        "extracted_iocs": extracted_iocs,
+        "extracted_entities": {
+            "vendors": [],
+            "products": [],
+            "malware_families": [],
+            "threat_actors": [],
+        },
+        "attack_mappings": [],
+        "recommended_actions": [
+            "Read the source article.",
+            "Run extraction actions if the article mentions indicators or CVEs.",
+        ],
+        "confidence": 0.6,
+        "evidence": [first_line],
+    }
+
+
+def build_mock_ai_result(action, entity_type, entity_id, selected_text):
     if action == "cve_enrichment":
         return {
             "cve_id": entity_id.upper(),
@@ -656,31 +783,10 @@ def build_mock_ai_result(action, entity_type, entity_id):
             "evidence": ["IOC value was provided by the analyst."],
         }
 
-    return {
-        "summary": {
-            "executive": f"Mock {action} result for {entity_type} {entity_id}.",
-            "technical": "Gemini is not connected yet, so this is a schema preview.",
-            "key_points": [
-                "AI job storage is working.",
-                "Structured JSON output shape is ready for the Workbench UI.",
-            ],
-        },
-        "extracted_cves": [],
-        "extracted_iocs": [],
-        "extracted_entities": {
-            "vendors": [],
-            "products": [],
-            "malware_families": [],
-            "threat_actors": [],
-        },
-        "attack_mappings": [],
-        "recommended_actions": [
-            "Build the AI Workbench panel next.",
-            "Connect real structured-output AI only after the UI contract is stable.",
-        ],
-        "confidence": 0.5,
-        "evidence": ["Mock result generated by CyberNews."],
-    }
+    if entity_type == "article":
+        return build_article_mock_result(action, entity_id, selected_text)
+
+    return build_article_mock_result(action, entity_id, selected_text)
 
 
 def build_mock_report_json(entity_type, entity_id, result_json):
@@ -747,7 +853,8 @@ def create_ai_job(payload, current_user):
 
     job_id = str(uuid4())
     created_at = get_timestamp()
-    result_json = build_mock_ai_result(action, entity_type, entity_id)
+    selected_text = payload.get("selected_text", "")
+    result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
     report_json = None
 
     if output_format in {"html_report", "both"} or action == "generate_report":
@@ -759,7 +866,7 @@ def create_ai_job(payload, current_user):
         "action": action,
         "entity_type": entity_type,
         "entity_id": entity_id,
-        "selected_text": payload.get("selected_text", ""),
+        "selected_text": selected_text,
         "context_depth": context_depth,
         "output_format": output_format,
         "model": "mock-ai-v1",

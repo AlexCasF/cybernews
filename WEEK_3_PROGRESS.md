@@ -314,3 +314,23 @@ Notes:
 - Replaced the single Analyze button with a visible AI Actions dropdown.
 - Kept the menu click-based instead of right-click-based.
 - Added the selected action to the AI Workbench result area.
+
+### AI Action Mock Results
+
+Status: DONE
+
+Commit: Week 3: add action-specific AI mock results
+
+Tested:
+
+- Checked `POST /api/ai/jobs` returns different structured results for Analyze, Generate report, Extract IOCs, and Extract CVEs.
+- Checked selected article text is included in the AI job request.
+- Checked the Workbench can display extracted IOC and CVE lists.
+- Checked `/` returns `200`.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added simple local CVE and IOC pattern extraction for mock AI jobs.
+- Kept extraction deterministic and easy to replace with Gemini later.
+- Updated the Workbench result tab to show extracted CVEs and IOCs clearly.
