@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 6: EPSS Risk Labels
+Step 7: CVE Graph Nodes
 
 Status: DONE
 
@@ -180,3 +180,24 @@ Notes:
 - Added EPSS score, percentile, update date, and risk label to KEV cards.
 - Added matching EPSS rendering for refreshed KEV cards.
 - Added simple EPSS badge styling.
+
+### Step 7: CVE Graph Nodes
+
+Status: DONE
+
+Commit: Week 3: add CVE nodes to threat graph
+
+Tested:
+
+- Checked `/api/threat-graph` returns `200`.
+- Checked the graph response includes CVE nodes from CISA KEV data.
+- Checked CVE graph nodes include EPSS fields.
+- Checked every graph edge points to an existing node.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added three CISA KEV-derived CVE nodes to the threat graph data.
+- Added CISA KEV Catalog and FIRST EPSS source nodes.
+- Added simple `listed in` and `scored by` relationships.
+- Kept product/vendor graph edges for a later follow-up commit.

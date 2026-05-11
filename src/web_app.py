@@ -476,63 +476,127 @@ def get_dashboard_intelligence_reports():
     ]
 
 
+def get_graph_severity_from_epss_label(epss_label):
+    if epss_label == "Very High":
+        return "Critical"
+
+    if epss_label == "High":
+        return "High"
+
+    if epss_label == "Medium":
+        return "Medium"
+
+    return "Low"
+
+
 def get_threat_graph_data():
+    nodes = [
+        {
+            "id": "parcel-phishing",
+            "label": "Parcel Phishing Campaign",
+            "type": "Threat",
+            "severity": "Medium",
+        },
+        {
+            "id": "fake-delivery-emails",
+            "label": "Fake Delivery Emails",
+            "type": "Technique",
+            "severity": "Medium",
+        },
+        {
+            "id": "credential-theft",
+            "label": "Credential Theft",
+            "type": "Impact",
+            "severity": "High",
+        },
+        {
+            "id": "affected-users",
+            "label": "Affected Users",
+            "type": "Target",
+            "severity": "Medium",
+        },
+        {
+            "id": "awareness-training",
+            "label": "Awareness Training",
+            "type": "Defense",
+            "severity": "Low",
+        },
+    ]
+    edges = [
+        {
+            "source": "parcel-phishing",
+            "target": "fake-delivery-emails",
+            "label": "uses",
+        },
+        {
+            "source": "fake-delivery-emails",
+            "target": "affected-users",
+            "label": "targets",
+        },
+        {
+            "source": "fake-delivery-emails",
+            "target": "credential-theft",
+            "label": "can lead to",
+        },
+        {
+            "source": "awareness-training",
+            "target": "credential-theft",
+            "label": "reduces risk of",
+        },
+    ]
+    kev_vulnerabilities = get_kev_vulnerabilities()["vulnerabilities"][:3]
+
+    if kev_vulnerabilities:
+        nodes.extend(
+            [
+                {
+                    "id": "cisa-kev-catalog",
+                    "label": "CISA KEV Catalog",
+                    "type": "Source",
+                    "severity": "Low",
+                },
+                {
+                    "id": "first-epss",
+                    "label": "FIRST EPSS",
+                    "type": "Scoring Source",
+                    "severity": "Low",
+                },
+            ]
+        )
+
+    for vulnerability in kev_vulnerabilities:
+        cve_node_id = vulnerability["cve"].lower()
+        nodes.append(
+            {
+                "id": cve_node_id,
+                "label": vulnerability["cve"],
+                "type": "CVE",
+                "severity": get_graph_severity_from_epss_label(vulnerability["epss_label"]),
+                "title": vulnerability["title"],
+                "epss": vulnerability["epss"],
+                "epss_label": vulnerability["epss_label"],
+                "due_date": vulnerability["due_date"],
+            }
+        )
+        edges.extend(
+            [
+                {
+                    "source": cve_node_id,
+                    "target": "cisa-kev-catalog",
+                    "label": "listed in",
+                },
+                {
+                    "source": cve_node_id,
+                    "target": "first-epss",
+                    "label": "scored by",
+                },
+            ]
+        )
+
     return {
-        "nodes": [
-            {
-                "id": "parcel-phishing",
-                "label": "Parcel Phishing Campaign",
-                "type": "Threat",
-                "severity": "Medium",
-            },
-            {
-                "id": "fake-delivery-emails",
-                "label": "Fake Delivery Emails",
-                "type": "Technique",
-                "severity": "Medium",
-            },
-            {
-                "id": "credential-theft",
-                "label": "Credential Theft",
-                "type": "Impact",
-                "severity": "High",
-            },
-            {
-                "id": "affected-users",
-                "label": "Affected Users",
-                "type": "Target",
-                "severity": "Medium",
-            },
-            {
-                "id": "awareness-training",
-                "label": "Awareness Training",
-                "type": "Defense",
-                "severity": "Low",
-            },
-        ],
-        "edges": [
-            {
-                "source": "parcel-phishing",
-                "target": "fake-delivery-emails",
-                "label": "uses",
-            },
-            {
-                "source": "fake-delivery-emails",
-                "target": "affected-users",
-                "label": "targets",
-            },
-            {
-                "source": "fake-delivery-emails",
-                "target": "credential-theft",
-                "label": "can lead to",
-            },
-            {
-                "source": "awareness-training",
-                "target": "credential-theft",
-                "label": "reduces risk of",
-            },
-        ],
-        "message": "Mock threat graph data loaded.",
+        "nodes": nodes,
+        "edges": edges,
+        "message": "Threat graph data loaded with CISA KEV CVE nodes.",
     }
 
 
