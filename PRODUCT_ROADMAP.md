@@ -176,6 +176,10 @@ Use AI for:
 - Detection rule generation
 - Remediation recommendations
 
+Detailed implementation spec:
+
+- `AI_WORKBENCH_SPEC.md`
+
 Near-term idea:
 
 - First create a sandboxed Analyst Briefing viewport for mock AI reports.
