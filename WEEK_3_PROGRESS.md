@@ -668,3 +668,19 @@ Notes:
 
 - Added official CISA advisories as a unified feed source.
 - Kept CISA KEV separate as the richer vulnerability intelligence panel.
+
+### Unified Feed Source Visibility Fix
+
+Status: DONE
+
+Commit: show all aggregated feed sources
+
+Tested:
+
+- Checked dashboard source options are built from the full aggregated feed.
+- Checked the unified feed can show sources beyond the first 20 feed items.
+
+Notes:
+
+- Removed the dashboard's 20-item server-side slice.
+- The scrollable feed now handles the larger list on the page.

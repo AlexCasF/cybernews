@@ -1623,7 +1623,7 @@ def get_feed_source_types(feed_items):
 @app.route("/")
 def home():
     feed_data = get_aggregated_news_feed()
-    articles = feed_data["items"][:20]
+    articles = feed_data["items"]
     intelligence_reports = get_dashboard_intelligence_reports()
     kev_data = get_kev_vulnerabilities()
     kev_vulnerabilities = kev_data["vulnerabilities"][:4]
