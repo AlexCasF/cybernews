@@ -369,6 +369,12 @@ body {
   border: 1px solid #dbe3e7;
 }
 
+.saved-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .saved-report-item p {
   margin: 4px 0 0;
   color: #5a6872;
@@ -722,20 +728,13 @@ body {
   border: 0;
 }
 
+.danger-button {
+  background: #a31717;
+}
+
 .error-message {
   color: #a31717;
   font-weight: bold;
-}
-
-.demo-logins {
-  margin-top: 18px;
-  padding: 12px;
-  background: #f5f7f8;
-  border: 1px solid #dbe3e7;
-}
-
-.demo-logins p {
-  margin: 4px 0;
 }
 
 .audit-table {

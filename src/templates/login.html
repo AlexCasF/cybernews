@@ -5,7 +5,7 @@
 {% block content %}
   <section class="panel auth-panel">
     <h2>Login</h2>
-    <p>Use a demo account to access CyberNews.</p>
+    <p>Sign in to access CyberNews.</p>
 
     {% if error %}
       <p class="error-message">{{ error }}</p>
@@ -24,11 +24,5 @@
 
       <button type="submit">Login</button>
     </form>
-
-    <div class="demo-logins">
-      <p><strong>Demo users</strong></p>
-      <p>alice / alicepass (user)</p>
-      <p>bob / bobpass (admin)</p>
-    </div>
   </section>
 {% endblock %}

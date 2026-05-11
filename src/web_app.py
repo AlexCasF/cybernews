@@ -19,23 +19,22 @@ from src.ai_service import (
     extract_article_iocs,
     generate_article_report,
 )
-from src.storage import get_ai_job, get_report, list_reports, save_ai_job, save_report
+from src.storage import delete_report, get_ai_job, get_report, list_reports, save_ai_job, save_report
 
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
 USERS = {
-    "alice": {
-        "password_hash": "scrypt:32768:8:1$xfwMCTRrSH4FHpxC$71e60605e56b791e7e77a86445d316c1e86d705119ba37bd454566e45713b68d41c45a76c46ce9a7e5cd54e1653ed3210f1bf4a0d3dad2af13a745cb6aed2cb9",
-        "role": "user",
-    },
-    "bob": {
-        "password_hash": "scrypt:32768:8:1$5XuElFcWxCS0LADI$c1320b95dca5b078efcdca3a5570a6cba150b452a069af919e117cea541f8b9a0992859145b81060d63f5a509ebe3c8ab21fa6d9cad7256cd3f9719ca5debe2c",
+    "Alex": {
+        "password_hash": "scrypt:32768:8:1$fTWfMRT6mzUwlYkT$92d77430ce3f9049b1aec1b090dbc28efbf800510e452e884df92e3871d1e2e1faefa4647185433e5b8bde15f397999f02688201056afb43135419ff4982431f",
         "role": "admin",
     },
+    "Cybersteps": {
+        "password_hash": "scrypt:32768:8:1$rVJ43bC4mPB3jEGm$542fa68a32bc8a300e98fafd6b3dd1d48876df6041b6080417176e1ee50ae2de72bc5fc03d1d6eacd767b88ee2eec0b4ad867cdac0f17c320d38933b5d482968",
+        "role": "user",
+    },
 }
-ADMIN_REPORTS = []
 AUDIT_LOG = []
 NEWSAPI_URL = "https://newsapi.org/v2/everything"
 HN_TOP_STORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
@@ -1573,47 +1572,16 @@ def logout():
     return redirect(url_for("home"))
 
 
-@app.route("/admin/reports", methods=["GET", "POST"])
-def admin_reports():
-    return redirect(url_for("ai_reporting"))
-
-
-@app.route("/ai-reporting", methods=["GET", "POST"])
+@app.route("/ai-reporting")
 def ai_reporting():
     current_user = get_current_user()
 
     if not current_user:
         return redirect(url_for("login"))
 
-    error = ""
-
-    if request.method == "POST" and user_is_admin(current_user):
-        title = request.form.get("title", "").strip()
-        severity = request.form.get("severity", "").strip()
-        summary = request.form.get("summary", "").strip()
-
-        if title and severity and summary:
-            ADMIN_REPORTS.append(
-                {
-                    "id": len(ADMIN_REPORTS) + 1,
-                    "title": title,
-                    "severity": severity,
-                    "summary": summary,
-                    "created_by": current_user["username"],
-                    "created_at": get_timestamp(),
-                }
-            )
-            return redirect(url_for("ai_reporting"))
-
-        error = "Please fill in all report fields."
-    elif request.method == "POST":
-        error = "Only admins can create admin reports."
-
     return render_template(
         "ai_reporting.html",
-        admin_reports=ADMIN_REPORTS,
         audit_log=AUDIT_LOG,
-        error=error,
         current_user=current_user,
     )
 
@@ -1691,8 +1659,19 @@ def api_list_reports():
     )
 
 
-@app.route("/api/reports/<report_id>")
+@app.route("/api/reports/<report_id>", methods=["GET", "DELETE"])
 def api_get_report(report_id):
+    if request.method == "DELETE":
+        current_user = get_current_user()
+
+        if not user_is_admin(current_user):
+            return jsonify({"error": "Admins only."}), 403
+
+        if not delete_report(report_id):
+            return jsonify({"error": "Report not found."}), 404
+
+        return jsonify({"message": "Report deleted.", "report_id": report_id})
+
     report = get_report(report_id)
 
     if not report:

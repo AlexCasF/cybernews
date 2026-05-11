@@ -784,3 +784,25 @@ Notes:
 - Added time window filters for all time, last 24 hours, last 7 days, and last 30 days.
 - Added simple client-side pagination with 20 feed items per page.
 - Kept this as a frontend step before Firestore-backed feed storage.
+
+### User Tiers And Artifact Cleanup
+
+Status: DONE
+
+Commit: update users and admin artifact cleanup
+
+Tested:
+
+- Checked Python compilation.
+- Checked `Alex` can log in as admin.
+- Checked `Cybersteps` can log in as regular user.
+- Checked old `alice` and `bob` accounts no longer work.
+- Checked regular users cannot delete generated reports.
+- Checked admins can delete generated reports.
+
+Notes:
+
+- Replaced the old demo accounts.
+- Removed demo user hints from the login page.
+- Removed the manual Admin Report feature.
+- Kept two tiers: users get feed and AI features, admins can also delete generated AI reports.

@@ -89,6 +89,28 @@ def get_report(report_id):
     return MEMORY_REPORTS.get(report_id)
 
 
+def delete_report(report_id):
+    db = get_firestore_client()
+    deleted = False
+
+    if db:
+        try:
+            document = db.collection("reports").document(report_id)
+            snapshot = document.get()
+
+            if snapshot.exists:
+                document.delete()
+                deleted = True
+        except Exception:
+            pass
+
+    if report_id in MEMORY_REPORTS:
+        del MEMORY_REPORTS[report_id]
+        deleted = True
+
+    return deleted
+
+
 def list_reports():
     db = get_firestore_client()
 
