@@ -126,21 +126,13 @@
 
     function updateSourceFilterState(changedOption) {
       if (changedOption === sourceFilterAll) {
-        sourceFilterAll.checked = true;
         sourceFilterOptions.forEach((option) => {
-          option.checked = true;
+          option.checked = sourceFilterAll.checked;
         });
       } else {
         const checkedCount = sourceFilterOptions.filter((option) => option.checked).length;
 
-        if (checkedCount === 0) {
-          sourceFilterAll.checked = true;
-          sourceFilterOptions.forEach((option) => {
-            option.checked = true;
-          });
-        } else {
-          sourceFilterAll.checked = checkedCount === sourceFilterOptions.length;
-        }
+        sourceFilterAll.checked = checkedCount === sourceFilterOptions.length;
       }
 
       applyArticleFilters();

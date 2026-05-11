@@ -191,13 +191,27 @@ body {
 }
 
 .source-filter-menu summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 8px;
   font: inherit;
+  font-weight: bold;
   color: #172026;
   background: white;
   border: 1px solid #b9c6cc;
   cursor: pointer;
   list-style: none;
+}
+
+.source-filter-menu summary::after {
+  content: "▾";
+  font-size: 0.8rem;
+}
+
+.source-filter-menu[open] summary::after {
+  content: "▴";
 }
 
 .source-filter-menu summary::-webkit-details-marker {
