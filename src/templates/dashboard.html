@@ -80,13 +80,13 @@
 
     <div id="articleList" class="item-list unified-feed-list">
       {% for article in articles %}
-        <article class="news-item" data-entity-id="{{ article.id }}" data-category="{{ article.category }}" data-severity="{{ article.severity }}" data-source-type="{{ article.source_type }}" data-published-sort="{{ article.published_sort }}">
-          <div>
+        <article class="news-item compact-card" data-entity-id="{{ article.id }}" data-category="{{ article.category }}" data-severity="{{ article.severity }}" data-source-type="{{ article.source_type }}" data-published-sort="{{ article.published_sort }}">
+          <div class="news-card-content">
             <h4>
               <a href="{{ article.url }}">{{ article.title }}</a>
             </h4>
-            <p>{{ article.source }} | {{ article.published }} | {{ article.severity }} | {{ article.source_type }}</p>
-            <p>{{ article.summary }}</p>
+            <p class="news-meta">{{ article.source }} | {{ article.published }} | {{ article.severity }} | {{ article.source_type }}</p>
+            <p class="news-summary">{{ article.summary }}</p>
           </div>
           <div class="card-actions">
             <span class="tag">{{ article.category }}</span>
@@ -280,6 +280,7 @@
       const entitySummary = article.summary || "";
 
       card.className = "news-item";
+      card.classList.add("compact-card");
       card.dataset.category = article.category;
       card.dataset.severity = article.severity;
       card.dataset.sourceType = article.source_type || "newsapi";
@@ -289,6 +290,9 @@
       link.textContent = article.title;
       meta.textContent = `${article.source} | ${article.published} | ${article.severity} | ${article.source_type || "newsapi"}`;
       summary.textContent = article.summary;
+      content.className = "news-card-content";
+      meta.className = "news-meta";
+      summary.className = "news-summary";
       tag.className = "tag";
       tag.textContent = article.category;
       actions.className = "card-actions";
@@ -471,9 +475,22 @@
     }
     articleList.addEventListener("click", (event) => {
       const button = event.target.closest(".ai-action-button");
+      const menu = event.target.closest(".ai-actions-menu");
+      const link = event.target.closest("a");
 
       if (button) {
         runArticleAiAction(button);
+        return;
+      }
+
+      if (menu || link) {
+        return;
+      }
+
+      const card = event.target.closest(".news-item");
+
+      if (card) {
+        card.classList.toggle("expanded");
       }
     });
   </script>

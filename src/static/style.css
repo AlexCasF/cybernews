@@ -3,6 +3,7 @@ body {
   font-family: Arial, sans-serif;
   color: #172026;
   background: #f5f7f8;
+  overflow-x: hidden;
 }
 
 [hidden] {
@@ -222,6 +223,14 @@ body {
   border-color: #006e72;
 }
 
+.source-filter-menu summary::after {
+  content: "v";
+}
+
+.source-filter-menu[open] summary::after {
+  content: "^";
+}
+
 .source-filter-options {
   position: absolute;
   z-index: 10;
@@ -249,6 +258,7 @@ body {
 
 .unified-feed-list {
   max-height: 720px;
+  overflow-x: hidden;
   overflow-y: auto;
   padding-right: 6px;
 }
@@ -503,10 +513,20 @@ body {
   border: 1px solid #dbe3e7;
 }
 
+.news-item {
+  cursor: pointer;
+  overflow: hidden;
+}
+
 .news-item > div,
 .bsi-item > div,
 .kev-item > div {
   min-width: 0;
+}
+
+.news-card-content {
+  flex: 1;
+  overflow: hidden;
 }
 
 .intel-card {
@@ -528,6 +548,36 @@ body {
 .report-item h4,
 .graph-node h4 {
   margin: 0;
+}
+
+.news-item h4,
+.news-meta,
+.news-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+}
+
+.news-item h4,
+.news-meta {
+  -webkit-line-clamp: 1;
+}
+
+.news-summary {
+  -webkit-line-clamp: 3;
+}
+
+.news-item.expanded {
+  align-items: flex-start;
+}
+
+.news-item.expanded h4,
+.news-item.expanded .news-meta,
+.news-item.expanded .news-summary {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
 }
 
 .bsi-item a,
