@@ -489,3 +489,22 @@ Notes:
 
 - Added safer Firestore fallback if a Firestore operation fails at runtime.
 - Added a clearer AI Workbench error if the server ever returns non-JSON.
+
+### Vertex AI Report Generation
+
+Status: DONE
+
+Commit: generate reports with Vertex AI
+
+Tested:
+
+- Checked `Generate report` returns a completed AI job.
+- Checked the job uses `gemini-2.5-flash`.
+- Checked the response includes structured report JSON.
+- Checked the report has Executive Summary, Key Findings, and Recommended Actions.
+
+Notes:
+
+- Report generation now uses Gemini for article entities.
+- The report is still rendered from structured JSON, not raw AI HTML.
+- Mock fallback remains in place if Vertex AI is unavailable.

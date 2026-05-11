@@ -40,7 +40,7 @@ For a simple school demo, Cloud Run environment variables are fine. Later, move 
 
 The app uses Firestore automatically when Google Cloud credentials are available. Locally, it falls back to in-memory storage if Firestore cannot be reached.
 
-Article analysis uses Gemini through Vertex AI when available. If Vertex AI is unavailable, the app falls back to the existing mock AI result so the dashboard still works.
+Article analysis and report generation use Gemini through Vertex AI when available. If Vertex AI is unavailable, the app falls back to the existing mock AI result so the dashboard still works.
 
 The Cloud Run runtime service account needs `roles/aiplatform.user` to call Gemini through Vertex AI.
 
