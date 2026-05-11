@@ -233,9 +233,12 @@ Target sources:
 
 Near-term idea:
 
-- Add NewsAPI first because the key is already available.
-- Add the BSI WID RSS feed next because it is cybersecurity-specific and does not need an API key.
-- Normalize everything into a simple shared article shape:
+- NewsAPI and BSI WID RSS are already integrated.
+- Add CISA KEV next because it gives official known exploited vulnerability data.
+- Add FIRST EPSS after KEV because it gives exploit probability scores for CVEs.
+- Normalize news, advisories, and vulnerabilities into simple readable shapes.
+
+Simple article/advisory shape:
 
 ```text
 title
@@ -246,64 +249,51 @@ published_at
 category
 ```
 
+Simple vulnerability shape:
+
+```text
+cve
+vendor
+product
+title
+summary
+date_added
+due_date
+known_ransomware_use
+required_action
+source
+```
+
 ### Data Source Evaluation
 
-These are possible feeds and research links for CyberNews:
+Detailed findings are tracked in `DATA_SOURCES.md`.
+
+These are the most useful sources right now:
 
 | Source | Fit | Priority | Notes |
 | --- | --- | --- | --- |
-| NewsAPI | General cybersecurity news | Now | Already planned for live dashboard news. Requires `NEWS_API_KEY`. Good for keyword searches like `cybersecurity`. |
-| BSI WID RSS | Vulnerability/security advisories | Next | Strong fit. Official German security advisories, no API key, RSS/XML format, severity values like `niedrig`, `mittel`, `hoch`, `kritisch`. |
-| NewsData.io | General news API alternative | Later | Useful fallback if NewsAPI limits become a problem. Requires another API key. Free latest news is delayed and limited per request. |
-| Hacker News API | Tech community signal | Later | Free and near real-time, but not cybersecurity-specific and awkward to search by keyword. Better as a "community mentions" source later. |
-| jaegeral/security-apis | Research catalog | Reference | Not a feed itself. Useful list for finding later APIs such as CVE, IP reputation, malware analysis, and threat intelligence sources. |
-| NewsCatcher alternatives article | Research article | Reference | Good background for open-source news collection ideas, not an immediate data source for the app. |
-
-Detailed findings:
-
-- **NewsAPI**
-  - Requires an API key.
-  - Good first live source because `NEWS_API_KEY` is already available.
-  - Best endpoint for CyberNews: `/v2/everything?q=cybersecurity&language=en&sortBy=publishedAt`.
-  - Useful fields: `source.name`, `title`, `description`, `url`, `publishedAt`.
-  - Limitation: this is general news search, not pure threat intelligence.
-- **BSI WID RSS**
-  - Best second source.
-  - Feed URL tested: `https://wid.cert-bund.de/content/public/securityAdvisory/rss`
-  - No API key needed.
-  - RSS fields map cleanly to our data model: `title`, `link`, `description`, `category`, `pubDate`.
-  - Severity values are German: `niedrig`, `mittel`, `hoch`, `kritisch`.
-  - Strong fit for vulnerability and advisory data.
-  - Limitation: content is German, so the UI should either show it as-is or label it clearly as BSI advisories.
-- **NewsData.io**
-  - General news API alternative.
-  - Requires another API key.
-  - The latest endpoint can query recent articles with parameters such as `q`, `country`, `language`, `domain`, and `category`.
-  - Free latest-news results are delayed and limited per request.
-  - Useful if NewsAPI limits become a problem, but not needed right now.
-- **Hacker News API**
-  - Free public API with near real-time Hacker News data.
-  - No current rate limit is documented.
-  - Useful fields include `id`, `title`, `url`, `score`, `time`, and `by`.
-  - Limitation: it is not cybersecurity-specific and keyword search is awkward.
-  - Better future use: "community signal" or "developer discussion" panel.
-- **jaegeral/security-apis**
-  - A curated list of public JSON security APIs.
-  - Not a direct data feed.
-  - Useful later for discovering CVE, hash lookup, IP reputation, DShield, GreyNoise, malware analysis, and other security APIs.
-- **NewsCatcher alternatives article**
-  - Useful research for open-source news collection.
-  - Mentions options such as `newscatcher` and `pygooglenews`.
-  - Not an immediate dependency for this app.
+| NewsAPI | General cybersecurity news | Integrated | Requires `NEWS_API_KEY`. Free developer plan is useful for local development, but limited and not production-ready. |
+| BSI WID RSS | Vulnerability/security advisories | Integrated | Official German advisory feed, no API key, RSS/XML format, severity values like `niedrig`, `mittel`, `hoch`, `kritisch`. |
+| CISA KEV Catalog | Known exploited CVEs | Next | Official public JSON source for vulnerabilities known to be exploited in the wild. No key needed. |
+| FIRST EPSS | Exploit probability scoring | Next after KEV | Public API that returns EPSS score and percentile for CVE IDs. No key needed. |
+| NVD CVE API | CVE details and CVSS data | Later | Free public API. API key is recommended for better limits. Useful after KEV and EPSS are stable. |
+| The Hacker News | Cybersecurity news RSS | Later | Public feed, useful for cyber news volume. Normalize after vulnerability data. |
+| SecurityWeek | Cybersecurity news RSS | Later | Public RSS feed, useful for cyber news volume. Normalize after vulnerability data. |
+| BleepingComputer | Cybersecurity and malware news RSS | Later | Public RSS feed, useful as an extra news source. |
+| Hacker News API/RSS | Tech community signal | Later | Free public API/RSS, but not cybersecurity-specific. Better as a community signal panel. |
+| URLhaus / MalwareBazaar | IOC and malware intelligence | Later | Free community/fair-use data. Useful later for malicious URLs and hashes. Do not download malware samples in this school app. |
+| OpenPhish | Phishing URLs | Later | Free community feed option. Review terms before automating. |
 
 Recommended implementation order:
 
-1. NewsAPI live news.
-2. BSI WID RSS vulnerability advisories.
-3. Admin-created reports shown on the dashboard.
-4. Threat graph data API.
-5. Readable graph page with node details.
-6. Visual graph rendering in small commits.
+1. CISA KEV JSON API.
+2. CISA KEV dashboard panel.
+3. FIRST EPSS scoring for CVEs.
+4. EPSS labels and filtering.
+5. CVE nodes in the threat graph.
+6. The Hacker News and SecurityWeek RSS normalization.
+7. IOC source spike with URLhaus, MalwareBazaar, or OpenPhish.
+8. Mock AI enrichment before real Vertex AI calls.
 
 ## SOC Dashboard Ideas
 
@@ -469,21 +459,14 @@ For this school project, we should handle these gradually and avoid overbuilding
 
 ## Suggested Next Steps
 
-1. Clean up the Flask templates with a shared base layout.
-2. Improve the dashboard into a polished CyberNews home page.
-3. Add source/category filters for articles.
-4. Add admin-only controls for adding reports.
-5. Add password hashing.
-6. Add an audit log for login attempts.
-7. Add richer intelligence report cards.
-8. Replace mock news with live NewsAPI data.
-9. Add a second live security source, preferably BSI WID RSS.
-10. Connect admin-created reports back to the dashboard.
-11. Add threat graph mock data based on the normalized data shapes.
-12. Add a readable threat graph page with node details.
-13. Add visual graph rendering in small slices.
-14. Add simple incident tracking.
-15. Add AI-style summaries, mocked first.
+1. Add CISA KEV JSON API.
+2. Show known exploited vulnerabilities on the dashboard.
+3. Add FIRST EPSS scoring for CVEs.
+4. Connect CVEs into the threat graph.
+5. Add The Hacker News and SecurityWeek RSS sources.
+6. Add simple incident tracking.
+7. Add IOC source research and a small safe IOC feed.
+8. Add AI-style summaries, mocked first.
 
 ## Development Principles
 
