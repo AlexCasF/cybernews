@@ -722,3 +722,25 @@ Notes:
 - Removed hardcoded demo news entries from the feed fallback path.
 - Kept real RSS/advisory sources in the unified feed.
 - Changed report print export to open a printable report window from the structured report JSON.
+
+### Feed And Reporting Split
+
+Status: DONE
+
+Commit: split feed from AI reporting
+
+Tested:
+
+- Checked Python compilation.
+- Checked `/` renders as the Feed page.
+- Checked `/ai-reporting` renders the AI Workbench and sandboxed report viewport.
+- Checked `/admin/reports` redirects to `/ai-reporting`.
+- Checked `/api/aggregated-news` still returns the unified feed.
+
+Notes:
+
+- Renamed the main navigation item from Dashboard to Feed.
+- Kept the Feed page focused on the master feed only.
+- Moved the sandboxed report viewport and AI Workbench to AI & Reporting.
+- Integrated admin report intake, admin reports, and audit log into AI & Reporting for admins.
+- Removed the separate static Intelligence Reports feature.

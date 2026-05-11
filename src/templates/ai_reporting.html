@@ -1,0 +1,682 @@
+{% extends "base.html" %}
+
+{% block title %}CyberNews AI & Reporting{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <p class="eyebrow">Analysis workspace</p>
+    <h2>AI & Reporting</h2>
+    <p>Review AI results, preview generated reports, and manage analyst reporting.</p>
+  </section>
+
+  <section id="analyst-briefing" class="panel analyst-viewport">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Sandboxed preview</p>
+        <h3>Analyst Briefing Viewport</h3>
+      </div>
+      <span>AI-ready</span>
+    </div>
+
+    <p class="news-message">
+      Generated reports and visuals render inside this isolated frame.
+    </p>
+
+    <iframe
+      id="analystReportFrame"
+      class="analyst-frame"
+      src="{{ url_for('analyst_briefing_frame') }}"
+      title="Sandboxed analyst report preview"
+      referrerpolicy="no-referrer"
+      sandbox
+    ></iframe>
+  </section>
+
+  <section id="ai-workbench" class="panel ai-workbench">
+    <div class="panel-heading">
+      <h3>AI Workbench</h3>
+      <span id="aiJobStatus">Waiting</span>
+    </div>
+
+    <p class="news-message">Run an AI action from the Feed page, then review the result here.</p>
+
+    <div class="workbench-tabs" aria-label="AI Workbench tabs">
+      <button class="workbench-tab active" type="button" data-tab="result">Result</button>
+      <button class="workbench-tab" type="button" data-tab="report">Report</button>
+      <button class="workbench-tab" type="button" data-tab="json">JSON</button>
+    </div>
+
+    <div class="workbench-section" data-section="result">
+      <p><strong>Selected entity:</strong> <span id="aiSelectedEntity">None yet</span></p>
+      <p><strong>Action:</strong> <span id="aiSelectedAction">None yet</span></p>
+      <div id="aiResultBox" class="workbench-box">
+        <p>No AI job has been loaded yet.</p>
+      </div>
+    </div>
+
+    <div class="workbench-section" data-section="report" hidden>
+      <div class="workbench-actions">
+        <button id="saveReportButton" class="panel-action-button" type="button" hidden>Save report</button>
+        <button id="printReportButton" class="panel-action-button" type="button" hidden>Export PDF / Print</button>
+        <span id="saveReportMessage"></span>
+      </div>
+      <div class="saved-reports">
+        <div class="panel-heading">
+          <h4>Saved Reports</h4>
+          <button id="refreshReportsButton" class="panel-action-button" type="button">Refresh</button>
+        </div>
+        <div id="savedReportsList" class="saved-reports-list">
+          <p>No reports saved yet.</p>
+        </div>
+      </div>
+      <div id="aiReportBox" class="workbench-box">
+        <p>No report has been generated yet.</p>
+      </div>
+    </div>
+
+    <div class="workbench-section" data-section="json" hidden>
+      <pre id="aiJsonOutput" class="json-output">{}</pre>
+    </div>
+  </section>
+
+  {% if current_user and current_user.role == "admin" %}
+    <section class="panel">
+      <h3>Admin Report Intake</h3>
+
+      {% if error %}
+        <p class="error-message">{{ error }}</p>
+      {% endif %}
+
+      <form method="post" class="report-form">
+        <label for="title">
+          Title
+          <input id="title" name="title" type="text" required>
+        </label>
+
+        <label for="severity">
+          Severity
+          <select id="severity" name="severity" required>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </label>
+
+        <label for="summary">
+          Summary
+          <textarea id="summary" name="summary" rows="4" required></textarea>
+        </label>
+
+        <button type="submit">Add Report</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Admin Reports</h3>
+        <span>{{ admin_reports|length }} total</span>
+      </div>
+
+      {% if admin_reports %}
+        <div class="item-list">
+          {% for report in admin_reports %}
+            <article class="report-item">
+              <div>
+                <h4>{{ report.title }}</h4>
+                <p>{{ report.summary }}</p>
+                <p>Created by {{ report.created_by }} at {{ report.created_at }}</p>
+              </div>
+              <span class="priority">{{ report.severity }}</span>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty-message">No admin reports have been created yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h3>Login Audit Log</h3>
+        <span>{{ audit_log|length }} events</span>
+      </div>
+
+      {% if audit_log %}
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Username</th>
+              <th>Result</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for event in audit_log|reverse %}
+              <tr>
+                <td>{{ event.timestamp }}</td>
+                <td>{{ event.username }}</td>
+                <td>{{ event.result }}</td>
+                <td>{{ event.role or "-" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty-message">No login attempts have been recorded yet.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    const aiJobStatus = document.getElementById("aiJobStatus");
+    const aiSelectedEntity = document.getElementById("aiSelectedEntity");
+    const aiSelectedAction = document.getElementById("aiSelectedAction");
+    const aiResultBox = document.getElementById("aiResultBox");
+    const aiReportBox = document.getElementById("aiReportBox");
+    const aiJsonOutput = document.getElementById("aiJsonOutput");
+    const saveReportButton = document.getElementById("saveReportButton");
+    const printReportButton = document.getElementById("printReportButton");
+    const saveReportMessage = document.getElementById("saveReportMessage");
+    const refreshReportsButton = document.getElementById("refreshReportsButton");
+    const savedReportsList = document.getElementById("savedReportsList");
+    const analystReportFrame = document.getElementById("analystReportFrame");
+    let latestReportJson = null;
+    let latestReportJobId = "";
+    const aiActionLabels = {
+      analyze: "Analyze",
+      generate_report: "Generate report",
+      extract_iocs: "Extract IOCs",
+      extract_cves: "Extract CVEs",
+    };
+
+    function setWorkbenchTab(selectedTab) {
+      document.querySelectorAll(".workbench-tab").forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.tab === selectedTab);
+      });
+
+      document.querySelectorAll(".workbench-section").forEach((section) => {
+        section.hidden = section.dataset.section !== selectedTab;
+      });
+    }
+
+    function addTextList(parent, items) {
+      const list = document.createElement("ul");
+
+      items.forEach((item) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = item;
+        list.appendChild(listItem);
+      });
+
+      parent.appendChild(list);
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function isSafeHttpUrl(url) {
+      return typeof url === "string" && (url.startsWith("https://") || url.startsWith("http://"));
+    }
+
+    function renderCveList(parent, cves) {
+      const title = document.createElement("p");
+      const titleLabel = document.createElement("strong");
+      titleLabel.textContent = "Extracted CVEs:";
+      title.appendChild(titleLabel);
+      parent.appendChild(title);
+
+      if (!cves || cves.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No CVEs found.";
+        parent.appendChild(empty);
+        return;
+      }
+
+      addTextList(parent, cves);
+    }
+
+    function renderIocList(parent, iocs) {
+      const title = document.createElement("p");
+      const titleLabel = document.createElement("strong");
+      titleLabel.textContent = "Extracted IOCs:";
+      title.appendChild(titleLabel);
+      parent.appendChild(title);
+
+      if (!iocs || iocs.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No IOCs found.";
+        parent.appendChild(empty);
+        return;
+      }
+
+      addTextList(parent, iocs.map((ioc) => `${ioc.type}: ${ioc.value} (${ioc.confidence})`));
+    }
+
+    function getSummaryText(resultJson) {
+      if (!resultJson || !resultJson.summary) {
+        return "No summary available.";
+      }
+
+      if (typeof resultJson.summary === "string") {
+        return resultJson.summary;
+      }
+
+      return resultJson.summary.executive || "No summary available.";
+    }
+
+    function renderReportSectionHtml(section) {
+      const heading = `<h2>${escapeHtml(section.heading || "Section")}</h2>`;
+
+      if (section.type === "bullet_list" || section.type === "recommendations") {
+        const items = (section.items || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+
+        return `<section class="report-section">${heading}<ul>${items}</ul></section>`;
+      }
+
+      if (section.type === "numbered_list") {
+        const items = (section.items || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+
+        return `<section class="report-section">${heading}<ol>${items}</ol></section>`;
+      }
+
+      if (section.type === "source_links") {
+        const links = (section.links || [])
+          .filter((link) => isSafeHttpUrl(link.url))
+          .map((link) => `<li><a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label || link.url)}</a></li>`)
+          .join("");
+
+        return `<section class="report-section">${heading}<ul>${links}</ul></section>`;
+      }
+
+      if (section.type === "table") {
+        const columns = (section.columns || [])
+          .map((column) => `<th>${escapeHtml(column)}</th>`)
+          .join("");
+        const rows = (section.rows || [])
+          .map((row) => {
+            const rowValues = Array.isArray(row) ? row : Object.values(row);
+            const cells = rowValues.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
+            return `<tr>${cells}</tr>`;
+          })
+          .join("");
+
+        return `<section class="report-section">${heading}<table><thead><tr>${columns}</tr></thead><tbody>${rows}</tbody></table></section>`;
+      }
+
+      return `<section class="report-section">${heading}<p>${escapeHtml(section.content || "")}</p></section>`;
+    }
+
+    function buildReportPreviewHtml(reportJson) {
+      const sections = (reportJson.sections || [])
+        .map((section) => renderReportSectionHtml(section))
+        .join("");
+
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(reportJson.title || "Threat Intelligence Report")}</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; color: #172026; background: #f5f7f8; }
+    main { display: grid; gap: 14px; padding: 18px; }
+    header, .report-section { padding: 14px; background: white; border: 1px solid #dbe3e7; }
+    header { border-left: 5px solid #28d7d0; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 1.4rem; }
+    h2 { margin-bottom: 8px; font-size: 1rem; }
+    .meta { margin-top: 6px; color: #5a6872; }
+    ul, ol { margin: 8px 0 0; padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #dbe3e7; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>${escapeHtml(reportJson.title || "Threat Intelligence Report")}</h1>
+      <p class="meta">${escapeHtml(reportJson.subtitle || "Generated report preview")}</p>
+      <p class="meta">Created at ${escapeHtml(reportJson.created_at || "Unknown time")}</p>
+    </header>
+    ${sections}
+  </main>
+</body>
+</html>`;
+    }
+
+    function updateReportPreview(reportJson) {
+      if (reportJson) {
+        analystReportFrame.srcdoc = buildReportPreviewHtml(reportJson);
+      }
+    }
+
+    function renderSavedReports(reports) {
+      savedReportsList.innerHTML = "";
+
+      if (!reports || reports.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No reports saved yet.";
+        savedReportsList.appendChild(empty);
+        return;
+      }
+
+      reports.forEach((report) => {
+        const item = document.createElement("article");
+        const details = document.createElement("div");
+        const title = document.createElement("h5");
+        const meta = document.createElement("p");
+        const loadButton = document.createElement("button");
+
+        item.className = "saved-report-item";
+        title.textContent = report.title || "Untitled report";
+        meta.textContent = `Saved ${report.created_at} by ${report.created_by}`;
+        loadButton.className = "panel-action-button";
+        loadButton.type = "button";
+        loadButton.dataset.reportId = report.report_id;
+        loadButton.textContent = "Load";
+
+        details.appendChild(title);
+        details.appendChild(meta);
+        item.appendChild(details);
+        item.appendChild(loadButton);
+        savedReportsList.appendChild(item);
+      });
+    }
+
+    async function readJsonResponse(response, fallbackMessage) {
+      const contentType = response.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        throw new Error(fallbackMessage);
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || fallbackMessage);
+      }
+
+      return data;
+    }
+
+    async function refreshSavedReports() {
+      refreshReportsButton.disabled = true;
+
+      try {
+        const response = await fetch("/api/reports");
+        const data = await readJsonResponse(response, "Could not load saved reports.");
+
+        renderSavedReports(data.reports);
+      } catch (error) {
+        savedReportsList.innerHTML = "";
+
+        const message = document.createElement("p");
+        message.className = "error-message";
+        message.textContent = error.message;
+        savedReportsList.appendChild(message);
+      }
+
+      refreshReportsButton.disabled = false;
+    }
+
+    async function loadSavedReport(reportId) {
+      saveReportMessage.textContent = "Loading saved report...";
+
+      try {
+        const response = await fetch(`/api/reports/${reportId}`);
+        const data = await readJsonResponse(response, "Could not load saved report.");
+
+        latestReportJson = data.report_json;
+        latestReportJobId = data.source_job_id || "";
+        renderAiReport(data.report_json);
+        updateReportPreview(data.report_json);
+        aiJsonOutput.textContent = JSON.stringify(data, null, 2);
+        aiJobStatus.textContent = "loaded";
+        aiSelectedEntity.textContent = `report: ${data.title}`;
+        aiSelectedAction.textContent = "Load saved report";
+        saveReportMessage.textContent = `Loaded report ${data.report_id}.`;
+        setWorkbenchTab("report");
+      } catch (error) {
+        saveReportMessage.textContent = error.message;
+      }
+    }
+
+    function renderAiReport(reportJson) {
+      aiReportBox.innerHTML = "";
+
+      if (!reportJson) {
+        latestReportJson = null;
+        latestReportJobId = "";
+        saveReportButton.hidden = true;
+        printReportButton.hidden = true;
+        saveReportMessage.textContent = "";
+
+        const emptyReport = document.createElement("p");
+        emptyReport.textContent = "No report was generated for this job.";
+        aiReportBox.appendChild(emptyReport);
+        return;
+      }
+
+      latestReportJson = reportJson;
+      saveReportButton.hidden = false;
+      saveReportButton.disabled = false;
+      printReportButton.hidden = false;
+      printReportButton.disabled = false;
+      saveReportMessage.textContent = "";
+
+      const title = document.createElement("h4");
+      const subtitle = document.createElement("p");
+
+      title.textContent = reportJson.title || "Threat Intelligence Report";
+      subtitle.textContent = reportJson.subtitle || "";
+      aiReportBox.appendChild(title);
+      aiReportBox.appendChild(subtitle);
+
+      (reportJson.sections || []).forEach((section) => {
+        const heading = document.createElement("p");
+        const headingLabel = document.createElement("strong");
+        headingLabel.textContent = section.heading || "Section";
+        heading.appendChild(headingLabel);
+        aiReportBox.appendChild(heading);
+
+        if (section.content) {
+          const content = document.createElement("p");
+          content.textContent = section.content;
+          aiReportBox.appendChild(content);
+        }
+
+        if (section.items && section.items.length > 0) {
+          addTextList(aiReportBox, section.items);
+        }
+
+        if (section.links && section.links.length > 0) {
+          const list = document.createElement("ul");
+
+          section.links
+            .filter((link) => isSafeHttpUrl(link.url))
+            .forEach((link) => {
+              const item = document.createElement("li");
+              const anchor = document.createElement("a");
+              anchor.href = link.url;
+              anchor.target = "_blank";
+              anchor.rel = "noopener noreferrer";
+              anchor.textContent = link.label || link.url;
+              item.appendChild(anchor);
+              list.appendChild(item);
+            });
+
+          aiReportBox.appendChild(list);
+        }
+      });
+    }
+
+    function renderAiJob(job) {
+      const resultJson = job.result_json || {};
+      const evidence = job.evidence || resultJson.evidence || [];
+      const recommendations = resultJson.recommended_actions || [];
+      const confidence = job.confidence || resultJson.confidence || "unknown";
+
+      aiJobStatus.textContent = job.status;
+      aiSelectedEntity.textContent = `${job.entity_type}: ${job.entity_id}`;
+      aiSelectedAction.textContent = aiActionLabels[job.action] || job.action;
+      aiResultBox.innerHTML = "";
+      latestReportJobId = job.job_id;
+
+      const summaryTitle = document.createElement("h4");
+      const summary = document.createElement("p");
+      const confidenceLine = document.createElement("p");
+      const confidenceLabel = document.createElement("strong");
+
+      summaryTitle.textContent = "Summary";
+      summary.textContent = getSummaryText(resultJson);
+      confidenceLabel.textContent = "Confidence:";
+      confidenceLine.appendChild(confidenceLabel);
+      confidenceLine.append(` ${confidence}`);
+
+      aiResultBox.appendChild(summaryTitle);
+      aiResultBox.appendChild(summary);
+      aiResultBox.appendChild(confidenceLine);
+
+      if (job.action === "extract_cves" || (resultJson.extracted_cves && resultJson.extracted_cves.length > 0)) {
+        renderCveList(aiResultBox, resultJson.extracted_cves);
+      }
+
+      if (job.action === "extract_iocs" || (resultJson.extracted_iocs && resultJson.extracted_iocs.length > 0)) {
+        renderIocList(aiResultBox, resultJson.extracted_iocs);
+      }
+
+      if (recommendations.length > 0) {
+        const recommendationsTitle = document.createElement("p");
+        const recommendationsLabel = document.createElement("strong");
+        recommendationsLabel.textContent = "Recommended actions:";
+        recommendationsTitle.appendChild(recommendationsLabel);
+        aiResultBox.appendChild(recommendationsTitle);
+        addTextList(aiResultBox, recommendations);
+      }
+
+      if (evidence.length > 0) {
+        const evidenceTitle = document.createElement("p");
+        const evidenceLabel = document.createElement("strong");
+        evidenceLabel.textContent = "Evidence:";
+        evidenceTitle.appendChild(evidenceLabel);
+        aiResultBox.appendChild(evidenceTitle);
+        addTextList(aiResultBox, evidence);
+      }
+
+      renderAiReport(job.report_json);
+      updateReportPreview(job.report_json);
+      aiJsonOutput.textContent = JSON.stringify(job, null, 2);
+      setWorkbenchTab(job.action === "generate_report" ? "report" : "result");
+    }
+
+    async function loadAiJob(jobId) {
+      aiJobStatus.textContent = "loading";
+
+      try {
+        const response = await fetch(`/api/ai/jobs/${jobId}`);
+        const data = await readJsonResponse(response, "Could not load AI job.");
+
+        renderAiJob(data);
+      } catch (error) {
+        aiJobStatus.textContent = "failed";
+        aiResultBox.innerHTML = "";
+
+        const message = document.createElement("p");
+        message.className = "error-message";
+        message.textContent = error.message;
+        aiResultBox.appendChild(message);
+      }
+    }
+
+    async function saveCurrentReport() {
+      if (!latestReportJson) {
+        saveReportMessage.textContent = "No report is ready to save.";
+        return;
+      }
+
+      saveReportButton.disabled = true;
+      saveReportMessage.textContent = "Saving report...";
+
+      try {
+        const response = await fetch("/api/reports", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            source_job_id: latestReportJobId,
+            report_json: latestReportJson,
+          }),
+        });
+        const data = await readJsonResponse(response, "Report save failed.");
+
+        saveReportMessage.textContent = `Saved as report ${data.report_id}.`;
+        refreshSavedReports();
+      } catch (error) {
+        saveReportMessage.textContent = error.message;
+      }
+
+      saveReportButton.disabled = false;
+    }
+
+    function printCurrentReport() {
+      if (!latestReportJson) {
+        saveReportMessage.textContent = "No report is ready to print.";
+        return;
+      }
+
+      const printWindow = window.open("", "_blank");
+
+      if (!printWindow) {
+        saveReportMessage.textContent = "Please allow pop-ups to print this report.";
+        return;
+      }
+
+      printWindow.document.open();
+      printWindow.document.write(buildReportPreviewHtml(latestReportJson));
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+
+    refreshReportsButton.addEventListener("click", refreshSavedReports);
+    saveReportButton.addEventListener("click", saveCurrentReport);
+    printReportButton.addEventListener("click", printCurrentReport);
+    savedReportsList.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-report-id]");
+
+      if (button) {
+        loadSavedReport(button.dataset.reportId);
+      }
+    });
+    document.querySelectorAll(".workbench-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        setWorkbenchTab(tab.dataset.tab);
+      });
+    });
+
+    const pendingJobId = localStorage.getItem("pendingAiJobId");
+
+    if (pendingJobId) {
+      localStorage.removeItem("pendingAiJobId");
+      loadAiJob(pendingJobId);
+    }
+
+    refreshSavedReports();
+  </script>
+{% endblock %}

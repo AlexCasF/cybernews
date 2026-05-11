@@ -1,253 +1,98 @@
 {% extends "base.html" %}
 
-{% block title %}CyberNews Dashboard{% endblock %}
+{% block title %}CyberNews Feed{% endblock %}
 
 {% block content %}
   <section class="page-heading">
-    <p class="eyebrow">Live workspace</p>
+    <p class="eyebrow">Master feed</p>
     <h2>{{ page_title }}</h2>
-    <p>Track cybersecurity headlines, intelligence notes, and system status from one place.</p>
+    <p>Review cybersecurity news, advisories, and community signals in one filterable feed.</p>
   </section>
 
-  <section class="stats-grid" aria-label="Dashboard overview">
-    {% for stat in stats %}
-      <article class="stat-card">
-        <p>{{ stat.label }}</p>
-        <strong>{{ stat.value }}</strong>
-        <span>{{ stat.note }}</span>
-      </article>
-    {% endfor %}
-  </section>
-
-  <section id="analyst-briefing" class="panel analyst-viewport">
+  <section id="headlines" class="panel">
     <div class="panel-heading">
-      <div>
-        <p class="eyebrow">Sandboxed preview</p>
-        <h3>Analyst Briefing Viewport</h3>
-      </div>
-      <span>AI-ready</span>
+      <h3>Unified Threat Feed</h3>
+      <span id="articleCount">{{ articles|length }} items</span>
     </div>
 
-    <p class="news-message">
-      Generated reports and visuals render inside this isolated frame.
-    </p>
+    <div class="filter-bar" aria-label="News filters">
+      <label for="categoryFilter">
+        Category
+        <select id="categoryFilter">
+          <option value="All">All</option>
+          {% for category in categories %}
+            <option value="{{ category }}">{{ category }}</option>
+          {% endfor %}
+        </select>
+      </label>
 
-    <iframe
-      id="analystReportFrame"
-      class="analyst-frame"
-      src="{{ url_for('analyst_briefing_frame') }}"
-      title="Sandboxed analyst report preview"
-      referrerpolicy="no-referrer"
-      sandbox
-    ></iframe>
-  </section>
+      <label for="severityFilter">
+        Severity
+        <select id="severityFilter">
+          <option value="All">All</option>
+          {% for severity in severities %}
+            <option value="{{ severity }}">{{ severity }}</option>
+          {% endfor %}
+        </select>
+      </label>
 
-  <div class="dashboard-grid">
-    <section id="headlines" class="panel">
-      <div class="panel-heading">
-        <h3>Unified Threat Feed</h3>
-        <span id="articleCount">{{ articles|length }} items</span>
-      </div>
-
-      <div class="filter-bar" aria-label="News filters">
-        <label for="categoryFilter">
-          Category
-          <select id="categoryFilter">
-            <option value="All">All</option>
-            {% for category in categories %}
-              <option value="{{ category }}">{{ category }}</option>
-            {% endfor %}
-          </select>
-        </label>
-
-        <label for="severityFilter">
-          Severity
-          <select id="severityFilter">
-            <option value="All">All</option>
-            {% for severity in severities %}
-              <option value="{{ severity }}">{{ severity }}</option>
-            {% endfor %}
-          </select>
-        </label>
-
-        <details class="source-filter-menu">
-          <summary>Sources</summary>
-          <div class="source-filter-options">
+      <details class="source-filter-menu">
+        <summary>Sources</summary>
+        <div class="source-filter-options">
+          <label>
+            <input id="sourceFilterAll" type="checkbox" value="All" checked>
+            All
+          </label>
+          {% for source in feed_sources %}
             <label>
-              <input id="sourceFilterAll" type="checkbox" value="All" checked>
-              All
+              <input class="source-filter-option" type="checkbox" value="{{ source.value }}" checked>
+              {{ source.label }}
             </label>
-            {% for source in feed_sources %}
-              <label>
-                <input class="source-filter-option" type="checkbox" value="{{ source.value }}" checked>
-                {{ source.label }}
-              </label>
-            {% endfor %}
+          {% endfor %}
+        </div>
+      </details>
+
+      <label for="sortFilter">
+        Sort
+        <select id="sortFilter">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </label>
+
+      <button id="refreshLiveNewsButton" type="button">Refresh Feed</button>
+    </div>
+
+    <p id="newsMessage" class="news-message">{{ feed_message }}</p>
+
+    <div id="articleList" class="item-list unified-feed-list">
+      {% for article in articles %}
+        <article class="news-item" data-category="{{ article.category }}" data-severity="{{ article.severity }}" data-source-type="{{ article.source_type }}" data-published-sort="{{ article.published_sort }}">
+          <div>
+            <h4>
+              <a href="{{ article.url }}">{{ article.title }}</a>
+            </h4>
+            <p>{{ article.source }} | {{ article.published }} | {{ article.severity }} | {{ article.source_type }}</p>
+            <p>{{ article.summary }}</p>
           </div>
-        </details>
-
-        <label for="sortFilter">
-          Sort
-          <select id="sortFilter">
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-          </select>
-        </label>
-
-        <button id="refreshLiveNewsButton" type="button">Refresh Feed</button>
-      </div>
-
-      <p id="newsMessage" class="news-message">{{ feed_message }}</p>
-
-      <div id="articleList" class="item-list unified-feed-list">
-        {% for article in articles %}
-          <article class="news-item" data-category="{{ article.category }}" data-severity="{{ article.severity }}" data-source-type="{{ article.source_type }}" data-published-sort="{{ article.published_sort }}">
-            <div>
-              <h4>
-                <a href="{{ article.url }}">{{ article.title }}</a>
-              </h4>
-              <p>{{ article.source }} | {{ article.published }} | {{ article.severity }} | {{ article.source_type }}</p>
-              <p>{{ article.summary }}</p>
-            </div>
-            <div class="card-actions">
-              <span class="tag">{{ article.category }}</span>
-              <details class="ai-actions-menu">
-                <summary>AI Actions</summary>
-                <div class="ai-actions-list">
-                  <button class="ai-action-button" type="button" data-ai-action="analyze" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Analyze</button>
-                  <button class="ai-action-button" type="button" data-ai-action="generate_report" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Generate report</button>
-                  <button class="ai-action-button" type="button" data-ai-action="extract_iocs" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Extract IOCs</button>
-                  <button class="ai-action-button" type="button" data-ai-action="extract_cves" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Extract CVEs</button>
-                </div>
-              </details>
-            </div>
-          </article>
-        {% endfor %}
-      </div>
-
-      <p id="emptyArticlesMessage" class="empty-message" hidden>No articles match these filters.</p>
-    </section>
-
-    <section id="ai-workbench" class="panel ai-workbench">
-      <div class="panel-heading">
-        <h3>AI Workbench</h3>
-        <span id="aiJobStatus">Waiting</span>
-      </div>
-
-      <p class="news-message">Run an AI action from a headline card to preview structured results.</p>
-
-      <div class="workbench-tabs" aria-label="AI Workbench tabs">
-        <button class="workbench-tab active" type="button" data-tab="result">Result</button>
-        <button class="workbench-tab" type="button" data-tab="report">Report</button>
-        <button class="workbench-tab" type="button" data-tab="json">JSON</button>
-      </div>
-
-      <div class="workbench-section" data-section="result">
-        <p><strong>Selected entity:</strong> <span id="aiSelectedEntity">None yet</span></p>
-        <p><strong>Action:</strong> <span id="aiSelectedAction">None yet</span></p>
-        <div id="aiResultBox" class="workbench-box">
-          <p>No AI job has been run yet.</p>
-        </div>
-      </div>
-
-      <div class="workbench-section" data-section="report" hidden>
-        <div class="workbench-actions">
-          <button id="saveReportButton" class="panel-action-button" type="button" hidden>Save report</button>
-          <button id="printReportButton" class="panel-action-button" type="button" hidden>Export PDF / Print</button>
-          <span id="saveReportMessage"></span>
-        </div>
-        <div class="saved-reports">
-          <div class="panel-heading">
-            <h4>Saved Reports</h4>
-            <button id="refreshReportsButton" class="panel-action-button" type="button">Refresh</button>
-          </div>
-          <div id="savedReportsList" class="saved-reports-list">
-            <p>No reports saved yet.</p>
-          </div>
-        </div>
-        <div id="aiReportBox" class="workbench-box">
-          <p>No report has been generated yet.</p>
-        </div>
-      </div>
-
-      <div class="workbench-section" data-section="json" hidden>
-        <pre id="aiJsonOutput" class="json-output">{}</pre>
-      </div>
-    </section>
-
-    <section id="intelligence" class="panel">
-      <div class="panel-heading">
-        <h3>Intelligence Reports</h3>
-        <span>{{ intelligence_reports|length }} reports</span>
-      </div>
-
-      <div class="item-list">
-        {% for report in intelligence_reports %}
-          <article class="intel-card">
-            <div>
-              <div class="intel-card-heading">
-                <h4>{{ report.title }}</h4>
-                <span class="priority severity-{{ report.severity|lower }}">{{ report.severity }}</span>
+          <div class="card-actions">
+            <span class="tag">{{ article.category }}</span>
+            <details class="ai-actions-menu">
+              <summary>AI Actions</summary>
+              <div class="ai-actions-list">
+                <button class="ai-action-button" type="button" data-ai-action="analyze" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Analyze</button>
+                <button class="ai-action-button" type="button" data-ai-action="generate_report" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Generate report</button>
+                <button class="ai-action-button" type="button" data-ai-action="extract_iocs" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Extract IOCs</button>
+                <button class="ai-action-button" type="button" data-ai-action="extract_cves" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Extract CVEs</button>
               </div>
-              <p class="intel-source">Source: {{ report.source }}</p>
-              <p>{{ report.summary }}</p>
-              <p class="action-box"><strong>Recommended action:</strong> {{ report.action }}</p>
-            </div>
-          </article>
-        {% endfor %}
-      </div>
-    </section>
+            </details>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
 
-    <section id="vulnerabilities" class="panel">
-      <div class="panel-heading">
-        <h3>Known Exploited Vulnerabilities</h3>
-        <div class="panel-actions">
-          <span id="kevCount">{{ kev_vulnerabilities|length }} shown</span>
-          <button id="refreshKevButton" class="panel-action-button" type="button">Refresh KEV</button>
-        </div>
-      </div>
-
-      <p id="kevMessage" class="news-message">{{ kev_message }}</p>
-
-      <div id="kevList" class="item-list">
-        {% for vulnerability in kev_vulnerabilities %}
-          <article class="kev-item">
-            <div>
-              <h4>{{ vulnerability.cve }} - {{ vulnerability.title }}</h4>
-              <p>{{ vulnerability.vendor }} {{ vulnerability.product }} | Added {{ vulnerability.date_added }} | Due {{ vulnerability.due_date }}</p>
-              <p class="epss-line">
-                EPSS: {{ vulnerability.epss }} | Percentile: {{ vulnerability.epss_percentile }} | Updated {{ vulnerability.epss_date }}
-                <span class="epss-badge epss-{{ vulnerability.epss_label|lower|replace(' ', '-') }}">{{ vulnerability.epss_label }}</span>
-              </p>
-              <p>{{ vulnerability.summary }}</p>
-              <p class="action-box"><strong>Required action:</strong> {{ vulnerability.required_action }}</p>
-            </div>
-            <span class="tag">Ransomware: {{ vulnerability.known_ransomware_use }}</span>
-          </article>
-        {% endfor %}
-      </div>
-
-      <p id="emptyKevMessage" class="empty-message" {% if kev_vulnerabilities %}hidden{% endif %}>
-        No known exploited vulnerabilities are available right now.
-      </p>
-    </section>
-
-    <section id="system" class="panel">
-      <div class="panel-heading">
-        <h3>System Status</h3>
-        <span>Updated {{ last_updated }}</span>
-      </div>
-
-      <ul class="status-list">
-        {% for item in system_status %}
-          <li>
-            <span>{{ item.name }}</span>
-            <strong>{{ item.state }}</strong>
-          </li>
-        {% endfor %}
-      </ul>
-    </section>
-  </div>
+    <p id="emptyArticlesMessage" class="empty-message" hidden>No articles match these filters.</p>
+  </section>
 {% endblock %}
 
 {% block scripts %}
@@ -262,25 +107,6 @@
     const articleCount = document.getElementById("articleCount");
     const newsMessage = document.getElementById("newsMessage");
     const emptyArticlesMessage = document.getElementById("emptyArticlesMessage");
-    const refreshKevButton = document.getElementById("refreshKevButton");
-    const kevList = document.getElementById("kevList");
-    const kevCount = document.getElementById("kevCount");
-    const kevMessage = document.getElementById("kevMessage");
-    const emptyKevMessage = document.getElementById("emptyKevMessage");
-    const aiJobStatus = document.getElementById("aiJobStatus");
-    const aiSelectedEntity = document.getElementById("aiSelectedEntity");
-    const aiSelectedAction = document.getElementById("aiSelectedAction");
-    const aiResultBox = document.getElementById("aiResultBox");
-    const aiReportBox = document.getElementById("aiReportBox");
-    const aiJsonOutput = document.getElementById("aiJsonOutput");
-    const saveReportButton = document.getElementById("saveReportButton");
-    const printReportButton = document.getElementById("printReportButton");
-    const saveReportMessage = document.getElementById("saveReportMessage");
-    const refreshReportsButton = document.getElementById("refreshReportsButton");
-    const savedReportsList = document.getElementById("savedReportsList");
-    const analystReportFrame = document.getElementById("analystReportFrame");
-    let latestReportJson = null;
-    let latestReportJobId = "";
     const aiActionLabels = {
       analyze: "Analyze",
       generate_report: "Generate report",
@@ -344,561 +170,6 @@
       articleCount.textContent = `${visibleCount} of ${articleCards.length} items`;
     }
 
-    function setWorkbenchTab(selectedTab) {
-      document.querySelectorAll(".workbench-tab").forEach((tab) => {
-        tab.classList.toggle("active", tab.dataset.tab === selectedTab);
-      });
-
-      document.querySelectorAll(".workbench-section").forEach((section) => {
-        section.hidden = section.dataset.section !== selectedTab;
-      });
-    }
-
-    function addTextList(parent, items) {
-      const list = document.createElement("ul");
-
-      items.forEach((item) => {
-        const listItem = document.createElement("li");
-        listItem.textContent = item;
-        list.appendChild(listItem);
-      });
-
-      parent.appendChild(list);
-    }
-
-    function escapeHtml(value) {
-      return String(value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-    }
-
-    function renderCveList(parent, cves) {
-      const title = document.createElement("p");
-      const titleLabel = document.createElement("strong");
-      titleLabel.textContent = "Extracted CVEs:";
-      title.appendChild(titleLabel);
-      parent.appendChild(title);
-
-      if (!cves || cves.length === 0) {
-        const empty = document.createElement("p");
-        empty.textContent = "No CVEs found.";
-        parent.appendChild(empty);
-        return;
-      }
-
-      addTextList(parent, cves);
-    }
-
-    function renderIocList(parent, iocs) {
-      const title = document.createElement("p");
-      const titleLabel = document.createElement("strong");
-      titleLabel.textContent = "Extracted IOCs:";
-      title.appendChild(titleLabel);
-      parent.appendChild(title);
-
-      if (!iocs || iocs.length === 0) {
-        const empty = document.createElement("p");
-        empty.textContent = "No IOCs found.";
-        parent.appendChild(empty);
-        return;
-      }
-
-      addTextList(parent, iocs.map((ioc) => `${ioc.type}: ${ioc.value} (${ioc.confidence})`));
-    }
-
-    function getSummaryText(resultJson) {
-      if (!resultJson || !resultJson.summary) {
-        return "No summary available.";
-      }
-
-      if (typeof resultJson.summary === "string") {
-        return resultJson.summary;
-      }
-
-      return resultJson.summary.executive || "No summary available.";
-    }
-
-    function renderReportSectionHtml(section) {
-      const heading = `<h2>${escapeHtml(section.heading || "Section")}</h2>`;
-
-      if (section.type === "bullet_list" || section.type === "recommendations") {
-        const items = (section.items || [])
-          .map((item) => `<li>${escapeHtml(item)}</li>`)
-          .join("");
-
-        return `<section class="report-section">${heading}<ul>${items}</ul></section>`;
-      }
-
-      if (section.type === "numbered_list") {
-        const items = (section.items || [])
-          .map((item) => `<li>${escapeHtml(item)}</li>`)
-          .join("");
-
-        return `<section class="report-section">${heading}<ol>${items}</ol></section>`;
-      }
-
-      if (section.type === "source_links") {
-        const links = (section.links || [])
-          .filter((link) => isSafeHttpUrl(link.url))
-          .map((link) => `<li><a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label || link.url)}</a></li>`)
-          .join("");
-
-        return `<section class="report-section">${heading}<ul>${links}</ul></section>`;
-      }
-
-      if (section.type === "table") {
-        const columns = (section.columns || [])
-          .map((column) => `<th>${escapeHtml(column)}</th>`)
-          .join("");
-        const rows = (section.rows || [])
-          .map((row) => {
-            const rowValues = Array.isArray(row) ? row : Object.values(row);
-            const cells = rowValues.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
-            return `<tr>${cells}</tr>`;
-          })
-          .join("");
-
-        return `<section class="report-section">${heading}<table><thead><tr>${columns}</tr></thead><tbody>${rows}</tbody></table></section>`;
-      }
-
-      return `<section class="report-section">${heading}<p>${escapeHtml(section.content || "")}</p></section>`;
-    }
-
-    function buildReportPreviewHtml(reportJson) {
-      const sections = (reportJson.sections || [])
-        .map((section) => renderReportSectionHtml(section))
-        .join("");
-
-      return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(reportJson.title || "Threat Intelligence Report")}</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      color: #172026;
-      background: #f5f7f8;
-    }
-
-    main {
-      display: grid;
-      gap: 14px;
-      padding: 18px;
-    }
-
-    header,
-    .report-section {
-      padding: 14px;
-      background: white;
-      border: 1px solid #dbe3e7;
-    }
-
-    header {
-      border-left: 5px solid #28d7d0;
-    }
-
-    h1,
-    h2,
-    p {
-      margin: 0;
-    }
-
-    h1 {
-      font-size: 1.4rem;
-    }
-
-    h2 {
-      margin-bottom: 8px;
-      font-size: 1rem;
-    }
-
-    .meta {
-      margin-top: 6px;
-      color: #5a6872;
-    }
-
-    ul,
-    ol {
-      margin: 8px 0 0;
-      padding-left: 20px;
-    }
-
-    li {
-      margin-bottom: 6px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th,
-    td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #dbe3e7;
-    }
-  </style>
-</head>
-<body>
-  <main>
-    <header>
-      <h1>${escapeHtml(reportJson.title || "Threat Intelligence Report")}</h1>
-      <p class="meta">${escapeHtml(reportJson.subtitle || "Generated report preview")}</p>
-      <p class="meta">Created at ${escapeHtml(reportJson.created_at || "Unknown time")}</p>
-    </header>
-    ${sections}
-  </main>
-</body>
-</html>`;
-    }
-
-    function isSafeHttpUrl(url) {
-      return typeof url === "string" && (url.startsWith("https://") || url.startsWith("http://"));
-    }
-
-    function updateReportPreview(reportJson) {
-      if (!reportJson) {
-        return;
-      }
-
-      analystReportFrame.srcdoc = buildReportPreviewHtml(reportJson);
-    }
-
-    function renderSavedReports(reports) {
-      savedReportsList.innerHTML = "";
-
-      if (!reports || reports.length === 0) {
-        const empty = document.createElement("p");
-        empty.textContent = "No reports saved yet.";
-        savedReportsList.appendChild(empty);
-        return;
-      }
-
-      reports.forEach((report) => {
-        const item = document.createElement("article");
-        const details = document.createElement("div");
-        const title = document.createElement("h5");
-        const meta = document.createElement("p");
-        const loadButton = document.createElement("button");
-
-        item.className = "saved-report-item";
-        title.textContent = report.title || "Untitled report";
-        meta.textContent = `Saved ${report.created_at} by ${report.created_by}`;
-        loadButton.className = "panel-action-button";
-        loadButton.type = "button";
-        loadButton.dataset.reportId = report.report_id;
-        loadButton.textContent = "Load";
-
-        details.appendChild(title);
-        details.appendChild(meta);
-        item.appendChild(details);
-        item.appendChild(loadButton);
-        savedReportsList.appendChild(item);
-      });
-    }
-
-    async function readJsonResponse(response, fallbackMessage) {
-      const contentType = response.headers.get("content-type") || "";
-
-      if (!contentType.includes("application/json")) {
-        throw new Error(fallbackMessage);
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || fallbackMessage);
-      }
-
-      return data;
-    }
-
-    async function refreshSavedReports() {
-      refreshReportsButton.disabled = true;
-
-      try {
-        const response = await fetch("/api/reports");
-        const data = await readJsonResponse(response, "Could not load saved reports.");
-
-        renderSavedReports(data.reports);
-      } catch (error) {
-        savedReportsList.innerHTML = "";
-
-        const message = document.createElement("p");
-        message.className = "error-message";
-        message.textContent = error.message;
-        savedReportsList.appendChild(message);
-      }
-
-      refreshReportsButton.disabled = false;
-    }
-
-    async function loadSavedReport(reportId) {
-      saveReportMessage.textContent = "Loading saved report...";
-
-      try {
-        const response = await fetch(`/api/reports/${reportId}`);
-        const data = await readJsonResponse(response, "Could not load saved report.");
-
-        latestReportJson = data.report_json;
-        latestReportJobId = data.source_job_id || "";
-        renderAiReport(data.report_json);
-        updateReportPreview(data.report_json);
-        aiJsonOutput.textContent = JSON.stringify(data, null, 2);
-        aiJobStatus.textContent = "loaded";
-        aiSelectedEntity.textContent = `report: ${data.title}`;
-        aiSelectedAction.textContent = "Load saved report";
-        saveReportMessage.textContent = `Loaded report ${data.report_id}.`;
-        setWorkbenchTab("report");
-      } catch (error) {
-        saveReportMessage.textContent = error.message;
-      }
-    }
-
-    function renderAiReport(reportJson) {
-      aiReportBox.innerHTML = "";
-
-      if (!reportJson) {
-        latestReportJson = null;
-        latestReportJobId = "";
-        saveReportButton.hidden = true;
-        printReportButton.hidden = true;
-        saveReportMessage.textContent = "";
-
-        const emptyReport = document.createElement("p");
-        emptyReport.textContent = "No report was generated for this job.";
-        aiReportBox.appendChild(emptyReport);
-        return;
-      }
-
-      latestReportJson = reportJson;
-      saveReportButton.hidden = false;
-      saveReportButton.disabled = false;
-      printReportButton.hidden = false;
-      printReportButton.disabled = false;
-      saveReportMessage.textContent = "";
-
-      const title = document.createElement("h4");
-      const subtitle = document.createElement("p");
-
-      title.textContent = reportJson.title || "Threat Intelligence Report";
-      subtitle.textContent = reportJson.subtitle || "";
-      aiReportBox.appendChild(title);
-      aiReportBox.appendChild(subtitle);
-
-      (reportJson.sections || []).forEach((section) => {
-        const heading = document.createElement("p");
-        const headingLabel = document.createElement("strong");
-        headingLabel.textContent = section.heading || "Section";
-        heading.appendChild(headingLabel);
-        aiReportBox.appendChild(heading);
-
-        if (section.content) {
-          const content = document.createElement("p");
-          content.textContent = section.content;
-          aiReportBox.appendChild(content);
-        }
-
-        if (section.items && section.items.length > 0) {
-          addTextList(aiReportBox, section.items);
-        }
-
-        if (section.links && section.links.length > 0) {
-          const list = document.createElement("ul");
-
-          section.links
-            .filter((link) => isSafeHttpUrl(link.url))
-            .forEach((link) => {
-              const item = document.createElement("li");
-              const anchor = document.createElement("a");
-              anchor.href = link.url;
-              anchor.target = "_blank";
-              anchor.rel = "noopener noreferrer";
-              anchor.textContent = link.label || link.url;
-              item.appendChild(anchor);
-              list.appendChild(item);
-            });
-
-          aiReportBox.appendChild(list);
-        }
-      });
-    }
-
-    function renderAiJob(job) {
-      const resultJson = job.result_json || {};
-      const evidence = job.evidence || resultJson.evidence || [];
-      const recommendations = resultJson.recommended_actions || [];
-      const confidence = job.confidence || resultJson.confidence || "unknown";
-
-      aiJobStatus.textContent = job.status;
-      aiSelectedEntity.textContent = `${job.entity_type}: ${job.entity_id}`;
-      aiSelectedAction.textContent = aiActionLabels[job.action] || job.action;
-      aiResultBox.innerHTML = "";
-      latestReportJobId = job.job_id;
-
-      const summaryTitle = document.createElement("h4");
-      const summary = document.createElement("p");
-      const confidenceLine = document.createElement("p");
-      const confidenceLabel = document.createElement("strong");
-
-      summaryTitle.textContent = "Summary";
-      summary.textContent = getSummaryText(resultJson);
-      confidenceLabel.textContent = "Confidence:";
-      confidenceLine.appendChild(confidenceLabel);
-      confidenceLine.append(` ${confidence}`);
-
-      aiResultBox.appendChild(summaryTitle);
-      aiResultBox.appendChild(summary);
-      aiResultBox.appendChild(confidenceLine);
-
-      if (job.action === "extract_cves" || (resultJson.extracted_cves && resultJson.extracted_cves.length > 0)) {
-        renderCveList(aiResultBox, resultJson.extracted_cves);
-      }
-
-      if (job.action === "extract_iocs" || (resultJson.extracted_iocs && resultJson.extracted_iocs.length > 0)) {
-        renderIocList(aiResultBox, resultJson.extracted_iocs);
-      }
-
-      if (recommendations.length > 0) {
-        const recommendationsTitle = document.createElement("p");
-        const recommendationsLabel = document.createElement("strong");
-        recommendationsLabel.textContent = "Recommended actions:";
-        recommendationsTitle.appendChild(recommendationsLabel);
-        aiResultBox.appendChild(recommendationsTitle);
-        addTextList(aiResultBox, recommendations);
-      }
-
-      if (evidence.length > 0) {
-        const evidenceTitle = document.createElement("p");
-        const evidenceLabel = document.createElement("strong");
-        evidenceLabel.textContent = "Evidence:";
-        evidenceTitle.appendChild(evidenceLabel);
-        aiResultBox.appendChild(evidenceTitle);
-        addTextList(aiResultBox, evidence);
-      }
-
-      renderAiReport(job.report_json);
-      updateReportPreview(job.report_json);
-      aiJsonOutput.textContent = JSON.stringify(job, null, 2);
-      setWorkbenchTab(job.action === "generate_report" ? "report" : "result");
-    }
-
-    async function saveCurrentReport() {
-      if (!latestReportJson) {
-        saveReportMessage.textContent = "No report is ready to save.";
-        return;
-      }
-
-      saveReportButton.disabled = true;
-      saveReportMessage.textContent = "Saving report...";
-
-      try {
-        const response = await fetch("/api/reports", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            source_job_id: latestReportJobId,
-            report_json: latestReportJson,
-          }),
-        });
-        const data = await readJsonResponse(response, "Report save failed.");
-
-        saveReportMessage.textContent = `Saved as report ${data.report_id}.`;
-        refreshSavedReports();
-      } catch (error) {
-        saveReportMessage.textContent = error.message;
-      }
-
-      saveReportButton.disabled = false;
-    }
-
-    function printCurrentReport() {
-      if (!latestReportJson) {
-        saveReportMessage.textContent = "No report is ready to print.";
-        return;
-      }
-
-      const printWindow = window.open("", "_blank");
-
-      if (!printWindow) {
-        saveReportMessage.textContent = "Please allow pop-ups to print this report.";
-        return;
-      }
-
-      printWindow.document.open();
-      printWindow.document.write(buildReportPreviewHtml(latestReportJson));
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
-
-    async function runArticleAiAction(button) {
-      const action = button.dataset.aiAction;
-      const entityId = button.dataset.entityId;
-      const entityLabel = button.dataset.entityLabel || entityId;
-      const entitySummary = button.dataset.entitySummary || "";
-      const actionLabel = aiActionLabels[action] || action;
-      const outputFormat = action === "generate_report" ? "both" : "structured_json";
-      const selectedText = `${entityLabel}\n${entitySummary}`;
-
-      button.disabled = true;
-      aiJobStatus.textContent = "running";
-      aiSelectedEntity.textContent = `article: ${entityLabel}`;
-      aiSelectedAction.textContent = actionLabel;
-      aiResultBox.innerHTML = "";
-
-      const loadingMessage = document.createElement("p");
-      loadingMessage.textContent = `Running AI action: ${actionLabel}...`;
-      aiResultBox.appendChild(loadingMessage);
-      setWorkbenchTab("result");
-
-      try {
-        const response = await fetch("/api/ai/jobs", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            action: action,
-            entity_type: "article",
-            entity_id: entityId,
-            selected_text: selectedText,
-            context_depth: "medium",
-            output_format: outputFormat,
-          }),
-        });
-
-        const data = await readJsonResponse(response, "AI service returned an unexpected server response.");
-
-        renderAiJob(data);
-      } catch (error) {
-        aiJobStatus.textContent = "failed";
-        aiResultBox.innerHTML = "";
-
-        const message = document.createElement("p");
-        message.className = "error-message";
-        message.textContent = error.message;
-        aiResultBox.appendChild(message);
-      }
-
-      button.disabled = false;
-
-      const menu = button.closest(".ai-actions-menu");
-
-      if (menu) {
-        menu.open = false;
-      }
-    }
-
     function createAiActionsMenu(entityId, entityLabel, entitySummary) {
       const menu = document.createElement("details");
       const summary = document.createElement("summary");
@@ -928,12 +199,6 @@
 
     function createArticleCard(article) {
       const card = document.createElement("article");
-      card.className = "news-item";
-      card.dataset.category = article.category;
-      card.dataset.severity = article.severity;
-      card.dataset.sourceType = article.source_type || "newsapi";
-      card.dataset.publishedSort = article.published_sort || "";
-
       const content = document.createElement("div");
       const actions = document.createElement("div");
       const heading = document.createElement("h4");
@@ -945,6 +210,11 @@
       const entityLabel = article.title || entityId;
       const entitySummary = article.summary || "";
 
+      card.className = "news-item";
+      card.dataset.category = article.category;
+      card.dataset.severity = article.severity;
+      card.dataset.sourceType = article.source_type || "newsapi";
+      card.dataset.publishedSort = article.published_sort || "";
       link.href = article.url;
       link.textContent = article.title;
       meta.textContent = `${article.source} | ${article.published} | ${article.severity} | ${article.source_type || "newsapi"}`;
@@ -1029,87 +299,45 @@
       refreshLiveNewsButton.disabled = false;
     }
 
-    function createKevCard(vulnerability) {
-      const card = document.createElement("article");
-      const content = document.createElement("div");
-      const heading = document.createElement("h4");
-      const meta = document.createElement("p");
-      const summary = document.createElement("p");
-      const action = document.createElement("p");
-      const actionLabel = document.createElement("strong");
-      const epssLine = document.createElement("p");
-      const epssBadge = document.createElement("span");
-      const tag = document.createElement("span");
-      const cve = vulnerability.cve || "Unknown CVE";
-      const title = vulnerability.title || "Untitled vulnerability";
-      const vendor = vulnerability.vendor || "Unknown vendor";
-      const product = vulnerability.product || "Unknown product";
-      const dateAdded = vulnerability.date_added || "Unknown date";
-      const dueDate = vulnerability.due_date || "Unknown date";
-      const epss = vulnerability.epss || "Unknown";
-      const epssPercentile = vulnerability.epss_percentile || "Unknown";
-      const epssDate = vulnerability.epss_date || "Unknown date";
-      const epssLabel = vulnerability.epss_label || "Unknown";
-      const ransomwareUse = vulnerability.known_ransomware_use || "Unknown";
-      const requiredAction = vulnerability.required_action || "Review vendor guidance.";
+    async function runArticleAiAction(button) {
+      const action = button.dataset.aiAction;
+      const entityId = button.dataset.entityId;
+      const entityLabel = button.dataset.entityLabel || entityId;
+      const entitySummary = button.dataset.entitySummary || "";
+      const outputFormat = action === "generate_report" ? "both" : "structured_json";
+      const selectedText = `${entityLabel}\n${entitySummary}`;
 
-      card.className = "kev-item";
-      heading.textContent = `${cve} - ${title}`;
-      meta.textContent = `${vendor} ${product} | Added ${dateAdded} | Due ${dueDate}`;
-      epssLine.className = "epss-line";
-      epssLine.textContent = `EPSS: ${epss} | Percentile: ${epssPercentile} | Updated ${epssDate} `;
-      epssBadge.className = `epss-badge epss-${epssLabel.toLowerCase().replace(" ", "-")}`;
-      epssBadge.textContent = epssLabel;
-      epssLine.appendChild(epssBadge);
-      summary.textContent = vulnerability.summary || "No summary available.";
-      action.className = "action-box";
-      actionLabel.textContent = "Required action:";
-      action.appendChild(actionLabel);
-      action.append(` ${requiredAction}`);
-      tag.className = "tag";
-      tag.textContent = `Ransomware: ${ransomwareUse}`;
-
-      content.appendChild(heading);
-      content.appendChild(meta);
-      content.appendChild(epssLine);
-      content.appendChild(summary);
-      content.appendChild(action);
-      card.appendChild(content);
-      card.appendChild(tag);
-
-      return card;
-    }
-
-    function renderKevVulnerabilities(vulnerabilities) {
-      kevList.innerHTML = "";
-
-      vulnerabilities.forEach((vulnerability) => {
-        kevList.appendChild(createKevCard(vulnerability));
-      });
-
-      kevCount.textContent = `${vulnerabilities.length} shown`;
-      emptyKevMessage.hidden = vulnerabilities.length > 0;
-    }
-
-    async function refreshKevVulnerabilities() {
-      refreshKevButton.disabled = true;
-      kevMessage.textContent = "Loading CISA KEV vulnerabilities...";
+      button.disabled = true;
+      button.textContent = "Running...";
 
       try {
-        const response = await fetch("/api/kev-vulnerabilities");
+        const response = await fetch("/api/ai/jobs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: action,
+            entity_type: "article",
+            entity_id: entityId,
+            selected_text: selectedText,
+            context_depth: "medium",
+            output_format: outputFormat,
+          }),
+        });
+        const data = await response.json();
 
         if (!response.ok) {
-          throw new Error("CISA KEV request failed.");
+          throw new Error(data.error || "AI action failed.");
         }
 
-        const data = await response.json();
-        renderKevVulnerabilities(data.vulnerabilities.slice(0, 4));
-        kevMessage.textContent = data.message;
+        localStorage.setItem("pendingAiJobId", data.job_id);
+        window.location.href = "{{ url_for('ai_reporting') }}";
       } catch (error) {
-        kevMessage.textContent = "CISA KEV vulnerabilities unavailable right now. Please try again later.";
+        alert(error.message);
+        button.disabled = false;
+        button.textContent = aiActionLabels[action] || "AI Action";
       }
-
-      refreshKevButton.disabled = false;
     }
 
     categoryFilter.addEventListener("change", applyArticleFilters);
@@ -1126,19 +354,6 @@
       renderArticles(getCurrentArticlesFromDom());
     });
     refreshLiveNewsButton.addEventListener("click", refreshLiveNews);
-    refreshKevButton.addEventListener("click", refreshKevVulnerabilities);
-    saveReportButton.addEventListener("click", saveCurrentReport);
-    printReportButton.addEventListener("click", printCurrentReport);
-    refreshReportsButton.addEventListener("click", refreshSavedReports);
-
-    savedReportsList.addEventListener("click", (event) => {
-      const button = event.target.closest("button[data-report-id]");
-
-      if (button) {
-        loadSavedReport(button.dataset.reportId);
-      }
-    });
-
     articleList.addEventListener("click", (event) => {
       const button = event.target.closest(".ai-action-button");
 
@@ -1146,13 +361,5 @@
         runArticleAiAction(button);
       }
     });
-
-    document.querySelectorAll(".workbench-tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        setWorkbenchTab(tab.dataset.tab);
-      });
-    });
-
-    refreshSavedReports();
   </script>
 {% endblock %}

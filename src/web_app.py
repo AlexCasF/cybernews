@@ -920,73 +920,6 @@ def build_cve_enrichment(cve_id):
     return enrichment
 
 
-def get_dashboard_stats(articles, intelligence_reports, kev_vulnerabilities):
-    return [
-        {
-            "label": "Tracked headlines",
-            "value": str(len(articles)),
-            "note": "shown on the dashboard",
-        },
-        {
-            "label": "Intel reports",
-            "value": str(len(intelligence_reports)),
-            "note": "ready for analyst review",
-        },
-        {
-            "label": "Known exploited CVEs",
-            "value": str(len(kev_vulnerabilities)),
-            "note": "from CISA KEV",
-        },
-        {
-            "label": "System status",
-            "value": "Online",
-            "note": "local dashboard is healthy",
-        },
-    ]
-
-
-def get_intelligence_reports():
-    return [
-        {
-            "title": "Repeated admin login failures",
-            "severity": "High",
-            "source": "Authentication logs",
-            "summary": "Multiple failed admin logins appeared in a short time window.",
-            "action": "Check source IP addresses and confirm whether the attempts were expected.",
-        },
-        {
-            "title": "Possible exposed development server",
-            "severity": "Medium",
-            "source": "External scan",
-            "summary": "A development host may be reachable from the public internet.",
-            "action": "Verify firewall rules and remove public access if it is not required.",
-        },
-        {
-            "title": "Phishing theme increase",
-            "severity": "Low",
-            "source": "News monitoring",
-            "summary": "Several new headlines mention parcel delivery phishing campaigns.",
-            "action": "Prepare a short awareness note for users.",
-        },
-    ]
-
-
-def get_dashboard_intelligence_reports():
-    if not ADMIN_REPORTS:
-        return get_intelligence_reports()
-
-    return [
-        {
-            "title": report["title"],
-            "severity": report["severity"],
-            "source": f"Admin report by {report['created_by']}",
-            "summary": report["summary"],
-            "action": f"Created at {report['created_at']}. Review and assign next steps.",
-        }
-        for report in reversed(ADMIN_REPORTS)
-    ]
-
-
 def extract_cves_from_text(text):
     return sorted(set(match.upper() for match in re.findall(r"CVE-\d{4}-\d{4,7}", text, re.IGNORECASE)))
 
@@ -1546,19 +1479,6 @@ def get_threat_graph_data():
     }
 
 
-def get_system_status():
-    return [
-        {"name": "Local dashboard", "state": "Ready"},
-        {"name": "Live news refresh", "state": "Ready"},
-        {"name": "Security RSS feeds", "state": "Ready"},
-        {"name": "BSI advisory feed", "state": "Ready"},
-        {"name": "CISA KEV feed", "state": "Ready"},
-        {"name": "Demo authentication", "state": "Ready"},
-        {"name": "Report preview frame", "state": "Ready"},
-        {"name": "Correlation data", "state": "Ready"},
-    ]
-
-
 def get_article_categories(articles):
     return sorted({article["category"] for article in articles} | {"News"})
 
@@ -1589,25 +1509,16 @@ def get_feed_source_types(feed_items):
 def home():
     feed_data = get_aggregated_news_feed()
     articles = feed_data["items"]
-    intelligence_reports = get_dashboard_intelligence_reports()
-    kev_data = get_kev_vulnerabilities()
-    kev_vulnerabilities = kev_data["vulnerabilities"][:4]
 
     return render_template(
         "dashboard.html",
-        page_title="Dashboard",
-        stats=get_dashboard_stats(articles, intelligence_reports, kev_vulnerabilities),
+        page_title="Feed",
         articles=articles,
         categories=get_article_categories(articles),
         severities=get_article_severities(),
         feed_sources=get_feed_source_types(articles),
         feed_message=feed_data["message"],
-        intelligence_reports=intelligence_reports,
-        kev_vulnerabilities=kev_vulnerabilities,
-        kev_message=kev_data["message"],
-        system_status=get_system_status(),
         current_user=get_current_user(),
-        last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),
     )
 
 
@@ -1639,17 +1550,19 @@ def logout():
 
 @app.route("/admin/reports", methods=["GET", "POST"])
 def admin_reports():
+    return redirect(url_for("ai_reporting"))
+
+
+@app.route("/ai-reporting", methods=["GET", "POST"])
+def ai_reporting():
     current_user = get_current_user()
 
     if not current_user:
         return redirect(url_for("login"))
 
-    if not user_is_admin(current_user):
-        return "Access denied. Admins only.", 403
-
     error = ""
 
-    if request.method == "POST":
+    if request.method == "POST" and user_is_admin(current_user):
         title = request.form.get("title", "").strip()
         severity = request.form.get("severity", "").strip()
         summary = request.form.get("summary", "").strip()
@@ -1665,13 +1578,15 @@ def admin_reports():
                     "created_at": get_timestamp(),
                 }
             )
-            return redirect(url_for("admin_reports"))
+            return redirect(url_for("ai_reporting"))
 
         error = "Please fill in all report fields."
+    elif request.method == "POST":
+        error = "Only admins can create admin reports."
 
     return render_template(
-        "admin_reports.html",
-        reports=ADMIN_REPORTS,
+        "ai_reporting.html",
+        admin_reports=ADMIN_REPORTS,
         audit_log=AUDIT_LOG,
         error=error,
         current_user=current_user,
