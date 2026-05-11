@@ -41,6 +41,7 @@ NEWSAPI_URL = "https://newsapi.org/v2/everything"
 HN_TOP_STORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
 HN_ITEM_URL = "https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
 BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
+CISA_ADVISORIES_RSS_URL = "https://www.cisa.gov/cybersecurity-advisories/all.xml"
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 EPSS_URL = "https://api.first.org/data/v1/epss"
 NVD_CVE_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
@@ -514,6 +515,7 @@ def get_aggregated_news_feed():
         ("security-rss", get_security_rss_articles(), "articles"),
         ("hacker-news", get_hacker_news_security_articles(), "articles"),
         ("bsi", get_bsi_advisories(), "advisories"),
+        ("cisa-advisories", get_cisa_advisories(), "advisories"),
     ]
 
     for source_type, result, item_key in source_results:
@@ -566,6 +568,41 @@ def get_bsi_advisories():
         "advisories": advisories,
         "source": "bsi",
         "message": "BSI advisories loaded.",
+    }
+
+
+def get_cisa_advisories():
+    try:
+        request_data = Request(
+            CISA_ADVISORIES_RSS_URL,
+            headers={"User-Agent": "CyberNewsSchoolProject/1.0"},
+        )
+
+        with urlopen(request_data, timeout=8) as response:
+            rss_data = response.read()
+
+        root = ET.fromstring(rss_data)
+        items = root.findall("./channel/item")
+    except Exception:
+        return {
+            "advisories": [],
+            "source": "cisa-advisories",
+            "message": "CISA advisories are unavailable right now.",
+        }
+
+    advisories = [
+        normalize_rss_item(item, "CISA Advisories", "cisa-advisories", index + 1)
+        for index, item in enumerate(items[:6])
+    ]
+
+    for advisory in advisories:
+        advisory["category"] = "Vulnerability Advisory"
+        advisory["severity"] = guess_article_severity(advisory["category"])
+
+    return {
+        "advisories": advisories,
+        "source": "cisa-advisories",
+        "message": "CISA advisories loaded.",
     }
 
 
@@ -1571,6 +1608,7 @@ def get_feed_source_types(feed_items):
         "security-rss": "Security RSS",
         "hacker-news": "Hacker News",
         "bsi": "BSI",
+        "cisa-advisories": "CISA Advisories",
     }
 
     return [
@@ -1781,6 +1819,11 @@ def api_security_feeds():
 @app.route("/api/hacker-news")
 def api_hacker_news():
     return jsonify(get_hacker_news_security_articles())
+
+
+@app.route("/api/cisa-advisories")
+def api_cisa_advisories():
+    return jsonify(get_cisa_advisories())
 
 
 @app.route("/api/aggregated-news")

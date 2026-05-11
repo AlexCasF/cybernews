@@ -10,6 +10,7 @@ This file tracks useful free or low-cost data sources for CyberNews.
 | --- | --- | --- | --- | --- |
 | NewsAPI | REST API with `NEWS_API_KEY` | Free developer plan, limited and not for production | Integrated | Good for general cybersecurity headlines. Keep fallback behavior because the free tier is limited. |
 | BSI WID advisories | Public RSS/XML | Free, no key | Integrated | Strong source for vulnerability advisories. German text, but useful severity data. |
+| CISA Advisories | Public RSS/XML | Free, no key | Integrated | Official CISA cybersecurity advisories, kept separate from KEV. |
 | CISA KEV Catalog | Public JSON | Free, no key | Integrated | Official known exploited CVEs, now enriched with EPSS scores. |
 | FIRST EPSS | Public REST API | Free, no key | Integrated | Adds exploit probability scores to CISA KEV CVEs. |
 | The Hacker News | Public Atom feed | No key needed | Integrated | Extra cybersecurity news source for the dashboard. |
@@ -60,6 +61,7 @@ This file tracks useful free or low-cost data sources for CyberNews.
 - SecurityWeek feed: https://www.securityweek.com/feed/
 - BleepingComputer feed: https://www.bleepingcomputer.com/feed/
 - Hacker News API: https://github.com/HackerNews/API
+- CISA Advisories RSS: https://www.cisa.gov/cybersecurity-advisories/all.xml
 - URLhaus feeds: https://urlhaus.abuse.ch/feeds/
 - MalwareBazaar API: https://bazaar.abuse.ch/api/
 - OpenPhish feeds: https://openphish.com/phishing_feeds.html

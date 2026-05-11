@@ -651,3 +651,20 @@ Notes:
 - Added Hacker News as a community signal, not an authoritative threat intel source.
 - Filtered top stories with cybersecurity-related terms.
 - Added Hacker News to the unified feed source list.
+
+### CISA Advisories Feed
+
+Status: DONE
+
+Commit: add CISA advisories feed
+
+Tested:
+
+- Checked the CISA advisories XML feed returns `200`.
+- Checked `/api/cisa-advisories` returns normalized advisory items.
+- Checked `/api/aggregated-news` includes `cisa-advisories` items.
+
+Notes:
+
+- Added official CISA advisories as a unified feed source.
+- Kept CISA KEV separate as the richer vulnerability intelligence panel.
