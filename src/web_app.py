@@ -38,6 +38,8 @@ USERS = {
 ADMIN_REPORTS = []
 AUDIT_LOG = []
 NEWSAPI_URL = "https://newsapi.org/v2/everything"
+HN_TOP_STORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
+HN_ITEM_URL = "https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
 BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 EPSS_URL = "https://api.first.org/data/v1/epss"
@@ -55,6 +57,20 @@ SECURITY_RSS_SOURCES = [
         "name": "BleepingComputer",
         "url": "https://www.bleepingcomputer.com/feed/",
     },
+]
+HN_SECURITY_TERMS = [
+    "security",
+    "cyber",
+    "vulnerability",
+    "cve",
+    "malware",
+    "ransomware",
+    "phishing",
+    "breach",
+    "exploit",
+    "privacy",
+    "encryption",
+    "authentication",
 ]
 AI_ACTIONS = {
     "summarize",
@@ -393,6 +409,67 @@ def get_security_rss_articles():
     }
 
 
+def is_hn_security_story(story):
+    text = f"{story.get('title', '')} {story.get('url', '')}".lower()
+    return any(term in text for term in HN_SECURITY_TERMS)
+
+
+def normalize_hn_story(story, index):
+    title = clean_text(story.get("title", "Untitled HN story"))
+    url = story.get("url") or f"https://news.ycombinator.com/item?id={story.get('id')}"
+    comments_url = f"https://news.ycombinator.com/item?id={story.get('id')}"
+    score = story.get("score", 0)
+    comments = story.get("descendants", 0)
+    published = datetime.fromtimestamp(story.get("time", 0)).strftime("%Y-%m-%d")
+    category = guess_article_category(title)
+
+    return {
+        "id": f"hn-{story.get('id', index)}",
+        "title": title,
+        "summary": f"Hacker News discussion signal: {score} points and {comments} comments. Comments: {comments_url}",
+        "source": "Hacker News",
+        "url": url,
+        "published": published,
+        "category": category,
+        "severity": guess_article_severity(category),
+    }
+
+
+def get_hacker_news_security_articles():
+    try:
+        with urlopen(HN_TOP_STORIES_URL, timeout=8) as response:
+            story_ids = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return {
+            "articles": [],
+            "source": "hacker-news",
+            "message": "Hacker News community signals are unavailable right now.",
+        }
+
+    articles = []
+
+    for story_id in story_ids[:40]:
+        if len(articles) >= 6:
+            break
+
+        try:
+            with urlopen(HN_ITEM_URL.format(item_id=story_id), timeout=5) as response:
+                story = json.loads(response.read().decode("utf-8"))
+        except Exception:
+            continue
+
+        if story.get("type") != "story" or not is_hn_security_story(story):
+            continue
+
+        articles.append(normalize_hn_story(story, len(articles) + 1))
+
+    return {
+        "articles": articles,
+        "source": "hacker-news",
+        "message": "Hacker News community signals loaded." if articles else "No relevant Hacker News security stories found right now.",
+    }
+
+
 def get_feed_sort_value(published):
     if not published or published == "Unknown date":
         return ""
@@ -435,6 +512,7 @@ def get_aggregated_news_feed():
     source_results = [
         ("newsapi", get_live_news_articles(), "articles"),
         ("security-rss", get_security_rss_articles(), "articles"),
+        ("hacker-news", get_hacker_news_security_articles(), "articles"),
         ("bsi", get_bsi_advisories(), "advisories"),
     ]
 
@@ -1491,6 +1569,7 @@ def get_feed_source_types(feed_items):
     source_labels = {
         "newsapi": "NewsAPI",
         "security-rss": "Security RSS",
+        "hacker-news": "Hacker News",
         "bsi": "BSI",
     }
 
@@ -1697,6 +1776,11 @@ def api_bsi_advisories():
 @app.route("/api/security-feeds")
 def api_security_feeds():
     return jsonify(get_security_rss_articles())
+
+
+@app.route("/api/hacker-news")
+def api_hacker_news():
+    return jsonify(get_hacker_news_security_articles())
 
 
 @app.route("/api/aggregated-news")

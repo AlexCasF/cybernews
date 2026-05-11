@@ -633,3 +633,21 @@ Notes:
 
 - Added BleepingComputer as another public RSS source.
 - It flows through the existing normalized RSS parser and unified feed.
+
+### Hacker News Community Signal
+
+Status: DONE
+
+Commit: add Hacker News community feed
+
+Tested:
+
+- Checked the Hacker News API returns top story IDs and story JSON.
+- Checked `/api/hacker-news` returns filtered security/community items or a clear empty message.
+- Checked `/api/aggregated-news` includes Hacker News when matching stories are available.
+
+Notes:
+
+- Added Hacker News as a community signal, not an authoritative threat intel source.
+- Filtered top stories with cybersecurity-related terms.
+- Added Hacker News to the unified feed source list.
