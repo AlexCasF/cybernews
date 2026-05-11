@@ -294,3 +294,23 @@ Notes:
 - Added Result, Report, and JSON tabs.
 - Added Analyze buttons to headline cards.
 - The Analyze action calls the existing mock AI jobs API and renders the result.
+
+### AI Actions Menu
+
+Status: DONE
+
+Commit: Week 3: add AI actions menu
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked headline cards include an `AI Actions` menu.
+- Checked menu actions include Analyze, Generate report, Extract IOCs, and Extract CVEs.
+- Checked `POST /api/ai/jobs` accepts each menu action.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Replaced the single Analyze button with a visible AI Actions dropdown.
+- Kept the menu click-based instead of right-click-based.
+- Added the selected action to the AI Workbench result area.

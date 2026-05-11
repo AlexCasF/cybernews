@@ -85,12 +85,15 @@
             </div>
             <div class="card-actions">
               <span class="tag">{{ article.category }}</span>
-              <button
-                class="ai-analyze-button"
-                type="button"
-                data-entity-id="{{ article.id }}"
-                data-entity-label="{{ article.title }}"
-              >Analyze</button>
+              <details class="ai-actions-menu">
+                <summary>AI Actions</summary>
+                <div class="ai-actions-list">
+                  <button class="ai-action-button" type="button" data-ai-action="analyze" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title }}">Analyze</button>
+                  <button class="ai-action-button" type="button" data-ai-action="generate_report" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title }}">Generate report</button>
+                  <button class="ai-action-button" type="button" data-ai-action="extract_iocs" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title }}">Extract IOCs</button>
+                  <button class="ai-action-button" type="button" data-ai-action="extract_cves" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title }}">Extract CVEs</button>
+                </div>
+              </details>
             </div>
           </article>
         {% endfor %}
@@ -115,6 +118,7 @@
 
       <div class="workbench-section" data-section="result">
         <p><strong>Selected entity:</strong> <span id="aiSelectedEntity">None yet</span></p>
+        <p><strong>Action:</strong> <span id="aiSelectedAction">None yet</span></p>
         <div id="aiResultBox" class="workbench-box">
           <p>No AI job has been run yet.</p>
         </div>
@@ -294,9 +298,16 @@
     const emptySecurityFeedMessage = document.getElementById("emptySecurityFeedMessage");
     const aiJobStatus = document.getElementById("aiJobStatus");
     const aiSelectedEntity = document.getElementById("aiSelectedEntity");
+    const aiSelectedAction = document.getElementById("aiSelectedAction");
     const aiResultBox = document.getElementById("aiResultBox");
     const aiReportBox = document.getElementById("aiReportBox");
     const aiJsonOutput = document.getElementById("aiJsonOutput");
+    const aiActionLabels = {
+      analyze: "Analyze",
+      generate_report: "Generate report",
+      extract_iocs: "Extract IOCs",
+      extract_cves: "Extract CVEs",
+    };
 
     function applyArticleFilters() {
       const selectedCategory = categoryFilter.value;
@@ -398,6 +409,7 @@
 
       aiJobStatus.textContent = job.status;
       aiSelectedEntity.textContent = `${job.entity_type}: ${job.entity_id}`;
+      aiSelectedAction.textContent = aiActionLabels[job.action] || job.action;
       aiResultBox.innerHTML = "";
 
       const summaryTitle = document.createElement("h4");
@@ -438,17 +450,21 @@
       setWorkbenchTab("result");
     }
 
-    async function runArticleAnalysis(button) {
+    async function runArticleAiAction(button) {
+      const action = button.dataset.aiAction;
       const entityId = button.dataset.entityId;
       const entityLabel = button.dataset.entityLabel || entityId;
+      const actionLabel = aiActionLabels[action] || action;
+      const outputFormat = action === "generate_report" ? "both" : "structured_json";
 
       button.disabled = true;
       aiJobStatus.textContent = "running";
       aiSelectedEntity.textContent = `article: ${entityLabel}`;
+      aiSelectedAction.textContent = actionLabel;
       aiResultBox.innerHTML = "";
 
       const loadingMessage = document.createElement("p");
-      loadingMessage.textContent = "Running mock AI analysis...";
+      loadingMessage.textContent = `Running mock AI action: ${actionLabel}...`;
       aiResultBox.appendChild(loadingMessage);
       setWorkbenchTab("result");
 
@@ -459,11 +475,11 @@
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            action: "analyze",
+            action: action,
             entity_type: "article",
             entity_id: entityId,
             context_depth: "medium",
-            output_format: "both",
+            output_format: outputFormat,
           }),
         });
 
@@ -485,6 +501,38 @@
       }
 
       button.disabled = false;
+
+      const menu = button.closest(".ai-actions-menu");
+
+      if (menu) {
+        menu.open = false;
+      }
+    }
+
+    function createAiActionsMenu(entityId, entityLabel) {
+      const menu = document.createElement("details");
+      const summary = document.createElement("summary");
+      const list = document.createElement("div");
+
+      menu.className = "ai-actions-menu";
+      summary.textContent = "AI Actions";
+      list.className = "ai-actions-list";
+
+      Object.entries(aiActionLabels).forEach(([action, label]) => {
+        const button = document.createElement("button");
+        button.className = "ai-action-button";
+        button.type = "button";
+        button.dataset.aiAction = action;
+        button.dataset.entityId = entityId;
+        button.dataset.entityLabel = entityLabel;
+        button.textContent = label;
+        list.appendChild(button);
+      });
+
+      menu.appendChild(summary);
+      menu.appendChild(list);
+
+      return menu;
     }
 
     function createArticleCard(article) {
@@ -500,8 +548,8 @@
       const meta = document.createElement("p");
       const summary = document.createElement("p");
       const tag = document.createElement("span");
-      const analyzeButton = document.createElement("button");
       const entityId = article.id || article.url || article.title || "unknown";
+      const entityLabel = article.title || entityId;
 
       link.href = article.url;
       link.textContent = article.title;
@@ -510,18 +558,13 @@
       tag.className = "tag";
       tag.textContent = article.category;
       actions.className = "card-actions";
-      analyzeButton.className = "ai-analyze-button";
-      analyzeButton.type = "button";
-      analyzeButton.dataset.entityId = entityId;
-      analyzeButton.dataset.entityLabel = article.title || entityId;
-      analyzeButton.textContent = "Analyze";
 
       heading.appendChild(link);
       content.appendChild(heading);
       content.appendChild(meta);
       content.appendChild(summary);
       actions.appendChild(tag);
-      actions.appendChild(analyzeButton);
+      actions.appendChild(createAiActionsMenu(entityId, entityLabel));
       card.appendChild(content);
       card.appendChild(actions);
 
@@ -770,10 +813,10 @@
     refreshKevButton.addEventListener("click", refreshKevVulnerabilities);
 
     articleList.addEventListener("click", (event) => {
-      const button = event.target.closest(".ai-analyze-button");
+      const button = event.target.closest(".ai-action-button");
 
       if (button) {
-        runArticleAnalysis(button);
+        runArticleAiAction(button);
       }
     });
 

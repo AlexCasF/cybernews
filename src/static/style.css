@@ -186,7 +186,7 @@ body {
 
 .filter-bar button,
 .panel-action-button,
-.ai-analyze-button,
+.ai-action-button,
 .workbench-tab {
   align-self: end;
   padding: 9px 12px;
@@ -199,13 +199,47 @@ body {
 
 .filter-bar button:disabled,
 .panel-action-button:disabled,
-.ai-analyze-button:disabled {
+.ai-action-button:disabled {
   cursor: wait;
   opacity: 0.7;
 }
 
-.ai-analyze-button {
+.ai-actions-menu {
+  position: relative;
+}
+
+.ai-actions-menu summary {
+  padding: 9px 12px;
+  color: white;
   background: #006e72;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ai-actions-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.ai-actions-list {
+  position: absolute;
+  right: 0;
+  z-index: 5;
+  display: grid;
+  min-width: 170px;
+  margin-top: 6px;
+  padding: 6px;
+  background: white;
+  border: 1px solid #b9c6cc;
+  box-shadow: 0 6px 14px rgba(20, 33, 43, 0.18);
+}
+
+.ai-action-button {
+  text-align: left;
+  background: #006e72;
+}
+
+.ai-actions-list .ai-action-button {
+  align-self: stretch;
 }
 
 .workbench-tabs {
