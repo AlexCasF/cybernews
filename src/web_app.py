@@ -1071,37 +1071,9 @@ def get_system_status():
         {"name": "BSI advisory feed", "state": "Ready"},
         {"name": "CISA KEV feed", "state": "Ready"},
         {"name": "Demo authentication", "state": "Ready"},
-        {"name": "Analyst briefing frame", "state": "Ready"},
+        {"name": "Report preview frame", "state": "Ready"},
         {"name": "Correlation data", "state": "Ready"},
     ]
-
-
-def get_analyst_briefing():
-    kev_data = get_kev_vulnerabilities()
-    security_rss_data = get_security_rss_articles()
-    bsi_data = get_bsi_advisories()
-
-    vulnerabilities = kev_data["vulnerabilities"]
-    vulnerability = vulnerabilities[0] if vulnerabilities else None
-
-    if vulnerability:
-        summary = (
-            f"{vulnerability['cve']} affects {vulnerability['vendor']} "
-            f"{vulnerability['product']} and is listed by CISA KEV."
-        )
-        primary_action = vulnerability["required_action"]
-    else:
-        summary = "No CISA KEV vulnerability is available right now."
-        primary_action = "Refresh the vulnerability feed before triage."
-
-    return {
-        "generated_at": get_timestamp(),
-        "summary": summary,
-        "primary_action": primary_action,
-        "vulnerability": vulnerability,
-        "articles": security_rss_data["articles"][:3],
-        "advisories": bsi_data["advisories"][:2],
-    }
 
 
 def get_article_categories(articles):
@@ -1218,10 +1190,7 @@ def threat_graph():
 
 @app.route("/analyst-briefing/frame")
 def analyst_briefing_frame():
-    return render_template(
-        "analyst_briefing_frame.html",
-        briefing=get_analyst_briefing(),
-    )
+    return render_template("analyst_briefing_frame.html")
 
 
 @app.route("/api/ai/jobs", methods=["POST"])

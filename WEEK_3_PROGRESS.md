@@ -334,3 +334,24 @@ Notes:
 - Added simple local CVE and IOC pattern extraction for mock AI jobs.
 - Kept extraction deterministic and easy to replace with Gemini later.
 - Updated the Workbench result tab to show extracted CVEs and IOCs clearly.
+
+### Sandboxed Report Preview
+
+Status: DONE
+
+Commit: preview reports in sandboxed frame
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked the dashboard iframe has `sandbox` and `referrerpolicy="no-referrer"`.
+- Checked `/analyst-briefing/frame` returns the empty Report Preview state.
+- Checked Generate report returns `report_json`.
+- Checked the dashboard JavaScript renders report JSON into iframe `srcdoc`.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Connected generated report JSON to the sandboxed dashboard iframe.
+- Kept report rendering client-side and escaped instead of trusting raw HTML.
+- Replaced the old static briefing frame with a Report Preview placeholder.

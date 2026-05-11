@@ -29,13 +29,15 @@
     </div>
 
     <p class="news-message">
-      Future AI-generated reports and visuals will render inside this isolated frame.
+      Generated reports and visuals render inside this isolated frame.
     </p>
 
     <iframe
+      id="analystReportFrame"
       class="analyst-frame"
       src="{{ url_for('analyst_briefing_frame') }}"
-      title="Sandboxed analyst briefing"
+      title="Sandboxed analyst report preview"
+      referrerpolicy="no-referrer"
       sandbox
     ></iframe>
   </section>
@@ -302,6 +304,7 @@
     const aiResultBox = document.getElementById("aiResultBox");
     const aiReportBox = document.getElementById("aiReportBox");
     const aiJsonOutput = document.getElementById("aiJsonOutput");
+    const analystReportFrame = document.getElementById("analystReportFrame");
     const aiActionLabels = {
       analyze: "Analyze",
       generate_report: "Generate report",
@@ -352,6 +355,15 @@
       parent.appendChild(list);
     }
 
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
     function renderCveList(parent, cves) {
       const title = document.createElement("p");
       const titleLabel = document.createElement("strong");
@@ -396,6 +408,143 @@
       }
 
       return resultJson.summary.executive || "No summary available.";
+    }
+
+    function renderReportSectionHtml(section) {
+      const heading = `<h2>${escapeHtml(section.heading || "Section")}</h2>`;
+
+      if (section.type === "bullet_list" || section.type === "recommendations") {
+        const items = (section.items || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+
+        return `<section class="report-section">${heading}<ul>${items}</ul></section>`;
+      }
+
+      if (section.type === "numbered_list") {
+        const items = (section.items || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+
+        return `<section class="report-section">${heading}<ol>${items}</ol></section>`;
+      }
+
+      if (section.type === "table") {
+        const columns = (section.columns || [])
+          .map((column) => `<th>${escapeHtml(column)}</th>`)
+          .join("");
+        const rows = (section.rows || [])
+          .map((row) => {
+            const rowValues = Array.isArray(row) ? row : Object.values(row);
+            const cells = rowValues.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
+            return `<tr>${cells}</tr>`;
+          })
+          .join("");
+
+        return `<section class="report-section">${heading}<table><thead><tr>${columns}</tr></thead><tbody>${rows}</tbody></table></section>`;
+      }
+
+      return `<section class="report-section">${heading}<p>${escapeHtml(section.content || "")}</p></section>`;
+    }
+
+    function buildReportPreviewHtml(reportJson) {
+      const sections = (reportJson.sections || [])
+        .map((section) => renderReportSectionHtml(section))
+        .join("");
+
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(reportJson.title || "Threat Intelligence Report")}</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: #172026;
+      background: #f5f7f8;
+    }
+
+    main {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    header,
+    .report-section {
+      padding: 14px;
+      background: white;
+      border: 1px solid #dbe3e7;
+    }
+
+    header {
+      border-left: 5px solid #28d7d0;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .meta {
+      margin-top: 6px;
+      color: #5a6872;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #dbe3e7;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>${escapeHtml(reportJson.title || "Threat Intelligence Report")}</h1>
+      <p class="meta">${escapeHtml(reportJson.subtitle || "Generated report preview")}</p>
+      <p class="meta">Created at ${escapeHtml(reportJson.created_at || "Unknown time")}</p>
+    </header>
+    ${sections}
+  </main>
+</body>
+</html>`;
+    }
+
+    function updateReportPreview(reportJson) {
+      if (!reportJson) {
+        return;
+      }
+
+      analystReportFrame.srcdoc = buildReportPreviewHtml(reportJson);
     }
 
     function renderAiReport(reportJson) {
@@ -488,6 +637,7 @@
       }
 
       renderAiReport(job.report_json);
+      updateReportPreview(job.report_json);
       aiJsonOutput.textContent = JSON.stringify(job, null, 2);
       setWorkbenchTab("result");
     }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Analyst Briefing</title>
+  <title>Report Preview</title>
   <style>
     body {
       margin: 0;
@@ -12,26 +12,20 @@
       background: #f5f7f8;
     }
 
-    .briefing-shell {
+    main {
       display: grid;
       gap: 14px;
       padding: 18px;
     }
 
-    .briefing-header,
-    .briefing-section,
-    .correlation-step {
+    .preview-card {
       padding: 14px;
       background: white;
       border: 1px solid #dbe3e7;
-    }
-
-    .briefing-header {
       border-left: 5px solid #28d7d0;
     }
 
     h1,
-    h2,
     p {
       margin: 0;
     }
@@ -40,107 +34,18 @@
       font-size: 1.4rem;
     }
 
-    h2 {
-      margin-bottom: 8px;
-      font-size: 1rem;
-    }
-
-    .meta,
-    .source-list p {
-      margin-top: 6px;
+    p {
+      margin-top: 8px;
       color: #5a6872;
-    }
-
-    .badge {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 4px 8px;
-      font-weight: bold;
-      color: #14212b;
-      background: #c8f5f2;
-    }
-
-    .correlation-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
-    }
-
-    .correlation-step strong {
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    ul {
-      margin: 8px 0 0;
-      padding-left: 20px;
-    }
-
-    li {
-      margin-bottom: 6px;
     }
   </style>
 </head>
 <body>
-  <main class="briefing-shell">
-    <header class="briefing-header">
-      <h1>AI Analyst Briefing</h1>
-      <p class="meta">Mock report generated at {{ briefing.generated_at }}</p>
-      <span class="badge">Sandboxed HTML preview</span>
-    </header>
-
-    <section class="briefing-section">
-      <h2>Executive Summary</h2>
-      <p>{{ briefing.summary }}</p>
-    </section>
-
-    <section class="briefing-section">
-      <h2>Correlation View</h2>
-      <div class="correlation-row" aria-label="Threat correlation path">
-        <div class="correlation-step">
-          <strong>News Signals</strong>
-          <span>{{ briefing.articles|length }} security articles</span>
-        </div>
-        <div class="correlation-step">
-          <strong>Advisories</strong>
-          <span>{{ briefing.advisories|length }} BSI advisories</span>
-        </div>
-        <div class="correlation-step">
-          <strong>Vulnerability</strong>
-          {% if briefing.vulnerability %}
-            <span>{{ briefing.vulnerability.cve }}</span>
-          {% else %}
-            <span>No current CVE</span>
-          {% endif %}
-        </div>
-        <div class="correlation-step">
-          <strong>Analyst Action</strong>
-          <span>Review and triage</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="briefing-section source-list">
-      <h2>Signals Used</h2>
-      {% if briefing.articles or briefing.advisories %}
-        {% for article in briefing.articles %}
-          <p>{{ article.source }}: {{ article.title }}</p>
-        {% endfor %}
-        {% for advisory in briefing.advisories %}
-          <p>{{ advisory.source }}: {{ advisory.title }}</p>
-        {% endfor %}
-      {% else %}
-        <p>No live signals are available right now.</p>
-      {% endif %}
-    </section>
-
-    <section class="briefing-section">
-      <h2>Recommended Actions</h2>
-      <ul>
-        <li>{{ briefing.primary_action }}</li>
-        <li>Check whether the affected product exists in your environment.</li>
-        <li>Save relevant headlines or advisories as analyst notes.</li>
-      </ul>
+  <main>
+    <section class="preview-card">
+      <h1>Report Preview</h1>
+      <p>Run Generate report from a headline card to preview a safe rendered report here.</p>
+      <p>This frame is sandboxed and does not run generated scripts.</p>
     </section>
   </main>
 </body>
