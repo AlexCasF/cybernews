@@ -28,6 +28,7 @@ AUDIT_LOG = []
 NEWSAPI_URL = "https://newsapi.org/v2/everything"
 BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+EPSS_URL = "https://api.first.org/data/v1/epss"
 
 
 def get_timestamp():
@@ -311,6 +312,39 @@ def get_kev_vulnerabilities():
     }
 
 
+def get_epss_score(cve_id):
+    query = urlencode({"cve": cve_id})
+
+    try:
+        with urlopen(f"{EPSS_URL}?{query}", timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return {
+            "error": "EPSS score is unavailable right now.",
+            "status": 503,
+        }
+
+    scores = data.get("data", [])
+
+    if not scores:
+        return {
+            "error": f"No EPSS score found for {cve_id}.",
+            "status": 404,
+        }
+
+    score = scores[0]
+
+    return {
+        "cve": score.get("cve", cve_id),
+        "epss": score.get("epss", "0"),
+        "percentile": score.get("percentile", "0"),
+        "date": score.get("date", "Unknown date"),
+        "source": "FIRST EPSS",
+        "message": "EPSS score loaded.",
+        "status": 200,
+    }
+
+
 def get_dashboard_stats(articles, intelligence_reports, kev_vulnerabilities):
     return [
         {
@@ -576,6 +610,13 @@ def api_bsi_advisories():
 @app.route("/api/kev-vulnerabilities")
 def api_kev_vulnerabilities():
     return jsonify(get_kev_vulnerabilities())
+
+
+@app.route("/api/epss/<cve_id>")
+def api_epss(cve_id):
+    result = get_epss_score(cve_id.upper())
+    status = result.pop("status")
+    return jsonify(result), status
 
 
 @app.route("/api/threat-graph")

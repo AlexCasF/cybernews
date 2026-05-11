@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Navigation Polish
+Step 4: EPSS Scoring API
 
 Status: DONE
 
@@ -121,3 +121,22 @@ Notes:
 
 - Removed dashboard section anchors from the main menu.
 - Kept Dashboard, Threat Graph, Admin Reports, and Login/Logout links.
+
+### Step 4: EPSS Scoring API
+
+Status: DONE
+
+Commit: Week 3: add EPSS scoring API
+
+Tested:
+
+- Checked `/api/epss/CVE-2021-44228` returns `200`.
+- Checked the response includes `cve`, `epss`, `percentile`, and `date`.
+- Checked an unknown CVE returns a clean JSON error.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added the FIRST EPSS API source.
+- Added a backend-only EPSS lookup route.
+- Kept KEV enrichment and dashboard labels for separate follow-up commits.
