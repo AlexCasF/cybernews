@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Responsive Dashboard Layout
+Step 3: KEV Refresh Button
 
 Status: DONE
 
@@ -83,3 +83,23 @@ Notes:
 - Kept the default portrait/laptop layout close to the previous design.
 - Added a dashboard grid that wraps panels into columns on wider screens.
 - Increased the dashboard content width only on large and very large screens.
+
+### Step 3: KEV Refresh Button
+
+Status: DONE
+
+Commit: Week 3: add KEV refresh
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked the dashboard includes the Refresh KEV button.
+- Checked the dashboard includes KEV JavaScript rendering.
+- Checked `/api/kev-vulnerabilities` still returns `200`.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added a Refresh KEV button to the vulnerability panel.
+- Added browser-side rendering for refreshed CISA KEV results.
+- Kept the dashboard display limited to four vulnerabilities.

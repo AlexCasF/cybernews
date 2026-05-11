@@ -127,12 +127,15 @@
     <section id="vulnerabilities" class="panel">
       <div class="panel-heading">
         <h3>Known Exploited Vulnerabilities</h3>
-        <span>{{ kev_vulnerabilities|length }} shown</span>
+        <div class="panel-actions">
+          <span id="kevCount">{{ kev_vulnerabilities|length }} shown</span>
+          <button id="refreshKevButton" class="panel-action-button" type="button">Refresh KEV</button>
+        </div>
       </div>
 
-      <p class="news-message">{{ kev_message }}</p>
+      <p id="kevMessage" class="news-message">{{ kev_message }}</p>
 
-      <div class="item-list">
+      <div id="kevList" class="item-list">
         {% for vulnerability in kev_vulnerabilities %}
           <article class="kev-item">
             <div>
@@ -146,7 +149,7 @@
         {% endfor %}
       </div>
 
-      <p class="empty-message" {% if kev_vulnerabilities %}hidden{% endif %}>
+      <p id="emptyKevMessage" class="empty-message" {% if kev_vulnerabilities %}hidden{% endif %}>
         No known exploited vulnerabilities are available right now.
       </p>
     </section>
@@ -183,6 +186,11 @@
     const bsiCount = document.getElementById("bsiCount");
     const bsiMessage = document.getElementById("bsiMessage");
     const emptyBsiMessage = document.getElementById("emptyBsiMessage");
+    const refreshKevButton = document.getElementById("refreshKevButton");
+    const kevList = document.getElementById("kevList");
+    const kevCount = document.getElementById("kevCount");
+    const kevMessage = document.getElementById("kevMessage");
+    const emptyKevMessage = document.getElementById("emptyKevMessage");
 
     function applyArticleFilters() {
       const selectedCategory = categoryFilter.value;
@@ -327,9 +335,81 @@
       refreshBsiButton.disabled = false;
     }
 
+    function createKevCard(vulnerability) {
+      const card = document.createElement("article");
+      const content = document.createElement("div");
+      const heading = document.createElement("h4");
+      const meta = document.createElement("p");
+      const summary = document.createElement("p");
+      const action = document.createElement("p");
+      const actionLabel = document.createElement("strong");
+      const tag = document.createElement("span");
+      const cve = vulnerability.cve || "Unknown CVE";
+      const title = vulnerability.title || "Untitled vulnerability";
+      const vendor = vulnerability.vendor || "Unknown vendor";
+      const product = vulnerability.product || "Unknown product";
+      const dateAdded = vulnerability.date_added || "Unknown date";
+      const dueDate = vulnerability.due_date || "Unknown date";
+      const ransomwareUse = vulnerability.known_ransomware_use || "Unknown";
+      const requiredAction = vulnerability.required_action || "Review vendor guidance.";
+
+      card.className = "kev-item";
+      heading.textContent = `${cve} - ${title}`;
+      meta.textContent = `${vendor} ${product} | Added ${dateAdded} | Due ${dueDate}`;
+      summary.textContent = vulnerability.summary || "No summary available.";
+      action.className = "action-box";
+      actionLabel.textContent = "Required action:";
+      action.appendChild(actionLabel);
+      action.append(` ${requiredAction}`);
+      tag.className = "tag";
+      tag.textContent = `Ransomware: ${ransomwareUse}`;
+
+      content.appendChild(heading);
+      content.appendChild(meta);
+      content.appendChild(summary);
+      content.appendChild(action);
+      card.appendChild(content);
+      card.appendChild(tag);
+
+      return card;
+    }
+
+    function renderKevVulnerabilities(vulnerabilities) {
+      kevList.innerHTML = "";
+
+      vulnerabilities.forEach((vulnerability) => {
+        kevList.appendChild(createKevCard(vulnerability));
+      });
+
+      kevCount.textContent = `${vulnerabilities.length} shown`;
+      emptyKevMessage.hidden = vulnerabilities.length > 0;
+    }
+
+    async function refreshKevVulnerabilities() {
+      refreshKevButton.disabled = true;
+      kevMessage.textContent = "Loading CISA KEV vulnerabilities...";
+
+      try {
+        const response = await fetch("/api/kev-vulnerabilities");
+
+        if (!response.ok) {
+          throw new Error("CISA KEV request failed.");
+        }
+
+        const data = await response.json();
+        renderKevVulnerabilities(data.vulnerabilities.slice(0, 4));
+        kevMessage.textContent = data.message;
+      } catch (error) {
+        kevMessage.textContent = "CISA KEV vulnerabilities unavailable right now. Please try again later.";
+      }
+
+      refreshKevButton.disabled = false;
+    }
+
     categoryFilter.addEventListener("change", applyArticleFilters);
     severityFilter.addEventListener("change", applyArticleFilters);
     refreshLiveNewsButton.addEventListener("click", refreshLiveNews);
     refreshBsiButton.addEventListener("click", refreshBsiAdvisories);
+    refreshKevButton.addEventListener("click", refreshKevVulnerabilities);
   </script>
 {% endblock %}
