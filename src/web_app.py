@@ -131,6 +131,26 @@ def user_is_admin(user):
     return user and user["role"] == "admin"
 
 
+def is_safe_next_url(next_url):
+    return next_url and next_url.startswith("/") and not next_url.startswith("//")
+
+
+@app.before_request
+def require_login():
+    public_endpoints = {"login", "logout", "health", "static"}
+
+    if request.endpoint in public_endpoints:
+        return None
+
+    if get_current_user():
+        return None
+
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Login required."}), 401
+
+    return redirect(url_for("login", next=request.path))
+
+
 def guess_article_category(text):
     lower_text = text.lower()
 
@@ -1534,6 +1554,11 @@ def login():
         if user and check_password_hash(user["password_hash"], password):
             record_login_attempt(username, True, user["role"])
             session["username"] = username
+            next_url = request.args.get("next", "")
+
+            if is_safe_next_url(next_url):
+                return redirect(next_url)
+
             return redirect(url_for("home"))
 
         record_login_attempt(username, False)

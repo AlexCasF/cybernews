@@ -744,3 +744,23 @@ Notes:
 - Moved the sandboxed report viewport and AI Workbench to AI & Reporting.
 - Integrated admin report intake, admin reports, and audit log into AI & Reporting for admins.
 - Removed the separate static Intelligence Reports feature.
+
+### Login Gate
+
+Status: DONE
+
+Commit: require login for app access
+
+Tested:
+
+- Checked Python compilation.
+- Checked logged-out `/` redirects to `/login`.
+- Checked logged-out app API requests return `401` JSON.
+- Checked `/health`, `/login`, and static files remain public.
+- Checked login redirects back to the originally requested page.
+
+Notes:
+
+- Added one central Flask `before_request` login guard.
+- Protected app pages and app API endpoints.
+- Kept Cloud Run health checks public.
