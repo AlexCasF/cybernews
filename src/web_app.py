@@ -262,16 +262,71 @@ def get_bsi_advisories():
     }
 
 
-def normalize_kev_vulnerability(vulnerability, index):
+def get_epss_label(epss_value):
+    try:
+        epss_number = float(epss_value)
+    except (TypeError, ValueError):
+        return "Unknown"
+
+    if epss_number >= 0.9:
+        return "Very High"
+
+    if epss_number >= 0.5:
+        return "High"
+
+    if epss_number >= 0.1:
+        return "Medium"
+
+    return "Low"
+
+
+def get_epss_scores(cve_ids):
+    clean_cve_ids = [
+        cve_id.upper()
+        for cve_id in cve_ids
+        if cve_id and cve_id != "Unknown CVE"
+    ]
+
+    if not clean_cve_ids:
+        return {}
+
+    query = urlencode({"cve": ",".join(clean_cve_ids)})
+
+    try:
+        with urlopen(f"{EPSS_URL}?{query}", timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return {}
+
+    return {
+        score.get("cve", "").upper(): {
+            "epss": score.get("epss", "Unknown"),
+            "epss_percentile": score.get("percentile", "Unknown"),
+            "epss_date": score.get("date", "Unknown date"),
+            "epss_label": get_epss_label(score.get("epss")),
+        }
+        for score in data.get("data", [])
+        if score.get("cve")
+    }
+
+
+def normalize_kev_vulnerability(vulnerability, index, epss_scores=None):
+    cve = vulnerability.get("cveID") or "Unknown CVE"
+    epss_data = (epss_scores or {}).get(cve.upper(), {})
+
     return {
         "id": f"kev-{index}",
-        "cve": vulnerability.get("cveID") or "Unknown CVE",
+        "cve": cve,
         "vendor": vulnerability.get("vendorProject") or "Unknown vendor",
         "product": vulnerability.get("product") or "Unknown product",
         "title": vulnerability.get("vulnerabilityName") or "Untitled vulnerability",
         "summary": vulnerability.get("shortDescription") or "No summary available.",
         "date_added": vulnerability.get("dateAdded") or "Unknown date",
         "due_date": vulnerability.get("dueDate") or "Unknown date",
+        "epss": epss_data.get("epss", "Unknown"),
+        "epss_percentile": epss_data.get("epss_percentile", "Unknown"),
+        "epss_date": epss_data.get("epss_date", "Unknown date"),
+        "epss_label": epss_data.get("epss_label", "Unknown"),
         "known_ransomware_use": vulnerability.get("knownRansomwareCampaignUse") or "Unknown",
         "required_action": vulnerability.get("requiredAction") or "Review vendor guidance.",
         "source": "CISA KEV",
@@ -300,10 +355,18 @@ def get_kev_vulnerabilities():
         reverse=True,
     )
 
+    latest_vulnerabilities = vulnerabilities[:10]
+    epss_scores = get_epss_scores(
+        [
+            vulnerability.get("cveID")
+            for vulnerability in latest_vulnerabilities
+        ]
+    )
+
     return {
         "vulnerabilities": [
-            normalize_kev_vulnerability(vulnerability, index + 1)
-            for index, vulnerability in enumerate(vulnerabilities[:10])
+            normalize_kev_vulnerability(vulnerability, index + 1, epss_scores)
+            for index, vulnerability in enumerate(latest_vulnerabilities)
         ],
         "source": "cisa-kev",
         "catalog_version": data.get("catalogVersion", "Unknown"),
@@ -338,6 +401,7 @@ def get_epss_score(cve_id):
         "cve": score.get("cve", cve_id),
         "epss": score.get("epss", "0"),
         "percentile": score.get("percentile", "0"),
+        "epss_label": get_epss_label(score.get("epss")),
         "date": score.get("date", "Unknown date"),
         "source": "FIRST EPSS",
         "message": "EPSS score loaded.",

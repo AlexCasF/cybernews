@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 4: EPSS Scoring API
+Step 5: KEV EPSS Enrichment
 
 Status: DONE
 
@@ -140,3 +140,23 @@ Notes:
 - Added the FIRST EPSS API source.
 - Added a backend-only EPSS lookup route.
 - Kept KEV enrichment and dashboard labels for separate follow-up commits.
+
+### Step 5: KEV EPSS Enrichment
+
+Status: DONE
+
+Commit: Week 3: enrich KEV API with EPSS
+
+Tested:
+
+- Checked `/api/kev-vulnerabilities` returns `200`.
+- Checked KEV vulnerability objects include `epss`, `epss_percentile`, `epss_date`, and `epss_label`.
+- Checked `/api/epss/CVE-2021-44228` still returns `200`.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added batch EPSS lookup for the KEV API.
+- Kept CISA KEV records visible even if EPSS data is missing.
+- Added simple backend risk labels for EPSS scores.
+- Kept visible dashboard styling for a separate follow-up commit.
