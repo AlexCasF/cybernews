@@ -6,6 +6,7 @@ except ImportError:
 
 MEMORY_AI_JOBS = {}
 MEMORY_REPORTS = {}
+MEMORY_FEED_ITEMS = {}
 FIRESTORE_CLIENT = None
 FIRESTORE_CHECKED = False
 
@@ -125,5 +126,45 @@ def list_reports():
     return sorted(
         reports,
         key=lambda report: report["created_at"],
+        reverse=True,
+    )
+
+
+def save_feed_items(feed_items):
+    db = get_firestore_client()
+    saved_count = 0
+
+    if db:
+        for item in feed_items:
+            try:
+                db.collection("feed_items").document(item["id"]).set(item)
+                saved_count += 1
+            except Exception:
+                MEMORY_FEED_ITEMS[item["id"]] = item
+                saved_count += 1
+
+        return saved_count
+
+    for item in feed_items:
+        MEMORY_FEED_ITEMS[item["id"]] = item
+        saved_count += 1
+
+    return saved_count
+
+
+def list_feed_items():
+    db = get_firestore_client()
+
+    if db:
+        try:
+            feed_items = [document.to_dict() for document in db.collection("feed_items").stream()]
+        except Exception:
+            feed_items = list(MEMORY_FEED_ITEMS.values())
+    else:
+        feed_items = list(MEMORY_FEED_ITEMS.values())
+
+    return sorted(
+        feed_items,
+        key=lambda item: item.get("published_sort", ""),
         reverse=True,
     )

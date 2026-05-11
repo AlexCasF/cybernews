@@ -1,9 +1,10 @@
 import html
+import hashlib
 import json
 import os
 import re
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -19,7 +20,16 @@ from src.ai_service import (
     extract_article_iocs,
     generate_article_report,
 )
-from src.storage import delete_report, get_ai_job, get_report, list_reports, save_ai_job, save_report
+from src.storage import (
+    delete_report,
+    get_ai_job,
+    get_report,
+    list_feed_items,
+    list_reports,
+    save_ai_job,
+    save_feed_items,
+    save_report,
+)
 
 
 app = Flask(__name__)
@@ -470,13 +480,34 @@ def get_feed_sort_value(published):
         return str(published)
 
 
+def get_feed_item_id(source_type, title, url):
+    raw_key = f"{source_type}|{url}|{title}".lower()
+    digest = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()[:20]
+
+    return f"{source_type}-{digest}"
+
+
+def is_feed_item_recent(item, days):
+    published_sort = item.get("published_sort", "")
+
+    if not published_sort:
+        return False
+
+    try:
+        published_date = datetime.fromisoformat(published_sort[:10])
+    except ValueError:
+        return False
+
+    return published_date >= datetime.now() - timedelta(days=days)
+
+
 def normalize_aggregated_item(item, source_type):
     title = item.get("title", "Untitled item")
     url = item.get("url", "#")
     published = item.get("published", "Unknown date")
 
     return {
-        "id": f"{source_type}-{item.get('id', title)}",
+        "id": get_feed_item_id(source_type, title, url),
         "title": title,
         "summary": item.get("summary", "No summary available."),
         "source": item.get("source", source_type),
@@ -489,7 +520,7 @@ def normalize_aggregated_item(item, source_type):
     }
 
 
-def get_aggregated_news_feed():
+def get_aggregated_news_feed(save_to_store=False, days=None):
     feed_items = []
     messages = []
     seen_keys = set()
@@ -515,18 +546,50 @@ def get_aggregated_news_feed():
             seen_keys.add(dedupe_key)
             feed_items.append(normalized)
 
+    if days is not None:
+        feed_items = [item for item in feed_items if is_feed_item_recent(item, days)]
+
     feed_items.sort(
         key=lambda item: item["published_sort"],
         reverse=True,
     )
 
+    saved_count = save_feed_items(feed_items) if save_to_store else 0
+
     return {
         "items": feed_items,
         "count": len(feed_items),
+        "saved_count": saved_count,
         "messages": [message for message in messages if message],
         "source": "aggregated-news",
         "message": "Aggregated news feed loaded.",
     }
+
+
+def get_stored_news_feed():
+    feed_items = list_feed_items()
+
+    return {
+        "items": feed_items,
+        "count": len(feed_items),
+        "saved_count": 0,
+        "messages": [],
+        "source": "stored-feed",
+        "message": "Stored feed loaded." if feed_items else "No stored feed items yet.",
+    }
+
+
+def get_dashboard_feed():
+    stored_feed = get_stored_news_feed()
+
+    if stored_feed["items"]:
+        return stored_feed
+
+    return get_aggregated_news_feed()
+
+
+def sync_feed_items(days=7):
+    return get_aggregated_news_feed(save_to_store=True, days=days)
 
 
 def get_bsi_advisories():
@@ -1526,7 +1589,7 @@ def get_feed_source_types(feed_items):
 
 @app.route("/")
 def home():
-    feed_data = get_aggregated_news_feed()
+    feed_data = get_dashboard_feed()
     articles = feed_data["items"]
 
     return render_template(
@@ -1553,6 +1616,9 @@ def login():
         if user and check_password_hash(user["password_hash"], password):
             record_login_attempt(username, True, user["role"])
             session["username"] = username
+            sync_result = sync_feed_items(days=7)
+            session["last_feed_sync"] = get_timestamp()
+            session["last_feed_sync_count"] = sync_result["saved_count"]
             next_url = request.args.get("next", "")
 
             if is_safe_next_url(next_url):
@@ -1712,7 +1778,31 @@ def api_cisa_advisories():
 
 @app.route("/api/aggregated-news")
 def api_aggregated_news():
-    return jsonify(get_aggregated_news_feed())
+    return jsonify(sync_feed_items(days=7))
+
+
+@app.route("/api/feed-items")
+def api_feed_items():
+    return jsonify(get_stored_news_feed())
+
+
+@app.route("/api/feed-sync", methods=["POST"])
+def api_feed_sync():
+    current_user = get_current_user()
+
+    if not user_is_admin(current_user):
+        return jsonify({"error": "Admins only."}), 403
+
+    result = sync_feed_items(days=7)
+
+    return jsonify(
+        {
+            "message": "Feed sync complete.",
+            "count": result["count"],
+            "saved_count": result["saved_count"],
+            "items": result["items"],
+        }
+    )
 
 
 @app.route("/api/kev-vulnerabilities")

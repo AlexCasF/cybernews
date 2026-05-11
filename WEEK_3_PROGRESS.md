@@ -806,3 +806,25 @@ Notes:
 - Removed demo user hints from the login page.
 - Removed the manual Admin Report feature.
 - Kept two tiers: users get feed and AI features, admins can also delete generated AI reports.
+
+### Feed Persistence And Sync
+
+Status: DONE
+
+Commit: persist feed items and sync on login
+
+Tested:
+
+- Checked Python compilation.
+- Checked successful login syncs feed items.
+- Checked the Feed page reads stored feed items first.
+- Checked regular users cannot run manual feed sync.
+- Checked admins can run manual 7-day feed sync.
+- Checked `/api/feed-items` returns stored feed items.
+
+Notes:
+
+- Added Firestore-backed `feed_items` storage with local memory fallback.
+- Added stable feed item IDs to avoid duplicate saved articles.
+- Added an admin-only `Sync 7 Days` button on the Feed page.
+- Added autosync after successful login.

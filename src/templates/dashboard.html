@@ -71,6 +71,9 @@
       </label>
 
       <button id="refreshLiveNewsButton" type="button">Refresh Feed</button>
+      {% if current_user and current_user.role == "admin" %}
+        <button id="syncFeedButton" type="button">Sync 7 Days</button>
+      {% endif %}
     </div>
 
     <p id="newsMessage" class="news-message">{{ feed_message }}</p>
@@ -120,6 +123,7 @@
     const sortFilter = document.getElementById("sortFilter");
     const timeWindowFilter = document.getElementById("timeWindowFilter");
     const refreshLiveNewsButton = document.getElementById("refreshLiveNewsButton");
+    const syncFeedButton = document.getElementById("syncFeedButton");
     const articleList = document.getElementById("articleList");
     const articleCount = document.getElementById("articleCount");
     const newsMessage = document.getElementById("newsMessage");
@@ -363,6 +367,29 @@
       refreshLiveNewsButton.disabled = false;
     }
 
+    async function syncFeedItems() {
+      syncFeedButton.disabled = true;
+      newsMessage.textContent = "Syncing the last 7 days into Firestore...";
+
+      try {
+        const response = await fetch("/api/feed-sync", {
+          method: "POST",
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Feed sync failed.");
+        }
+
+        renderArticles(data.items);
+        newsMessage.textContent = `${data.message} Saved ${data.saved_count} items.`;
+      } catch (error) {
+        newsMessage.textContent = error.message;
+      }
+
+      syncFeedButton.disabled = false;
+    }
+
     async function runArticleAiAction(button) {
       const action = button.dataset.aiAction;
       const entityId = button.dataset.entityId;
@@ -430,6 +457,9 @@
       applyArticleFilters();
     });
     refreshLiveNewsButton.addEventListener("click", refreshLiveNews);
+    if (syncFeedButton) {
+      syncFeedButton.addEventListener("click", syncFeedItems);
+    }
     articleList.addEventListener("click", (event) => {
       const button = event.target.closest(".ai-action-button");
 
