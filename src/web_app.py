@@ -4,7 +4,7 @@ import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
@@ -27,6 +27,7 @@ ADMIN_REPORTS = []
 AUDIT_LOG = []
 NEWSAPI_URL = "https://newsapi.org/v2/everything"
 BSI_RSS_URL = "https://wid.cert-bund.de/content/public/securityAdvisory/rss"
+CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 
 
 def get_timestamp():
@@ -257,6 +258,56 @@ def get_bsi_advisories():
         "advisories": advisories,
         "source": "bsi",
         "message": "BSI advisories loaded.",
+    }
+
+
+def normalize_kev_vulnerability(vulnerability, index):
+    return {
+        "id": f"kev-{index}",
+        "cve": vulnerability.get("cveID") or "Unknown CVE",
+        "vendor": vulnerability.get("vendorProject") or "Unknown vendor",
+        "product": vulnerability.get("product") or "Unknown product",
+        "title": vulnerability.get("vulnerabilityName") or "Untitled vulnerability",
+        "summary": vulnerability.get("shortDescription") or "No summary available.",
+        "date_added": vulnerability.get("dateAdded") or "Unknown date",
+        "due_date": vulnerability.get("dueDate") or "Unknown date",
+        "known_ransomware_use": vulnerability.get("knownRansomwareCampaignUse") or "Unknown",
+        "required_action": vulnerability.get("requiredAction") or "Review vendor guidance.",
+        "source": "CISA KEV",
+    }
+
+
+def get_kev_vulnerabilities():
+    try:
+        request_data = Request(
+            CISA_KEV_URL,
+            headers={"User-Agent": "CyberNewsSchoolProject/1.0"},
+        )
+
+        with urlopen(request_data, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return {
+            "vulnerabilities": [],
+            "source": "fallback",
+            "message": "CISA KEV vulnerabilities are unavailable right now.",
+        }
+
+    vulnerabilities = sorted(
+        data.get("vulnerabilities", []),
+        key=lambda vulnerability: vulnerability.get("dateAdded", ""),
+        reverse=True,
+    )
+
+    return {
+        "vulnerabilities": [
+            normalize_kev_vulnerability(vulnerability, index + 1)
+            for index, vulnerability in enumerate(vulnerabilities[:10])
+        ],
+        "source": "cisa-kev",
+        "catalog_version": data.get("catalogVersion", "Unknown"),
+        "date_released": data.get("dateReleased", "Unknown"),
+        "message": "CISA KEV vulnerabilities loaded.",
     }
 
 
@@ -510,6 +561,11 @@ def api_live_news():
 @app.route("/api/bsi-advisories")
 def api_bsi_advisories():
     return jsonify(get_bsi_advisories())
+
+
+@app.route("/api/kev-vulnerabilities")
+def api_kev_vulnerabilities():
+    return jsonify(get_kev_vulnerabilities())
 
 
 @app.route("/api/threat-graph")

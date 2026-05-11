@@ -4,7 +4,7 @@
 
 Step 1: CISA KEV API
 
-Status: TODO
+Status: DONE
 
 ## Progress Log
 
@@ -25,3 +25,21 @@ Notes:
 - FIRST EPSS is the best follow-up source because it adds exploit probability scoring to CVEs.
 - The Hacker News, SecurityWeek, and BleepingComputer are useful later for additional news RSS feeds.
 - URLhaus, MalwareBazaar, and OpenPhish are possible IOC sources, but should wait until CVE and news data are stable.
+
+### Step 1: CISA KEV API
+
+Status: DONE
+
+Commit: Week 3: add CISA KEV API
+
+Tested:
+
+- Checked `/api/kev-vulnerabilities` returns `200`.
+- Checked the response includes normalized vulnerability objects.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added the official CISA KEV JSON source.
+- Normalized the latest 10 vulnerabilities into beginner-readable fields.
+- Kept this step API-only; dashboard UI comes next.
