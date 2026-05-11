@@ -11,7 +11,7 @@ from werkzeug.security import check_password_hash
 
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key"
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
 USERS = {
     "alice": {

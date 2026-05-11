@@ -216,9 +216,19 @@ body {
   fill: #5a6872;
 }
 
+.visual-node {
+  cursor: pointer;
+}
+
 .visual-node circle {
   stroke: #14212b;
   stroke-width: 2;
+}
+
+.visual-node:hover circle,
+.visual-node.selected circle {
+  stroke: #006e72;
+  stroke-width: 4;
 }
 
 .visual-node text {

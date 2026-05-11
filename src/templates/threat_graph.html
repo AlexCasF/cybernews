@@ -90,8 +90,8 @@
       nodeDetails.innerHTML = "";
       selectedNodeStatus.textContent = node.type;
 
-      document.querySelectorAll(".graph-node").forEach((card) => {
-        card.classList.toggle("selected", card.dataset.nodeId === node.id);
+      document.querySelectorAll(".graph-node, .visual-node").forEach((item) => {
+        item.classList.toggle("selected", item.dataset.nodeId === node.id);
       });
 
       const title = document.createElement("h4");
@@ -200,7 +200,7 @@
       });
     }
 
-    function renderVisualNodes(nodes) {
+    function renderVisualNodes(nodes, edges, nodesById) {
       nodes.forEach((node) => {
         const position = nodePositions[node.id] || { x: 400, y: 160 };
         const group = createSvgElement("g");
@@ -209,6 +209,7 @@
         const type = createSvgElement("text");
 
         group.classList.add("visual-node");
+        group.dataset.nodeId = node.id;
         circle.setAttribute("cx", position.x);
         circle.setAttribute("cy", position.y);
         circle.setAttribute("r", "28");
@@ -226,25 +227,29 @@
         group.appendChild(circle);
         group.appendChild(label);
         group.appendChild(type);
+        group.addEventListener("click", () => {
+          showNodeDetails(node, edges, nodesById);
+        });
         threatGraphSvg.appendChild(group);
       });
     }
 
-    function renderVisualGraph(nodes, edges) {
+    function renderVisualGraph(nodes, edges, nodesById) {
       threatGraphSvg.innerHTML = "";
       renderVisualEdges(edges);
-      renderVisualNodes(nodes);
+      renderVisualNodes(nodes, edges, nodesById);
     }
 
     function renderThreatGraph(data) {
       const nodesById = {};
       nodeList.innerHTML = "";
       edgeList.innerHTML = "";
-      renderVisualGraph(data.nodes, data.edges);
 
       data.nodes.forEach((node) => {
         nodesById[node.id] = node.label;
       });
+
+      renderVisualGraph(data.nodes, data.edges, nodesById);
 
       data.nodes.forEach((node) => {
         nodeList.appendChild(createNodeCard(node, data.edges, nodesById));

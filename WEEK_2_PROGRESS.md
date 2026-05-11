@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 15d: Visual Graph Selection
+Step 17: Secret Handling Notes
 
 Status: TODO
 
@@ -429,7 +429,7 @@ Notes:
 
 Status: DONE
 
-Commit: Week 2: draw threat graph relationships
+Commit: 2e06394 Week 2: draw threat graph relationships
 
 Tested:
 
@@ -450,33 +450,45 @@ Notes:
 
 ### Step 15d: Visual Graph Selection
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: finish graph selection and prep deployment
 
 Tested:
 
-- -
+- Checked `/threat-graph` returns `200`.
+- Checked visual SVG nodes have click handlers.
+- Checked visual SVG nodes and node cards share the same selected state.
+- Checked the existing details panel still exists.
+- Checked `/api/threat-graph` still returns graph JSON.
+- Checked `/health` still returns the health message.
 
 Notes:
 
 - Planned: make visual graph nodes clickable.
 - Reuse the existing Selected Node details panel.
 - Highlight the selected visual node and matching card.
+- SVG nodes now reuse the same details panel as the node cards.
+- Selecting either a card or an SVG node updates both highlights.
 
 ### Step 16: Google Cloud Deployment Prep
 
-Status: TODO
+Status: DONE
 
-Commit: -
+Commit: Week 2: finish graph selection and prep deployment
 
 Tested:
 
-- -
+- Checked Flask routes still load with the updated `SECRET_KEY` fallback.
+- Checked `requirements.txt` is present.
+- Checked `DEPLOYMENT.md` documents local setup, environment variables, and the Cloud Run start command.
+- Checked `/health` still returns the health message.
 
 Notes:
 
-- -
+- Added `requirements.txt` with Flask and gunicorn.
+- Added `DEPLOYMENT.md` with simple Cloud Run notes.
+- Flask now reads `SECRET_KEY` from the environment, with `dev-secret-key` as the local fallback.
 
 ### Step 17: Secret Handling Notes
 
