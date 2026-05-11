@@ -253,6 +253,18 @@ body {
   padding-right: 6px;
 }
 
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pagination-controls span {
+  color: #5a6872;
+}
+
 .filter-bar button,
 .panel-action-button,
 .ai-action-button,

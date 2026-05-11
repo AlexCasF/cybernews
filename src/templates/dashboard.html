@@ -60,6 +60,16 @@
         </select>
       </label>
 
+      <label for="timeWindowFilter">
+        Time
+        <select id="timeWindowFilter">
+          <option value="all">All time</option>
+          <option value="1">Last 24 hours</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+        </select>
+      </label>
+
       <button id="refreshLiveNewsButton" type="button">Refresh Feed</button>
     </div>
 
@@ -67,7 +77,7 @@
 
     <div id="articleList" class="item-list unified-feed-list">
       {% for article in articles %}
-        <article class="news-item" data-category="{{ article.category }}" data-severity="{{ article.severity }}" data-source-type="{{ article.source_type }}" data-published-sort="{{ article.published_sort }}">
+        <article class="news-item" data-entity-id="{{ article.id }}" data-category="{{ article.category }}" data-severity="{{ article.severity }}" data-source-type="{{ article.source_type }}" data-published-sort="{{ article.published_sort }}">
           <div>
             <h4>
               <a href="{{ article.url }}">{{ article.title }}</a>
@@ -92,6 +102,12 @@
     </div>
 
     <p id="emptyArticlesMessage" class="empty-message" hidden>No articles match these filters.</p>
+
+    <div class="pagination-controls" aria-label="Feed pagination">
+      <button id="previousPageButton" class="panel-action-button" type="button">Previous</button>
+      <span id="pageStatus">Page 1 of 1</span>
+      <button id="nextPageButton" class="panel-action-button" type="button">Next</button>
+    </div>
   </section>
 {% endblock %}
 
@@ -102,11 +118,17 @@
     const sourceFilterAll = document.getElementById("sourceFilterAll");
     const sourceFilterOptions = Array.from(document.querySelectorAll(".source-filter-option"));
     const sortFilter = document.getElementById("sortFilter");
+    const timeWindowFilter = document.getElementById("timeWindowFilter");
     const refreshLiveNewsButton = document.getElementById("refreshLiveNewsButton");
     const articleList = document.getElementById("articleList");
     const articleCount = document.getElementById("articleCount");
     const newsMessage = document.getElementById("newsMessage");
     const emptyArticlesMessage = document.getElementById("emptyArticlesMessage");
+    const previousPageButton = document.getElementById("previousPageButton");
+    const nextPageButton = document.getElementById("nextPageButton");
+    const pageStatus = document.getElementById("pageStatus");
+    const itemsPerPage = 20;
+    let currentPage = 1;
     const aiActionLabels = {
       analyze: "Analyze",
       generate_report: "Generate report",
@@ -135,7 +157,39 @@
         sourceFilterAll.checked = checkedCount === sourceFilterOptions.length;
       }
 
+      currentPage = 1;
       applyArticleFilters();
+    }
+
+    function resetPageAndApplyFilters() {
+      currentPage = 1;
+      applyArticleFilters();
+    }
+
+    function articleMatchesTimeWindow(card) {
+      if (timeWindowFilter.value === "all") {
+        return true;
+      }
+
+      if (!card.dataset.publishedSort) {
+        return false;
+      }
+
+      let publishedDate = new Date(card.dataset.publishedSort);
+
+      if (Number.isNaN(publishedDate.getTime()) && card.dataset.publishedSort.length === 10) {
+        publishedDate = new Date(`${card.dataset.publishedSort}T00:00:00`);
+      }
+
+      if (Number.isNaN(publishedDate.getTime())) {
+        return false;
+      }
+
+      const selectedDays = Number(timeWindowFilter.value);
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - selectedDays);
+
+      return publishedDate >= cutoffDate;
     }
 
     function applyArticleFilters() {
@@ -143,23 +197,40 @@
       const selectedSeverity = severityFilter.value;
       const selectedSources = getSelectedSources();
       const articleCards = document.querySelectorAll(".news-item");
-      let visibleCount = 0;
+      const matchingCards = [];
 
       articleCards.forEach((card) => {
         const categoryMatches = selectedCategory === "All" || card.dataset.category === selectedCategory;
         const severityMatches = selectedSeverity === "All" || card.dataset.severity === selectedSeverity;
         const sourceMatches = selectedSources.includes("All") || selectedSources.includes(card.dataset.sourceType);
-        const shouldShow = categoryMatches && severityMatches && sourceMatches;
+        const timeMatches = articleMatchesTimeWindow(card);
+        const shouldMatch = categoryMatches && severityMatches && sourceMatches && timeMatches;
 
-        card.hidden = !shouldShow;
+        card.hidden = true;
 
-        if (shouldShow) {
-          visibleCount += 1;
+        if (shouldMatch) {
+          matchingCards.push(card);
         }
       });
 
-      emptyArticlesMessage.hidden = visibleCount > 0;
-      articleCount.textContent = `${visibleCount} of ${articleCards.length} items`;
+      const pageCount = Math.ceil(matchingCards.length / itemsPerPage);
+
+      if (pageCount > 0 && currentPage > pageCount) {
+        currentPage = pageCount;
+      }
+
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const pageCards = matchingCards.slice(startIndex, startIndex + itemsPerPage);
+
+      pageCards.forEach((card) => {
+        card.hidden = false;
+      });
+
+      emptyArticlesMessage.hidden = matchingCards.length > 0;
+      articleCount.textContent = `${matchingCards.length} of ${articleCards.length} items`;
+      pageStatus.textContent = pageCount > 0 ? `Page ${currentPage} of ${pageCount}` : "Page 0 of 0";
+      previousPageButton.disabled = currentPage <= 1;
+      nextPageButton.disabled = currentPage >= pageCount;
     }
 
     function createAiActionsMenu(entityId, entityLabel, entitySummary) {
@@ -207,6 +278,7 @@
       card.dataset.severity = article.severity;
       card.dataset.sourceType = article.source_type || "newsapi";
       card.dataset.publishedSort = article.published_sort || "";
+      card.dataset.entityId = entityId;
       link.href = article.url;
       link.textContent = article.title;
       meta.textContent = `${article.source} | ${article.published} | ${article.severity} | ${article.source_type || "newsapi"}`;
@@ -267,7 +339,7 @@
       });
 
       articleCount.textContent = `${articles.length} items`;
-      applyArticleFilters();
+      resetPageAndApplyFilters();
     }
 
     async function refreshLiveNews() {
@@ -332,8 +404,8 @@
       }
     }
 
-    categoryFilter.addEventListener("change", applyArticleFilters);
-    severityFilter.addEventListener("change", applyArticleFilters);
+    categoryFilter.addEventListener("change", resetPageAndApplyFilters);
+    severityFilter.addEventListener("change", resetPageAndApplyFilters);
     sourceFilterAll.addEventListener("change", () => {
       updateSourceFilterState(sourceFilterAll);
     });
@@ -343,7 +415,19 @@
       });
     });
     sortFilter.addEventListener("change", () => {
+      currentPage = 1;
       renderArticles(getCurrentArticlesFromDom());
+    });
+    timeWindowFilter.addEventListener("change", resetPageAndApplyFilters);
+    previousPageButton.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        applyArticleFilters();
+      }
+    });
+    nextPageButton.addEventListener("click", () => {
+      currentPage += 1;
+      applyArticleFilters();
     });
     refreshLiveNewsButton.addEventListener("click", refreshLiveNews);
     articleList.addEventListener("click", (event) => {

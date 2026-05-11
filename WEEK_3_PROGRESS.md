@@ -764,3 +764,23 @@ Notes:
 - Added one central Flask `before_request` login guard.
 - Protected app pages and app API endpoints.
 - Kept Cloud Run health checks public.
+
+### Feed Time Filter And Paging
+
+Status: DONE
+
+Commit: add feed time filter and paging
+
+Tested:
+
+- Checked Python compilation.
+- Checked the Feed page renders for a logged-in user.
+- Checked the Feed page includes time filter options.
+- Checked the Feed page includes Previous and Next paging controls.
+- Checked `/api/aggregated-news` still returns the unified feed for logged-in users.
+
+Notes:
+
+- Added time window filters for all time, last 24 hours, last 7 days, and last 30 days.
+- Added simple client-side pagination with 20 feed items per page.
+- Kept this as a frontend step before Firestore-backed feed storage.
