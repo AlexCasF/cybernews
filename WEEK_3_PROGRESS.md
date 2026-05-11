@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 2: Vulnerability Dashboard Panel
+Responsive Dashboard Layout
 
 Status: DONE
 
@@ -64,3 +64,22 @@ Notes:
 - Added a navigation link to the vulnerability panel.
 - Added a CISA KEV row to System Status.
 - Kept JavaScript refresh for a separate follow-up commit.
+
+### Responsive Dashboard Layout
+
+Status: DONE
+
+Commit: Week 3: make dashboard layout responsive
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked the dashboard still contains the main panels.
+- Checked the responsive dashboard grid CSS is present.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Kept the default portrait/laptop layout close to the previous design.
+- Added a dashboard grid that wraps panels into columns on wider screens.
+- Increased the dashboard content width only on large and very large screens.
