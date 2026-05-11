@@ -1258,6 +1258,30 @@ def api_create_report():
     return jsonify(report), 201
 
 
+@app.route("/api/reports")
+def api_list_reports():
+    reports = sorted(
+        REPORTS.values(),
+        key=lambda report: report["created_at"],
+        reverse=True,
+    )
+
+    return jsonify(
+        {
+            "reports": [
+                {
+                    "report_id": report["report_id"],
+                    "title": report["title"],
+                    "created_by": report["created_by"],
+                    "created_at": report["created_at"],
+                }
+                for report in reports
+            ],
+            "count": len(reports),
+        }
+    )
+
+
 @app.route("/api/reports/<report_id>")
 def api_get_report(report_id):
     report = REPORTS.get(report_id)

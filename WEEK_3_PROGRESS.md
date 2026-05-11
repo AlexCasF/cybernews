@@ -376,3 +376,23 @@ Notes:
 - Added basic report create and retrieve API routes.
 - Added a Save report button for generated Workbench reports.
 - Reports still reset when the Flask server restarts; persistent storage comes later.
+
+### Saved Reports List
+
+Status: DONE
+
+Commit: list saved reports
+
+Tested:
+
+- Checked `GET /api/reports` lists saved report summaries.
+- Checked saved reports can still be retrieved by ID.
+- Checked the Workbench Report tab includes a Saved Reports list.
+- Checked loading a saved report updates the Workbench and report preview.
+- Checked `/` and `/health` still return `200`.
+
+Notes:
+
+- Added a lightweight saved reports list API.
+- Added Saved Reports UI inside the Workbench Report tab.
+- Loading a saved report reuses the same safe report renderer and sandboxed preview.

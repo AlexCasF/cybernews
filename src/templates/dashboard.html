@@ -131,6 +131,15 @@
           <button id="saveReportButton" class="panel-action-button" type="button" hidden>Save report</button>
           <span id="saveReportMessage"></span>
         </div>
+        <div class="saved-reports">
+          <div class="panel-heading">
+            <h4>Saved Reports</h4>
+            <button id="refreshReportsButton" class="panel-action-button" type="button">Refresh</button>
+          </div>
+          <div id="savedReportsList" class="saved-reports-list">
+            <p>No reports saved yet.</p>
+          </div>
+        </div>
         <div id="aiReportBox" class="workbench-box">
           <p>No report has been generated yet.</p>
         </div>
@@ -310,6 +319,8 @@
     const aiJsonOutput = document.getElementById("aiJsonOutput");
     const saveReportButton = document.getElementById("saveReportButton");
     const saveReportMessage = document.getElementById("saveReportMessage");
+    const refreshReportsButton = document.getElementById("refreshReportsButton");
+    const savedReportsList = document.getElementById("savedReportsList");
     const analystReportFrame = document.getElementById("analystReportFrame");
     let latestReportJson = null;
     let latestReportJobId = "";
@@ -555,6 +566,89 @@
       analystReportFrame.srcdoc = buildReportPreviewHtml(reportJson);
     }
 
+    function renderSavedReports(reports) {
+      savedReportsList.innerHTML = "";
+
+      if (!reports || reports.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No reports saved yet.";
+        savedReportsList.appendChild(empty);
+        return;
+      }
+
+      reports.forEach((report) => {
+        const item = document.createElement("article");
+        const details = document.createElement("div");
+        const title = document.createElement("h5");
+        const meta = document.createElement("p");
+        const loadButton = document.createElement("button");
+
+        item.className = "saved-report-item";
+        title.textContent = report.title || "Untitled report";
+        meta.textContent = `Saved ${report.created_at} by ${report.created_by}`;
+        loadButton.className = "panel-action-button";
+        loadButton.type = "button";
+        loadButton.dataset.reportId = report.report_id;
+        loadButton.textContent = "Load";
+
+        details.appendChild(title);
+        details.appendChild(meta);
+        item.appendChild(details);
+        item.appendChild(loadButton);
+        savedReportsList.appendChild(item);
+      });
+    }
+
+    async function refreshSavedReports() {
+      refreshReportsButton.disabled = true;
+
+      try {
+        const response = await fetch("/api/reports");
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Could not load saved reports.");
+        }
+
+        renderSavedReports(data.reports);
+      } catch (error) {
+        savedReportsList.innerHTML = "";
+
+        const message = document.createElement("p");
+        message.className = "error-message";
+        message.textContent = error.message;
+        savedReportsList.appendChild(message);
+      }
+
+      refreshReportsButton.disabled = false;
+    }
+
+    async function loadSavedReport(reportId) {
+      saveReportMessage.textContent = "Loading saved report...";
+
+      try {
+        const response = await fetch(`/api/reports/${reportId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Could not load saved report.");
+        }
+
+        latestReportJson = data.report_json;
+        latestReportJobId = data.source_job_id || "";
+        renderAiReport(data.report_json);
+        updateReportPreview(data.report_json);
+        aiJsonOutput.textContent = JSON.stringify(data, null, 2);
+        aiJobStatus.textContent = "loaded";
+        aiSelectedEntity.textContent = `report: ${data.title}`;
+        aiSelectedAction.textContent = "Load saved report";
+        saveReportMessage.textContent = `Loaded report ${data.report_id}.`;
+        setWorkbenchTab("report");
+      } catch (error) {
+        saveReportMessage.textContent = error.message;
+      }
+    }
+
     function renderAiReport(reportJson) {
       aiReportBox.innerHTML = "";
 
@@ -688,6 +782,7 @@
         }
 
         saveReportMessage.textContent = `Saved as report ${data.report_id}.`;
+        refreshSavedReports();
       } catch (error) {
         saveReportMessage.textContent = error.message;
       }
@@ -1062,6 +1157,15 @@
     refreshBsiButton.addEventListener("click", refreshBsiAdvisories);
     refreshKevButton.addEventListener("click", refreshKevVulnerabilities);
     saveReportButton.addEventListener("click", saveCurrentReport);
+    refreshReportsButton.addEventListener("click", refreshSavedReports);
+
+    savedReportsList.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-report-id]");
+
+      if (button) {
+        loadSavedReport(button.dataset.reportId);
+      }
+    });
 
     articleList.addEventListener("click", (event) => {
       const button = event.target.closest(".ai-action-button");
@@ -1076,5 +1180,7 @@
         setWorkbenchTab(tab.dataset.tab);
       });
     });
+
+    refreshSavedReports();
   </script>
 {% endblock %}

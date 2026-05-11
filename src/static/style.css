@@ -261,6 +261,38 @@ body {
   color: #5a6872;
 }
 
+.saved-reports {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f5f7f8;
+  border: 1px solid #dbe3e7;
+}
+
+.saved-reports h4,
+.saved-report-item h5 {
+  margin: 0;
+}
+
+.saved-reports-list {
+  display: grid;
+  gap: 10px;
+}
+
+.saved-report-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  background: white;
+  border: 1px solid #dbe3e7;
+}
+
+.saved-report-item p {
+  margin: 4px 0 0;
+  color: #5a6872;
+}
+
 .workbench-tab {
   color: #172026;
   background: #dbe3e7;
@@ -678,6 +710,7 @@ body {
   .kev-item,
   .intel-card,
   .card-actions,
+  .saved-report-item,
   .graph-node-heading {
     align-items: flex-start;
     flex-direction: column;
