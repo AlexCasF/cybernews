@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 3: KEV Refresh Button
+Navigation Polish
 
 Status: DONE
 
@@ -103,3 +103,21 @@ Notes:
 - Added a Refresh KEV button to the vulnerability panel.
 - Added browser-side rendering for refreshed CISA KEV results.
 - Kept the dashboard display limited to four vulnerabilities.
+
+### Navigation Polish
+
+Status: DONE
+
+Commit: Week 3: simplify dashboard navigation
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked same-page nav links for Headlines, Intelligence, Vulnerabilities, and System are removed.
+- Checked route-level nav links are still present.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Removed dashboard section anchors from the main menu.
+- Kept Dashboard, Threat Graph, Admin Reports, and Login/Logout links.
