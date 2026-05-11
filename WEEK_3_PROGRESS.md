@@ -542,3 +542,22 @@ Notes:
 
 - Added a simple browser print path for the sandboxed report preview.
 - This keeps PDF export client-side and avoids backend PDF dependencies.
+
+### Vertex AI Extraction And Source Links
+
+Status: DONE
+
+Commit: extract IOCs and CVEs with Vertex AI
+
+Tested:
+
+- Checked `Extract IOCs` returns Gemini-structured IOC data.
+- Checked `Extract CVEs` returns Gemini-structured CVE data.
+- Checked `Generate report` can include a safe `source_links` section.
+- Checked source links render in the Workbench report view and iframe preview.
+
+Notes:
+
+- IOC and CVE extraction now use Gemini for article entities.
+- Report JSON supports `source_links` with only `http://` and `https://` URLs.
+- Mock fallback remains in place if Vertex AI is unavailable.

@@ -379,6 +379,9 @@ Dynamic visuals should still come from structured JSON. For example, a `flowchar
 section can contain nodes and edges, and the frontend decides how to render it.
 The model should not generate arbitrary trusted HTML for diagrams or source links.
 
+Current implementation supports `source_links` first. Links must use `http://`
+or `https://`; `javascript:` and other schemes are not rendered.
+
 ## 5. Backend API
 
 Target API shape:

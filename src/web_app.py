@@ -11,7 +11,12 @@ from uuid import uuid4
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
-from src.ai_service import analyze_article, generate_article_report
+from src.ai_service import (
+    analyze_article,
+    extract_article_cves,
+    extract_article_iocs,
+    generate_article_report,
+)
 from src.storage import get_ai_job, get_report, list_reports, save_ai_job, save_report
 
 
@@ -856,6 +861,12 @@ def get_prompt_version(action, model):
     if action == "generate_report":
         return "article-report-v1"
 
+    if action == "extract_iocs":
+        return "article-ioc-extraction-v1"
+
+    if action == "extract_cves":
+        return "article-cve-extraction-v1"
+
     return "article-analysis-v1"
 
 
@@ -925,9 +936,21 @@ def create_ai_job(payload, current_user):
             result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
             report_json = build_mock_report_json(entity_type, entity_id, result_json)
             warnings.append(f"Vertex AI unavailable, used mock report: {error}")
+    elif action == "extract_iocs" and entity_type == "article":
+        try:
+            result_json, model = extract_article_iocs(entity_id, selected_text)
+        except Exception as error:
+            result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
+            warnings.append(f"Vertex AI unavailable, used mock IOC extraction: {error}")
+    elif action == "extract_cves" and entity_type == "article":
+        try:
+            result_json, model = extract_article_cves(entity_id, selected_text)
+        except Exception as error:
+            result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
+            warnings.append(f"Vertex AI unavailable, used mock CVE extraction: {error}")
     else:
         result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
-        warnings.append("Mock AI result. Gemini is only connected for article analysis and report generation.")
+        warnings.append("Mock AI result. Gemini is only connected for article analysis, report generation, IOC extraction, and CVE extraction.")
 
     if action != "generate_report":
         report_json = None

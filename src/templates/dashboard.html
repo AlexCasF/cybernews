@@ -450,6 +450,15 @@
         return `<section class="report-section">${heading}<ol>${items}</ol></section>`;
       }
 
+      if (section.type === "source_links") {
+        const links = (section.links || [])
+          .filter((link) => isSafeHttpUrl(link.url))
+          .map((link) => `<li><a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label || link.url)}</a></li>`)
+          .join("");
+
+        return `<section class="report-section">${heading}<ul>${links}</ul></section>`;
+      }
+
       if (section.type === "table") {
         const columns = (section.columns || [])
           .map((column) => `<th>${escapeHtml(column)}</th>`)
@@ -558,6 +567,10 @@
   </main>
 </body>
 </html>`;
+    }
+
+    function isSafeHttpUrl(url) {
+      return typeof url === "string" && (url.startsWith("https://") || url.startsWith("http://"));
     }
 
     function updateReportPreview(reportJson) {
@@ -705,6 +718,25 @@
 
         if (section.items && section.items.length > 0) {
           addTextList(aiReportBox, section.items);
+        }
+
+        if (section.links && section.links.length > 0) {
+          const list = document.createElement("ul");
+
+          section.links
+            .filter((link) => isSafeHttpUrl(link.url))
+            .forEach((link) => {
+              const item = document.createElement("li");
+              const anchor = document.createElement("a");
+              anchor.href = link.url;
+              anchor.target = "_blank";
+              anchor.rel = "noopener noreferrer";
+              anchor.textContent = link.label || link.url;
+              item.appendChild(anchor);
+              list.appendChild(item);
+            });
+
+          aiReportBox.appendChild(list);
         }
       });
     }
