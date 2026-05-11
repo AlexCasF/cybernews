@@ -141,6 +141,10 @@
             <div>
               <h4>{{ vulnerability.cve }} - {{ vulnerability.title }}</h4>
               <p>{{ vulnerability.vendor }} {{ vulnerability.product }} | Added {{ vulnerability.date_added }} | Due {{ vulnerability.due_date }}</p>
+              <p class="epss-line">
+                EPSS: {{ vulnerability.epss }} | Percentile: {{ vulnerability.epss_percentile }} | Updated {{ vulnerability.epss_date }}
+                <span class="epss-badge epss-{{ vulnerability.epss_label|lower|replace(' ', '-') }}">{{ vulnerability.epss_label }}</span>
+              </p>
               <p>{{ vulnerability.summary }}</p>
               <p class="action-box"><strong>Required action:</strong> {{ vulnerability.required_action }}</p>
             </div>
@@ -343,6 +347,8 @@
       const summary = document.createElement("p");
       const action = document.createElement("p");
       const actionLabel = document.createElement("strong");
+      const epssLine = document.createElement("p");
+      const epssBadge = document.createElement("span");
       const tag = document.createElement("span");
       const cve = vulnerability.cve || "Unknown CVE";
       const title = vulnerability.title || "Untitled vulnerability";
@@ -350,12 +356,21 @@
       const product = vulnerability.product || "Unknown product";
       const dateAdded = vulnerability.date_added || "Unknown date";
       const dueDate = vulnerability.due_date || "Unknown date";
+      const epss = vulnerability.epss || "Unknown";
+      const epssPercentile = vulnerability.epss_percentile || "Unknown";
+      const epssDate = vulnerability.epss_date || "Unknown date";
+      const epssLabel = vulnerability.epss_label || "Unknown";
       const ransomwareUse = vulnerability.known_ransomware_use || "Unknown";
       const requiredAction = vulnerability.required_action || "Review vendor guidance.";
 
       card.className = "kev-item";
       heading.textContent = `${cve} - ${title}`;
       meta.textContent = `${vendor} ${product} | Added ${dateAdded} | Due ${dueDate}`;
+      epssLine.className = "epss-line";
+      epssLine.textContent = `EPSS: ${epss} | Percentile: ${epssPercentile} | Updated ${epssDate} `;
+      epssBadge.className = `epss-badge epss-${epssLabel.toLowerCase().replace(" ", "-")}`;
+      epssBadge.textContent = epssLabel;
+      epssLine.appendChild(epssBadge);
       summary.textContent = vulnerability.summary || "No summary available.";
       action.className = "action-box";
       actionLabel.textContent = "Required action:";
@@ -366,6 +381,7 @@
 
       content.appendChild(heading);
       content.appendChild(meta);
+      content.appendChild(epssLine);
       content.appendChild(summary);
       content.appendChild(action);
       card.appendChild(content);

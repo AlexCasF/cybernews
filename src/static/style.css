@@ -315,6 +315,13 @@ body {
   color: #5a6872;
 }
 
+.epss-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .graph-node-heading {
   display: flex;
   align-items: center;
@@ -372,6 +379,37 @@ body {
   color: #14212b;
   background: #c8f5f2;
   white-space: nowrap;
+}
+
+.epss-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 0.78rem;
+  font-weight: bold;
+  color: #14212b;
+  background: #dbe3e7;
+}
+
+.epss-very-high {
+  color: white;
+  background: #5b1020;
+}
+
+.epss-high {
+  color: white;
+  background: #a31717;
+}
+
+.epss-medium {
+  background: #ffd166;
+}
+
+.epss-low {
+  background: #c8f5f2;
+}
+
+.epss-unknown {
+  background: #dbe3e7;
 }
 
 .severity-high {

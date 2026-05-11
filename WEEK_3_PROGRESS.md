@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 5: KEV EPSS Enrichment
+Step 6: EPSS Risk Labels
 
 Status: DONE
 
@@ -160,3 +160,23 @@ Notes:
 - Kept CISA KEV records visible even if EPSS data is missing.
 - Added simple backend risk labels for EPSS scores.
 - Kept visible dashboard styling for a separate follow-up commit.
+
+### Step 6: EPSS Risk Labels
+
+Status: DONE
+
+Commit: Week 3: show EPSS risk labels
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked the dashboard includes EPSS score text.
+- Checked the dashboard includes EPSS risk badge classes.
+- Checked KEV refresh JavaScript renders EPSS data.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added EPSS score, percentile, update date, and risk label to KEV cards.
+- Added matching EPSS rendering for refreshed KEV cards.
+- Added simple EPSS badge styling.
