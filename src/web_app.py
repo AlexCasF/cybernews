@@ -311,7 +311,7 @@ def get_kev_vulnerabilities():
     }
 
 
-def get_dashboard_stats(articles, intelligence_reports):
+def get_dashboard_stats(articles, intelligence_reports, kev_vulnerabilities):
     return [
         {
             "label": "Tracked headlines",
@@ -322,6 +322,11 @@ def get_dashboard_stats(articles, intelligence_reports):
             "label": "Intel reports",
             "value": str(len(intelligence_reports)),
             "note": "ready for analyst review",
+        },
+        {
+            "label": "Known exploited CVEs",
+            "value": str(len(kev_vulnerabilities)),
+            "note": "from CISA KEV",
         },
         {
             "label": "System status",
@@ -438,6 +443,7 @@ def get_system_status():
         {"name": "Local dashboard", "state": "Ready"},
         {"name": "Live news refresh", "state": "Ready"},
         {"name": "BSI advisory feed", "state": "Ready"},
+        {"name": "CISA KEV feed", "state": "Ready"},
         {"name": "Demo authentication", "state": "Ready"},
         {"name": "Threat graph", "state": "Ready"},
     ]
@@ -456,17 +462,21 @@ def home():
     articles = get_mock_articles()
     intelligence_reports = get_dashboard_intelligence_reports()
     bsi_data = get_bsi_advisories()
+    kev_data = get_kev_vulnerabilities()
+    kev_vulnerabilities = kev_data["vulnerabilities"][:4]
 
     return render_template(
         "dashboard.html",
         page_title="Dashboard",
-        stats=get_dashboard_stats(articles, intelligence_reports),
+        stats=get_dashboard_stats(articles, intelligence_reports, kev_vulnerabilities),
         articles=articles,
         categories=get_article_categories(articles),
         severities=get_article_severities(),
         intelligence_reports=intelligence_reports,
         bsi_advisories=bsi_data["advisories"][:4],
         bsi_message=bsi_data["message"],
+        kev_vulnerabilities=kev_vulnerabilities,
+        kev_message=kev_data["message"],
         system_status=get_system_status(),
         current_user=get_current_user(),
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),

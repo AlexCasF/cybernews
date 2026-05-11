@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 1: CISA KEV API
+Step 2: Vulnerability Dashboard Panel
 
 Status: DONE
 
@@ -43,3 +43,24 @@ Notes:
 - Added the official CISA KEV JSON source.
 - Normalized the latest 10 vulnerabilities into beginner-readable fields.
 - Kept this step API-only; dashboard UI comes next.
+
+### Step 2: Vulnerability Dashboard Panel
+
+Status: DONE
+
+Commit: Week 3: show KEV vulnerabilities
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked the dashboard includes the Known Exploited Vulnerabilities panel.
+- Checked `/api/kev-vulnerabilities` still returns `200`.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added a dashboard panel for recent CISA KEV records.
+- Shows CVE, vendor/product, date added, due date, ransomware-use status, summary, and required action.
+- Added a navigation link to the vulnerability panel.
+- Added a CISA KEV row to System Status.
+- Kept JavaScript refresh for a separate follow-up commit.

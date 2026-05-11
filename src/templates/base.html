@@ -17,6 +17,7 @@
       <a href="{{ url_for('home') }}">Dashboard</a>
       <a href="{{ url_for('home') }}#headlines">Headlines</a>
       <a href="{{ url_for('home') }}#intelligence">Intelligence</a>
+      <a href="{{ url_for('home') }}#vulnerabilities">Vulnerabilities</a>
       <a href="{{ url_for('threat_graph') }}">Threat Graph</a>
       <a href="{{ url_for('home') }}#system">System</a>
       {% if current_user and current_user.role == "admin" %}

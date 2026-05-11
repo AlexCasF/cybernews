@@ -123,6 +123,33 @@
     </p>
   </section>
 
+  <section id="vulnerabilities" class="panel">
+    <div class="panel-heading">
+      <h3>Known Exploited Vulnerabilities</h3>
+      <span>{{ kev_vulnerabilities|length }} shown</span>
+    </div>
+
+    <p class="news-message">{{ kev_message }}</p>
+
+    <div class="item-list">
+      {% for vulnerability in kev_vulnerabilities %}
+        <article class="kev-item">
+          <div>
+            <h4>{{ vulnerability.cve }} - {{ vulnerability.title }}</h4>
+            <p>{{ vulnerability.vendor }} {{ vulnerability.product }} | Added {{ vulnerability.date_added }} | Due {{ vulnerability.due_date }}</p>
+            <p>{{ vulnerability.summary }}</p>
+            <p class="action-box"><strong>Required action:</strong> {{ vulnerability.required_action }}</p>
+          </div>
+          <span class="tag">Ransomware: {{ vulnerability.known_ransomware_use }}</span>
+        </article>
+      {% endfor %}
+    </div>
+
+    <p class="empty-message" {% if kev_vulnerabilities %}hidden{% endif %}>
+      No known exploited vulnerabilities are available right now.
+    </p>
+  </section>
+
   <section id="system" class="panel">
     <div class="panel-heading">
       <h3>System Status</h3>

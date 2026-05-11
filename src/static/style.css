@@ -75,7 +75,7 @@ body {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -112,6 +112,7 @@ body {
 .panel-heading,
 .news-item,
 .bsi-item,
+.kev-item,
 .status-list li {
   display: flex;
   align-items: center;
@@ -246,6 +247,7 @@ body {
 
 .news-item,
 .bsi-item,
+.kev-item,
 .intel-card,
 .report-item,
 .graph-node,
@@ -269,6 +271,7 @@ body {
 
 .news-item h4,
 .bsi-item h4,
+.kev-item h4,
 .intel-card h4,
 .report-item h4,
 .graph-node h4 {
@@ -288,6 +291,7 @@ body {
 
 .news-item p,
 .bsi-item p,
+.kev-item p,
 .intel-card p,
 .report-item p,
 .graph-node p,
@@ -477,6 +481,7 @@ body {
 
   .news-item,
   .bsi-item,
+  .kev-item,
   .intel-card,
   .graph-node-heading {
     align-items: flex-start;
