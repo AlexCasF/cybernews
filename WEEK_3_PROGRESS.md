@@ -453,3 +453,22 @@ Notes:
 - Added Firestore storage for saved reports and AI jobs.
 - Kept a memory fallback for local development without Google Cloud credentials.
 - Left admin reports and audit log in memory for now.
+
+### Vertex AI Article Analysis
+
+Status: DONE
+
+Commit: connect article analysis to Vertex AI
+
+Tested:
+
+- Enabled the Vertex AI API in Google Cloud.
+- Granted the Cloud Run service account `roles/aiplatform.user`.
+- Checked article Analyze still returns a completed AI job.
+- Checked the AI job is saved through the storage layer.
+
+Notes:
+
+- Added a small Gemini service for article analysis only.
+- Kept mock fallback if Vertex AI or the SDK is unavailable.
+- Other AI actions still use the mock implementation for now.

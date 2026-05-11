@@ -11,6 +11,7 @@ from uuid import uuid4
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
+from src.ai_service import analyze_article
 from src.storage import get_ai_job, get_report, list_reports, save_ai_job, save_report
 
 
@@ -855,7 +856,19 @@ def create_ai_job(payload, current_user):
     job_id = str(uuid4())
     created_at = get_timestamp()
     selected_text = payload.get("selected_text", "")
-    result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
+    model = "mock-ai-v1"
+    warnings = []
+
+    if action == "analyze" and entity_type == "article":
+        try:
+            result_json, model = analyze_article(entity_id, selected_text)
+        except Exception as error:
+            result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
+            warnings.append(f"Vertex AI unavailable, used mock result: {error}")
+    else:
+        result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
+        warnings.append("Mock AI result. Gemini is only connected for article analysis.")
+
     report_json = None
 
     if output_format in {"html_report", "both"} or action == "generate_report":
@@ -870,13 +883,13 @@ def create_ai_job(payload, current_user):
         "selected_text": selected_text,
         "context_depth": context_depth,
         "output_format": output_format,
-        "model": "mock-ai-v1",
-        "prompt_version": "mock-v1",
+        "model": model,
+        "prompt_version": "article-analysis-v1" if model != "mock-ai-v1" else "mock-v1",
         "result_json": result_json,
         "report_json": report_json,
         "rendered_html": None,
         "confidence": result_json.get("confidence", 0.7),
-        "warnings": ["Mock AI result. Gemini is not connected yet."],
+        "warnings": warnings,
         "evidence": result_json.get("evidence", []),
         "created_by": current_user["username"] if current_user else "guest",
         "created_at": created_at,

@@ -30,12 +30,19 @@ Sources:
 
 - `SECRET_KEY`: required for production session security.
 - `NEWS_API_KEY`: optional, enables live NewsAPI headlines.
+- `GOOGLE_CLOUD_PROJECT`: Google Cloud project used by Vertex AI.
+- `VERTEX_AI_LOCATION`: Vertex AI location, currently `global`.
+- `GEMINI_MODEL`: Gemini model name, currently `gemini-2.5-flash`.
 - `PORT`: provided by Cloud Run automatically.
 - `FLASK_DEBUG`: local-only; do not set this to `1` in production.
 
 For a simple school demo, Cloud Run environment variables are fine. Later, move secrets such as `SECRET_KEY` and API keys into Secret Manager.
 
 The app uses Firestore automatically when Google Cloud credentials are available. Locally, it falls back to in-memory storage if Firestore cannot be reached.
+
+Article analysis uses Gemini through Vertex AI when available. If Vertex AI is unavailable, the app falls back to the existing mock AI result so the dashboard still works.
+
+The Cloud Run runtime service account needs `roles/aiplatform.user` to call Gemini through Vertex AI.
 
 ## Local Smoke Test
 
