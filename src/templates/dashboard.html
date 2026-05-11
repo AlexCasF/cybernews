@@ -93,10 +93,10 @@
             <details class="ai-actions-menu">
               <summary>AI Actions</summary>
               <div class="ai-actions-list">
-                <button class="ai-action-button" type="button" data-ai-action="analyze" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Analyze</button>
-                <button class="ai-action-button" type="button" data-ai-action="generate_report" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Generate report</button>
-                <button class="ai-action-button" type="button" data-ai-action="extract_iocs" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Extract IOCs</button>
-                <button class="ai-action-button" type="button" data-ai-action="extract_cves" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}">Extract CVEs</button>
+                <button class="ai-action-button" type="button" data-ai-action="analyze" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}" data-entity-source="{{ article.source|e }}" data-entity-url="{{ article.url|e }}">Analyze</button>
+                <button class="ai-action-button" type="button" data-ai-action="generate_report" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}" data-entity-source="{{ article.source|e }}" data-entity-url="{{ article.url|e }}">Generate report</button>
+                <button class="ai-action-button" type="button" data-ai-action="extract_iocs" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}" data-entity-source="{{ article.source|e }}" data-entity-url="{{ article.url|e }}">Extract IOCs</button>
+                <button class="ai-action-button" type="button" data-ai-action="extract_cves" data-entity-id="{{ article.id }}" data-entity-label="{{ article.title|e }}" data-entity-summary="{{ article.summary|e }}" data-entity-source="{{ article.source|e }}" data-entity-url="{{ article.url|e }}">Extract CVEs</button>
               </div>
             </details>
           </div>
@@ -254,6 +254,8 @@
         button.dataset.entityId = entityId;
         button.dataset.entityLabel = entityLabel;
         button.dataset.entitySummary = entitySummary;
+        button.dataset.entitySource = "Unknown source";
+        button.dataset.entityUrl = "#";
         button.textContent = label;
         list.appendChild(button);
       });
@@ -296,7 +298,12 @@
       content.appendChild(meta);
       content.appendChild(summary);
       actions.appendChild(tag);
-      actions.appendChild(createAiActionsMenu(entityId, entityLabel, entitySummary));
+      const aiMenu = createAiActionsMenu(entityId, entityLabel, entitySummary);
+      aiMenu.querySelectorAll(".ai-action-button").forEach((button) => {
+        button.dataset.entitySource = article.source || "Unknown source";
+        button.dataset.entityUrl = article.url || "#";
+      });
+      actions.appendChild(aiMenu);
       card.appendChild(content);
       card.appendChild(actions);
 
@@ -395,8 +402,10 @@
       const entityId = button.dataset.entityId;
       const entityLabel = button.dataset.entityLabel || entityId;
       const entitySummary = button.dataset.entitySummary || "";
+      const entitySource = button.dataset.entitySource || "Unknown source";
+      const entityUrl = button.dataset.entityUrl || "";
       const outputFormat = action === "generate_report" ? "both" : "structured_json";
-      const selectedText = `${entityLabel}\n${entitySummary}`;
+      const selectedText = `${entityLabel}\nSource: ${entitySource}\nURL: ${entityUrl}\n${entitySummary}`;
 
       button.disabled = true;
       button.textContent = "Running...";

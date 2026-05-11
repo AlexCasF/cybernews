@@ -207,6 +207,58 @@
       addTextList(parent, iocs.map((ioc) => `${ioc.type}: ${ioc.value} (${ioc.confidence})`));
     }
 
+    function renderRelatedArticles(parent, articles) {
+      const title = document.createElement("p");
+      const titleLabel = document.createElement("strong");
+      titleLabel.textContent = "Related feed items:";
+      title.appendChild(titleLabel);
+      parent.appendChild(title);
+
+      if (!articles || articles.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No related feed items found.";
+        parent.appendChild(empty);
+        return;
+      }
+
+      const list = document.createElement("ul");
+
+      articles.forEach((article) => {
+        const item = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = article.url || "#";
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = article.title || "Untitled article";
+        item.appendChild(link);
+        item.append(` (${article.source || "Unknown source"})`);
+        list.appendChild(item);
+      });
+
+      parent.appendChild(list);
+    }
+
+    function renderCveEnrichments(parent, enrichments) {
+      const title = document.createElement("p");
+      const titleLabel = document.createElement("strong");
+      titleLabel.textContent = "CVE enrichment:";
+      title.appendChild(titleLabel);
+      parent.appendChild(title);
+
+      if (!enrichments || enrichments.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No CVE enrichment available.";
+        parent.appendChild(empty);
+        return;
+      }
+
+      addTextList(parent, enrichments.map((item) => {
+        const epss = item.epss && item.epss.epss ? item.epss.epss : "unknown";
+        const kev = item.kev && item.kev.is_known_exploited ? "KEV listed" : "not in KEV";
+        return `${item.cve_id}: ${item.risk_classification} risk, EPSS ${epss}, ${kev}`;
+      }));
+    }
+
     function getSummaryText(resultJson) {
       if (!resultJson || !resultJson.summary) {
         return "No summary available.";
@@ -500,6 +552,36 @@
 
           aiReportBox.appendChild(list);
         }
+
+        if (section.columns && section.rows) {
+          const table = document.createElement("table");
+          const thead = document.createElement("thead");
+          const tbody = document.createElement("tbody");
+          const headerRow = document.createElement("tr");
+
+          section.columns.forEach((column) => {
+            const cell = document.createElement("th");
+            cell.textContent = column;
+            headerRow.appendChild(cell);
+          });
+
+          section.rows.forEach((row) => {
+            const tableRow = document.createElement("tr");
+
+            row.forEach((value) => {
+              const cell = document.createElement("td");
+              cell.textContent = value;
+              tableRow.appendChild(cell);
+            });
+
+            tbody.appendChild(tableRow);
+          });
+
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
+          table.appendChild(tbody);
+          aiReportBox.appendChild(table);
+        }
       });
     }
 
@@ -537,6 +619,9 @@
       if (job.action === "extract_iocs" || (resultJson.extracted_iocs && resultJson.extracted_iocs.length > 0)) {
         renderIocList(aiResultBox, resultJson.extracted_iocs);
       }
+
+      renderRelatedArticles(aiResultBox, resultJson.related_articles);
+      renderCveEnrichments(aiResultBox, resultJson.cve_enrichments);
 
       if (recommendations.length > 0) {
         const recommendationsTitle = document.createElement("p");

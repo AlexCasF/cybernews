@@ -1206,6 +1206,180 @@ def build_mock_report_json(entity_type, entity_id, result_json):
     }
 
 
+def get_ioc_values(result_json):
+    values = []
+
+    for ioc in result_json.get("extracted_iocs", []):
+        if isinstance(ioc, dict) and ioc.get("value"):
+            values.append(str(ioc["value"]))
+
+    return values
+
+
+def get_related_feed_keywords(text):
+    stop_words = {
+        "about",
+        "after",
+        "article",
+        "before",
+        "cyber",
+        "from",
+        "have",
+        "into",
+        "news",
+        "that",
+        "their",
+        "there",
+        "this",
+        "with",
+    }
+    words = re.findall(r"[A-Za-z][A-Za-z0-9-]{4,}", text.lower())
+    keywords = []
+
+    for word in words:
+        if word in stop_words or word in keywords:
+            continue
+
+        keywords.append(word)
+
+        if len(keywords) >= 8:
+            break
+
+    return keywords
+
+
+def find_related_feed_items(selected_text, result_json, entity_id, limit=5):
+    cves = [cve.upper() for cve in result_json.get("extracted_cves", [])]
+    ioc_values = get_ioc_values(result_json)
+    keywords = get_related_feed_keywords(selected_text)
+    related_items = []
+
+    for item in list_feed_items():
+        if item.get("id") == entity_id:
+            continue
+
+        haystack = f"{item.get('title', '')} {item.get('summary', '')}".lower()
+        matched_terms = []
+        score = 0
+
+        for cve in cves:
+            if cve.lower() in haystack:
+                matched_terms.append(cve)
+                score += 6
+
+        for ioc in ioc_values:
+            if ioc and ioc.lower() in haystack:
+                matched_terms.append(ioc)
+                score += 5
+
+        for keyword in keywords:
+            if keyword in haystack:
+                matched_terms.append(keyword)
+                score += 1
+
+        if score > 0:
+            related_items.append(
+                {
+                    "title": item.get("title", "Untitled item"),
+                    "source": item.get("source", "Unknown source"),
+                    "published": item.get("published", "Unknown date"),
+                    "url": item.get("url", "#"),
+                    "matched_terms": matched_terms[:6],
+                    "score": score,
+                }
+            )
+
+    return sorted(related_items, key=lambda item: item["score"], reverse=True)[:limit]
+
+
+def get_cve_enrichments(result_json):
+    enrichments = []
+
+    for cve_id in result_json.get("extracted_cves", [])[:3]:
+        if not re.fullmatch(r"CVE-\d{4}-\d{4,}", str(cve_id).upper()):
+            continue
+
+        enrichments.append(build_cve_enrichment(str(cve_id).upper()))
+
+    return enrichments
+
+
+def enrich_ai_result(result_json, selected_text, entity_id):
+    text_cves = extract_cves_from_text(selected_text)
+    existing_cves = [str(cve).upper() for cve in result_json.get("extracted_cves", [])]
+    result_json["extracted_cves"] = sorted(set(existing_cves + text_cves))
+
+    existing_iocs = result_json.get("extracted_iocs", [])
+    text_iocs = extract_iocs_from_text(selected_text)
+    seen_iocs = {
+        (str(ioc.get("type", "")), str(ioc.get("value", "")))
+        for ioc in existing_iocs
+        if isinstance(ioc, dict)
+    }
+
+    for ioc in text_iocs:
+        key = (ioc["type"], ioc["value"])
+
+        if key not in seen_iocs:
+            existing_iocs.append(ioc)
+            seen_iocs.add(key)
+
+    result_json["extracted_iocs"] = existing_iocs
+    result_json["related_articles"] = find_related_feed_items(selected_text, result_json, entity_id)
+    result_json["cve_enrichments"] = get_cve_enrichments(result_json)
+
+    if result_json["related_articles"]:
+        result_json.setdefault("evidence", []).append("Related feed items were found in stored news/RSS data.")
+
+    if result_json["cve_enrichments"]:
+        result_json.setdefault("evidence", []).append("CVE enrichment was loaded from NVD, CISA KEV, and EPSS data.")
+
+    return result_json
+
+
+def add_enrichment_sections_to_report(report_json, result_json):
+    sections = report_json.setdefault("sections", [])
+    related_articles = result_json.get("related_articles", [])
+    cve_enrichments = result_json.get("cve_enrichments", [])
+
+    if related_articles:
+        sections.append(
+            {
+                "type": "source_links",
+                "heading": "Related Feed Items",
+                "links": [
+                    {
+                        "label": f"{item['title']} ({item['source']})",
+                        "url": item["url"],
+                    }
+                    for item in related_articles
+                    if item.get("url", "#") != "#"
+                ],
+            }
+        )
+
+    if cve_enrichments:
+        sections.append(
+            {
+                "type": "table",
+                "heading": "CVE Enrichment",
+                "columns": ["CVE", "Risk", "EPSS", "KEV", "NVD Summary"],
+                "rows": [
+                    [
+                        enrichment.get("cve_id", ""),
+                        enrichment.get("risk_classification", "unknown"),
+                        str(enrichment.get("epss", {}).get("epss", "unknown")),
+                        "yes" if enrichment.get("kev", {}).get("is_known_exploited") else "no",
+                        enrichment.get("nvd", {}).get("summary", "No NVD summary available.")[:180],
+                    ]
+                    for enrichment in cve_enrichments
+                ],
+            }
+        )
+
+    return report_json
+
+
 def get_report_summary(report_json):
     for section in report_json.get("sections", []):
         if section.get("type") == "summary" and section.get("content"):
@@ -1286,6 +1460,7 @@ def create_ai_job(payload, current_user):
         except Exception as error:
             result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
             warnings.append(f"Vertex AI unavailable, used mock result: {error}")
+        result_json = enrich_ai_result(result_json, selected_text, entity_id)
     elif action == "generate_report" and entity_type == "article":
         try:
             report_json, model = generate_article_report(entity_id, selected_text, created_at)
@@ -1312,18 +1487,22 @@ def create_ai_job(payload, current_user):
             result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
             report_json = build_mock_report_json(entity_type, entity_id, result_json)
             warnings.append(f"Vertex AI unavailable, used mock report: {error}")
+        result_json = enrich_ai_result(result_json, selected_text, entity_id)
+        report_json = add_enrichment_sections_to_report(report_json, result_json)
     elif action == "extract_iocs" and entity_type == "article":
         try:
             result_json, model = extract_article_iocs(entity_id, selected_text)
         except Exception as error:
             result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
             warnings.append(f"Vertex AI unavailable, used mock IOC extraction: {error}")
+        result_json = enrich_ai_result(result_json, selected_text, entity_id)
     elif action == "extract_cves" and entity_type == "article":
         try:
             result_json, model = extract_article_cves(entity_id, selected_text)
         except Exception as error:
             result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
             warnings.append(f"Vertex AI unavailable, used mock CVE extraction: {error}")
+        result_json = enrich_ai_result(result_json, selected_text, entity_id)
     else:
         result_json = build_mock_ai_result(action, entity_type, entity_id, selected_text)
         warnings.append("Mock AI result. Gemini is only connected for article analysis, report generation, IOC extraction, and CVE extraction.")

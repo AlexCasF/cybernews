@@ -828,3 +828,22 @@ Notes:
 - Added stable feed item IDs to avoid duplicate saved articles.
 - Added an admin-only `Sync 7 Days` button on the Feed page.
 - Added autosync after successful login.
+
+### AI Feed And CVE Context
+
+Status: DONE
+
+Commit: enrich AI jobs with feed and CVE context
+
+Tested:
+
+- Checked Python compilation.
+- Checked article AI jobs include related stored feed items.
+- Checked extracted CVEs are enriched with deterministic CVE context.
+- Checked generated reports include related feed item links and CVE enrichment sections.
+
+Notes:
+
+- AI actions now search stored feed items for related news/RSS context.
+- CVE enrichment uses the existing deterministic NVD, CISA KEV, and EPSS lookup path.
+- The UI displays related feed items and CVE enrichment in the AI Workbench.
