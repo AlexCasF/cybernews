@@ -129,6 +129,7 @@
       <div class="workbench-section" data-section="report" hidden>
         <div class="workbench-actions">
           <button id="saveReportButton" class="panel-action-button" type="button" hidden>Save report</button>
+          <button id="printReportButton" class="panel-action-button" type="button" hidden>Export PDF / Print</button>
           <span id="saveReportMessage"></span>
         </div>
         <div class="saved-reports">
@@ -318,6 +319,7 @@
     const aiReportBox = document.getElementById("aiReportBox");
     const aiJsonOutput = document.getElementById("aiJsonOutput");
     const saveReportButton = document.getElementById("saveReportButton");
+    const printReportButton = document.getElementById("printReportButton");
     const saveReportMessage = document.getElementById("saveReportMessage");
     const refreshReportsButton = document.getElementById("refreshReportsButton");
     const savedReportsList = document.getElementById("savedReportsList");
@@ -664,6 +666,7 @@
         latestReportJson = null;
         latestReportJobId = "";
         saveReportButton.hidden = true;
+        printReportButton.hidden = true;
         saveReportMessage.textContent = "";
 
         const emptyReport = document.createElement("p");
@@ -675,6 +678,8 @@
       latestReportJson = reportJson;
       saveReportButton.hidden = false;
       saveReportButton.disabled = false;
+      printReportButton.hidden = false;
+      printReportButton.disabled = false;
       saveReportMessage.textContent = "";
 
       const title = document.createElement("h4");
@@ -792,6 +797,21 @@
       }
 
       saveReportButton.disabled = false;
+    }
+
+    function printCurrentReport() {
+      if (!latestReportJson) {
+        saveReportMessage.textContent = "No report is ready to print.";
+        return;
+      }
+
+      if (!analystReportFrame.contentWindow) {
+        saveReportMessage.textContent = "Report preview is not ready yet.";
+        return;
+      }
+
+      analystReportFrame.contentWindow.focus();
+      analystReportFrame.contentWindow.print();
     }
 
     async function runArticleAiAction(button) {
@@ -1157,6 +1177,7 @@
     refreshBsiButton.addEventListener("click", refreshBsiAdvisories);
     refreshKevButton.addEventListener("click", refreshKevVulnerabilities);
     saveReportButton.addEventListener("click", saveCurrentReport);
+    printReportButton.addEventListener("click", printCurrentReport);
     refreshReportsButton.addEventListener("click", refreshSavedReports);
 
     savedReportsList.addEventListener("click", (event) => {

@@ -525,3 +525,20 @@ Notes:
 - The dashboard renders controlled HTML from report JSON into the sandboxed iframe.
 - Dynamic visuals should be represented as structured section types, such as `flowchart` or `source_links`.
 - First PDF export will use browser Print / Save as PDF from the report preview.
+
+### Report Print Export
+
+Status: DONE
+
+Commit: add report print export
+
+Tested:
+
+- Checked `/` renders successfully.
+- Checked generated reports still return report JSON.
+- Checked the Report tab exposes an Export PDF / Print button when a report exists.
+
+Notes:
+
+- Added a simple browser print path for the sandboxed report preview.
+- This keeps PDF export client-side and avoids backend PDF dependencies.
