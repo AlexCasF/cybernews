@@ -597,3 +597,22 @@ Notes:
 
 - Added the first backend step toward a single filterable/sortable feed.
 - Dashboard UI consolidation is planned next.
+
+### Unified Feed UI
+
+Status: DONE
+
+Commit: show aggregated news feed
+
+Tested:
+
+- Checked `/` renders successfully.
+- Checked NewsAPI, security RSS, and BSI items appear in one feed.
+- Checked category, severity, and source filters are available.
+- Checked newest/oldest sorting is available.
+
+Notes:
+
+- Replaced separate RSS and BSI dashboard panels with one unified feed.
+- Kept KEV vulnerabilities as a separate vulnerability intelligence panel.
+- Made the unified feed scrollable.

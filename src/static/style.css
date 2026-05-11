@@ -184,6 +184,12 @@ body {
   border: 1px solid #b9c6cc;
 }
 
+.unified-feed-list {
+  max-height: 720px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
 .filter-bar button,
 .panel-action-button,
 .ai-action-button,

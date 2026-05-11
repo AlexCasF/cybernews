@@ -1483,14 +1483,29 @@ def get_article_severities():
     return ["High", "Medium", "Low"]
 
 
+def get_feed_source_types(feed_items):
+    source_labels = {
+        "newsapi": "NewsAPI",
+        "security-rss": "Security RSS",
+        "bsi": "BSI",
+    }
+
+    return [
+        {
+            "value": source_type,
+            "label": source_labels.get(source_type, source_type),
+        }
+        for source_type in sorted({item["source_type"] for item in feed_items})
+    ]
+
+
 @app.route("/")
 def home():
-    articles = get_mock_articles()
+    feed_data = get_aggregated_news_feed()
+    articles = feed_data["items"][:20]
     intelligence_reports = get_dashboard_intelligence_reports()
-    bsi_data = get_bsi_advisories()
     kev_data = get_kev_vulnerabilities()
     kev_vulnerabilities = kev_data["vulnerabilities"][:4]
-    security_rss_data = get_security_rss_articles()
 
     return render_template(
         "dashboard.html",
@@ -1499,13 +1514,11 @@ def home():
         articles=articles,
         categories=get_article_categories(articles),
         severities=get_article_severities(),
+        feed_sources=get_feed_source_types(articles),
+        feed_message=feed_data["message"],
         intelligence_reports=intelligence_reports,
-        bsi_advisories=bsi_data["advisories"][:4],
-        bsi_message=bsi_data["message"],
         kev_vulnerabilities=kev_vulnerabilities,
         kev_message=kev_data["message"],
-        security_rss_articles=security_rss_data["articles"][:6],
-        security_rss_message=security_rss_data["message"],
         system_status=get_system_status(),
         current_user=get_current_user(),
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M"),
