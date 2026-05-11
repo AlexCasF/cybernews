@@ -273,3 +273,24 @@ Notes:
 - Added `POST /api/ai/jobs` and `GET /api/ai/jobs/<job_id>`.
 - AI results are mocked for now so the UI can be built before Gemini is connected.
 - CVE and IOC enrichment return schema-shaped mock results for now.
+
+### AI Workbench Panel UI
+
+Status: DONE
+
+Commit: Week 3: add AI workbench panel
+
+Tested:
+
+- Checked `/` returns `200`.
+- Checked the dashboard includes the `AI Workbench` panel.
+- Checked headline cards include `Analyze` buttons.
+- Checked `POST /api/ai/jobs` still creates a completed mock AI job.
+- Checked `/health` still returns the health message.
+
+Notes:
+
+- Added a simple AI Workbench panel to the dashboard.
+- Added Result, Report, and JSON tabs.
+- Added Analyze buttons to headline cards.
+- The Analyze action calls the existing mock AI jobs API and renders the result.

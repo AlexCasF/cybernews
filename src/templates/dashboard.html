@@ -83,12 +83,52 @@
               <p>{{ article.source }} | {{ article.published }} | {{ article.severity }}</p>
               <p>{{ article.summary }}</p>
             </div>
-            <span class="tag">{{ article.category }}</span>
+            <div class="card-actions">
+              <span class="tag">{{ article.category }}</span>
+              <button
+                class="ai-analyze-button"
+                type="button"
+                data-entity-id="{{ article.id }}"
+                data-entity-label="{{ article.title }}"
+              >Analyze</button>
+            </div>
           </article>
         {% endfor %}
       </div>
 
       <p id="emptyArticlesMessage" class="empty-message" hidden>No articles match these filters.</p>
+    </section>
+
+    <section id="ai-workbench" class="panel ai-workbench">
+      <div class="panel-heading">
+        <h3>AI Workbench</h3>
+        <span id="aiJobStatus">Waiting</span>
+      </div>
+
+      <p class="news-message">Run an AI action from a headline card to preview structured results.</p>
+
+      <div class="workbench-tabs" aria-label="AI Workbench tabs">
+        <button class="workbench-tab active" type="button" data-tab="result">Result</button>
+        <button class="workbench-tab" type="button" data-tab="report">Report</button>
+        <button class="workbench-tab" type="button" data-tab="json">JSON</button>
+      </div>
+
+      <div class="workbench-section" data-section="result">
+        <p><strong>Selected entity:</strong> <span id="aiSelectedEntity">None yet</span></p>
+        <div id="aiResultBox" class="workbench-box">
+          <p>No AI job has been run yet.</p>
+        </div>
+      </div>
+
+      <div class="workbench-section" data-section="report" hidden>
+        <div id="aiReportBox" class="workbench-box">
+          <p>No report has been generated yet.</p>
+        </div>
+      </div>
+
+      <div class="workbench-section" data-section="json" hidden>
+        <pre id="aiJsonOutput" class="json-output">{}</pre>
+      </div>
     </section>
 
     <section id="security-feeds" class="panel">
@@ -252,6 +292,11 @@
     const securityFeedCount = document.getElementById("securityFeedCount");
     const securityFeedMessage = document.getElementById("securityFeedMessage");
     const emptySecurityFeedMessage = document.getElementById("emptySecurityFeedMessage");
+    const aiJobStatus = document.getElementById("aiJobStatus");
+    const aiSelectedEntity = document.getElementById("aiSelectedEntity");
+    const aiResultBox = document.getElementById("aiResultBox");
+    const aiReportBox = document.getElementById("aiReportBox");
+    const aiJsonOutput = document.getElementById("aiJsonOutput");
 
     function applyArticleFilters() {
       const selectedCategory = categoryFilter.value;
@@ -274,6 +319,174 @@
       emptyArticlesMessage.hidden = visibleCount > 0;
     }
 
+    function setWorkbenchTab(selectedTab) {
+      document.querySelectorAll(".workbench-tab").forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.tab === selectedTab);
+      });
+
+      document.querySelectorAll(".workbench-section").forEach((section) => {
+        section.hidden = section.dataset.section !== selectedTab;
+      });
+    }
+
+    function addTextList(parent, items) {
+      const list = document.createElement("ul");
+
+      items.forEach((item) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = item;
+        list.appendChild(listItem);
+      });
+
+      parent.appendChild(list);
+    }
+
+    function getSummaryText(resultJson) {
+      if (!resultJson || !resultJson.summary) {
+        return "No summary available.";
+      }
+
+      if (typeof resultJson.summary === "string") {
+        return resultJson.summary;
+      }
+
+      return resultJson.summary.executive || "No summary available.";
+    }
+
+    function renderAiReport(reportJson) {
+      aiReportBox.innerHTML = "";
+
+      if (!reportJson) {
+        const emptyReport = document.createElement("p");
+        emptyReport.textContent = "No report was generated for this job.";
+        aiReportBox.appendChild(emptyReport);
+        return;
+      }
+
+      const title = document.createElement("h4");
+      const subtitle = document.createElement("p");
+
+      title.textContent = reportJson.title || "Threat Intelligence Report";
+      subtitle.textContent = reportJson.subtitle || "";
+      aiReportBox.appendChild(title);
+      aiReportBox.appendChild(subtitle);
+
+      (reportJson.sections || []).forEach((section) => {
+        const heading = document.createElement("p");
+        const headingLabel = document.createElement("strong");
+        headingLabel.textContent = section.heading || "Section";
+        heading.appendChild(headingLabel);
+        aiReportBox.appendChild(heading);
+
+        if (section.content) {
+          const content = document.createElement("p");
+          content.textContent = section.content;
+          aiReportBox.appendChild(content);
+        }
+
+        if (section.items && section.items.length > 0) {
+          addTextList(aiReportBox, section.items);
+        }
+      });
+    }
+
+    function renderAiJob(job) {
+      const resultJson = job.result_json || {};
+      const evidence = job.evidence || resultJson.evidence || [];
+      const recommendations = resultJson.recommended_actions || [];
+      const confidence = job.confidence || resultJson.confidence || "unknown";
+
+      aiJobStatus.textContent = job.status;
+      aiSelectedEntity.textContent = `${job.entity_type}: ${job.entity_id}`;
+      aiResultBox.innerHTML = "";
+
+      const summaryTitle = document.createElement("h4");
+      const summary = document.createElement("p");
+      const confidenceLine = document.createElement("p");
+      const confidenceLabel = document.createElement("strong");
+
+      summaryTitle.textContent = "Summary";
+      summary.textContent = getSummaryText(resultJson);
+      confidenceLabel.textContent = "Confidence:";
+      confidenceLine.appendChild(confidenceLabel);
+      confidenceLine.append(` ${confidence}`);
+
+      aiResultBox.appendChild(summaryTitle);
+      aiResultBox.appendChild(summary);
+      aiResultBox.appendChild(confidenceLine);
+
+      if (recommendations.length > 0) {
+        const recommendationsTitle = document.createElement("p");
+        const recommendationsLabel = document.createElement("strong");
+        recommendationsLabel.textContent = "Recommended actions:";
+        recommendationsTitle.appendChild(recommendationsLabel);
+        aiResultBox.appendChild(recommendationsTitle);
+        addTextList(aiResultBox, recommendations);
+      }
+
+      if (evidence.length > 0) {
+        const evidenceTitle = document.createElement("p");
+        const evidenceLabel = document.createElement("strong");
+        evidenceLabel.textContent = "Evidence:";
+        evidenceTitle.appendChild(evidenceLabel);
+        aiResultBox.appendChild(evidenceTitle);
+        addTextList(aiResultBox, evidence);
+      }
+
+      renderAiReport(job.report_json);
+      aiJsonOutput.textContent = JSON.stringify(job, null, 2);
+      setWorkbenchTab("result");
+    }
+
+    async function runArticleAnalysis(button) {
+      const entityId = button.dataset.entityId;
+      const entityLabel = button.dataset.entityLabel || entityId;
+
+      button.disabled = true;
+      aiJobStatus.textContent = "running";
+      aiSelectedEntity.textContent = `article: ${entityLabel}`;
+      aiResultBox.innerHTML = "";
+
+      const loadingMessage = document.createElement("p");
+      loadingMessage.textContent = "Running mock AI analysis...";
+      aiResultBox.appendChild(loadingMessage);
+      setWorkbenchTab("result");
+
+      try {
+        const response = await fetch("/api/ai/jobs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "analyze",
+            entity_type: "article",
+            entity_id: entityId,
+            context_depth: "medium",
+            output_format: "both",
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "AI job failed.");
+        }
+
+        renderAiJob(data);
+      } catch (error) {
+        aiJobStatus.textContent = "failed";
+        aiResultBox.innerHTML = "";
+
+        const message = document.createElement("p");
+        message.className = "error-message";
+        message.textContent = error.message;
+        aiResultBox.appendChild(message);
+      }
+
+      button.disabled = false;
+    }
+
     function createArticleCard(article) {
       const card = document.createElement("article");
       card.className = "news-item";
@@ -281,11 +494,14 @@
       card.dataset.severity = article.severity;
 
       const content = document.createElement("div");
+      const actions = document.createElement("div");
       const heading = document.createElement("h4");
       const link = document.createElement("a");
       const meta = document.createElement("p");
       const summary = document.createElement("p");
       const tag = document.createElement("span");
+      const analyzeButton = document.createElement("button");
+      const entityId = article.id || article.url || article.title || "unknown";
 
       link.href = article.url;
       link.textContent = article.title;
@@ -293,13 +509,21 @@
       summary.textContent = article.summary;
       tag.className = "tag";
       tag.textContent = article.category;
+      actions.className = "card-actions";
+      analyzeButton.className = "ai-analyze-button";
+      analyzeButton.type = "button";
+      analyzeButton.dataset.entityId = entityId;
+      analyzeButton.dataset.entityLabel = article.title || entityId;
+      analyzeButton.textContent = "Analyze";
 
       heading.appendChild(link);
       content.appendChild(heading);
       content.appendChild(meta);
       content.appendChild(summary);
+      actions.appendChild(tag);
+      actions.appendChild(analyzeButton);
       card.appendChild(content);
-      card.appendChild(tag);
+      card.appendChild(actions);
 
       return card;
     }
@@ -544,5 +768,19 @@
     refreshSecurityFeedsButton.addEventListener("click", refreshSecurityFeeds);
     refreshBsiButton.addEventListener("click", refreshBsiAdvisories);
     refreshKevButton.addEventListener("click", refreshKevVulnerabilities);
+
+    articleList.addEventListener("click", (event) => {
+      const button = event.target.closest(".ai-analyze-button");
+
+      if (button) {
+        runArticleAnalysis(button);
+      }
+    });
+
+    document.querySelectorAll(".workbench-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        setWorkbenchTab(tab.dataset.tab);
+      });
+    });
   </script>
 {% endblock %}
