@@ -736,7 +736,8 @@
 
         item.className = "saved-report-item";
         title.textContent = `${aiActionLabels[job.action] || job.action} | ${job.entity_id}`;
-        meta.textContent = `${job.status} | ${job.created_at} | ${job.created_by}`;
+        const statusLabel = job.status === "running" ? "Generating..." : job.status;
+        meta.textContent = `${statusLabel} | ${job.created_at} | ${job.created_by}`;
         loadButton.className = "panel-action-button";
         loadButton.type = "button";
         loadButton.dataset.jobId = job.job_id;
@@ -971,8 +972,9 @@
       const evidence = job.evidence || resultJson.evidence || [];
       const recommendations = resultJson.recommended_actions || [];
       const confidence = job.confidence || resultJson.confidence || "unknown";
+      const statusLabel = job.status === "running" ? "Generating..." : job.status;
 
-      aiJobStatus.textContent = job.status;
+      aiJobStatus.textContent = statusLabel;
       aiSelectedEntity.textContent = `${job.entity_type}: ${job.entity_id}`;
       aiSelectedAction.textContent = aiActionLabels[job.action] || job.action;
       aiResultBox.innerHTML = "";
@@ -989,7 +991,9 @@
       const confidenceLabel = document.createElement("strong");
 
       summaryTitle.textContent = "Summary";
-      summary.textContent = getSummaryText(resultJson);
+      summary.textContent = job.status === "running"
+        ? (job.progress_message || "Generating AI result...")
+        : getSummaryText(resultJson);
       confidenceLabel.textContent = "Confidence:";
       confidenceLine.appendChild(confidenceLabel);
       confidenceLine.append(` ${confidence}`);
@@ -1034,6 +1038,7 @@
       renderRetrievalTrace(job.retrieval_trace);
       renderRelatedSources(job.related_sources, job.source_map);
       aiJsonOutput.textContent = JSON.stringify(job, null, 2);
+      refreshAiJobs();
       refreshSavedReports();
       setWorkbenchTab(job.action === "generate_report" ? "report" : "result");
     }
@@ -1053,6 +1058,10 @@
         }
 
         renderAiJob(data);
+
+        if (data.status === "running" || data.status === "queued") {
+          window.setTimeout(() => loadAiJob(jobId, data), 2500);
+        }
       } catch (error) {
         aiJobStatus.textContent = "failed";
         aiResultBox.innerHTML = "";

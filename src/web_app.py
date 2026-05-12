@@ -4,6 +4,7 @@ import json
 import os
 import re
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from urllib.parse import urlencode
@@ -50,6 +51,7 @@ app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 INITIAL_BACKFILL_DAYS = int(os.getenv("INITIAL_BACKFILL_DAYS", "30"))
 ARTICLE_RETENTION_POLICY = os.getenv("ARTICLE_RETENTION_POLICY", "keep_all")
 EXTERNAL_SEARCH_POLICY = os.getenv("EXTERNAL_SEARCH_POLICY", "auto")
+AI_JOB_EXECUTOR = ThreadPoolExecutor(max_workers=int(os.getenv("AI_JOB_WORKERS", "2")))
 
 USERS = {
     "Alex": {
@@ -1507,7 +1509,7 @@ def save_ai_job_artifacts(job):
         )
 
 
-def create_ai_job(payload, current_user):
+def validate_ai_job_payload(payload):
     action = payload.get("action", "")
     entity_type = payload.get("entity_type", "")
     entity_id = str(payload.get("entity_id", "")).strip()
@@ -1516,31 +1518,140 @@ def create_ai_job(payload, current_user):
     external_search_policy = payload.get("external_search_policy", EXTERNAL_SEARCH_POLICY)
 
     if action not in AI_ACTIONS:
-        return None, "Unsupported AI action."
+        return "Unsupported AI action."
 
     if entity_type not in AI_ENTITY_TYPES:
-        return None, "Unsupported entity type."
+        return "Unsupported entity type."
 
     if not entity_id:
-        return None, "Missing entity_id."
+        return "Missing entity_id."
 
     if context_depth not in AI_CONTEXT_DEPTHS:
-        return None, "Unsupported context_depth."
+        return "Unsupported context_depth."
 
     if output_format not in AI_OUTPUT_FORMATS:
-        return None, "Unsupported output_format."
+        return "Unsupported output_format."
 
     if external_search_policy not in {"off", "auto", "force"}:
-        return None, "Unsupported external_search_policy."
+        return "Unsupported external_search_policy."
 
     if action == "cve_enrichment" and entity_type != "cve":
-        return None, "CVE enrichment requires a cve entity."
+        return "CVE enrichment requires a cve entity."
 
     if action == "ioc_enrichment" and entity_type != "ioc":
-        return None, "IOC enrichment requires an ioc entity."
+        return "IOC enrichment requires an ioc entity."
+
+    return ""
+
+
+def run_ai_job_background(job_id, payload, current_user, created_at):
+    background_payload = dict(payload)
+    background_payload["_job_id"] = job_id
+    background_payload["_created_at"] = created_at
+
+    try:
+        job, error = create_ai_job(background_payload, current_user)
+
+        if error:
+            raise RuntimeError(error)
+
+        job["progress_message"] = "AI job completed."
+        save_ai_job(job)
+    except Exception as error:
+        failed_job = get_ai_job(job_id) or {
+            "job_id": job_id,
+            "action": payload.get("action", ""),
+            "entity_type": payload.get("entity_type", ""),
+            "entity_id": str(payload.get("entity_id", "")).strip(),
+            "created_by": current_user["username"] if current_user else "guest",
+            "created_at": created_at,
+        }
+        failed_job["status"] = "failed"
+        failed_job["progress_message"] = "AI job failed."
+        failed_job["error_message"] = str(error)
+        failed_job["warnings"] = list(failed_job.get("warnings", [])) + [str(error)]
+        failed_job["completed_at"] = get_timestamp()
+        save_ai_job(failed_job)
+
+
+def create_running_ai_job(payload, current_user):
+    error = validate_ai_job_payload(payload)
+
+    if error:
+        return None, error
 
     job_id = str(uuid4())
     created_at = get_timestamp()
+    action = payload.get("action", "")
+    entity_type = payload.get("entity_type", "")
+    entity_id = str(payload.get("entity_id", "")).strip()
+    context_depth = payload.get("context_depth", "medium")
+    output_format = payload.get("output_format", "structured_json")
+    external_search_policy = payload.get("external_search_policy", EXTERNAL_SEARCH_POLICY)
+
+    job = {
+        "job_id": job_id,
+        "status": "running",
+        "progress_message": "Generating AI result...",
+        "action": action,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+        "selected_text": payload.get("selected_text", ""),
+        "context_depth": context_depth,
+        "output_format": output_format,
+        "external_search_policy": external_search_policy,
+        "model": "",
+        "prompt_version": "",
+        "result_json": {},
+        "report_json": None,
+        "context_bundle": {},
+        "retrieval_plan": {},
+        "retrieval_trace": [
+            {
+                "step": "queued",
+                "details": "AI job accepted and queued for generation.",
+                "count": 0,
+            }
+        ],
+        "related_sources": [],
+        "source_map": {},
+        "rendered_html": None,
+        "confidence": 0,
+        "warnings": [],
+        "evidence": [],
+        "created_by": current_user["username"] if current_user else "guest",
+        "created_at": created_at,
+        "completed_at": None,
+        "auto_saved_report_id": None,
+    }
+
+    save_ai_job(job)
+    AI_JOB_EXECUTOR.submit(
+        run_ai_job_background,
+        job_id,
+        dict(payload),
+        dict(current_user) if current_user else None,
+        created_at,
+    )
+
+    return job, ""
+
+
+def create_ai_job(payload, current_user):
+    error = validate_ai_job_payload(payload)
+
+    if error:
+        return None, error
+
+    action = payload.get("action", "")
+    entity_type = payload.get("entity_type", "")
+    entity_id = str(payload.get("entity_id", "")).strip()
+    context_depth = payload.get("context_depth", "medium")
+    output_format = payload.get("output_format", "structured_json")
+    external_search_policy = payload.get("external_search_policy", EXTERNAL_SEARCH_POLICY)
+
+    job_id = payload.get("_job_id") or str(uuid4())
+    created_at = payload.get("_created_at") or get_timestamp()
     selected_text = payload.get("selected_text", "")
     model = "mock-ai-v1"
     warnings = []
@@ -1582,6 +1693,7 @@ def create_ai_job(payload, current_user):
     job = {
         "job_id": job_id,
         "status": "completed",
+        "progress_message": "AI job completed.",
         "action": action,
         "entity_type": entity_type,
         "entity_id": entity_id,
@@ -2343,6 +2455,7 @@ def api_create_ai_job():
                     {
                         "job_id": job["job_id"],
                         "status": job.get("status", ""),
+                        "progress_message": job.get("progress_message", ""),
                         "action": job.get("action", ""),
                         "entity_type": job.get("entity_type", ""),
                         "entity_id": job.get("entity_id", ""),
@@ -2360,6 +2473,14 @@ def api_create_ai_job():
 
     if not isinstance(payload, dict):
         return jsonify({"error": "JSON body is required."}), 400
+
+    if payload.get("async"):
+        job, error = create_running_ai_job(payload, get_current_user())
+
+        if error:
+            return jsonify({"error": error}), 400
+
+        return jsonify(job), 202
 
     job, error = create_ai_job(payload, get_current_user())
 
