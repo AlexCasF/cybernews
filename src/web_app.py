@@ -4,7 +4,6 @@ import json
 import os
 import re
 import xml.etree.ElementTree as ET
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from urllib.parse import urlencode
@@ -51,7 +50,6 @@ app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 INITIAL_BACKFILL_DAYS = int(os.getenv("INITIAL_BACKFILL_DAYS", "30"))
 ARTICLE_RETENTION_POLICY = os.getenv("ARTICLE_RETENTION_POLICY", "keep_all")
 EXTERNAL_SEARCH_POLICY = os.getenv("EXTERNAL_SEARCH_POLICY", "auto")
-AI_JOB_EXECUTOR = ThreadPoolExecutor(max_workers=int(os.getenv("AI_JOB_WORKERS", "2")))
 
 USERS = {
     "Alex": {
@@ -1544,34 +1542,41 @@ def validate_ai_job_payload(payload):
     return ""
 
 
-def run_ai_job_background(job_id, payload, current_user, created_at):
-    background_payload = dict(payload)
-    background_payload["_job_id"] = job_id
-    background_payload["_created_at"] = created_at
+def finish_running_ai_job(job):
+    if job.get("status") != "running":
+        return job
+
+    payload = {
+        "action": job.get("action", ""),
+        "entity_type": job.get("entity_type", ""),
+        "entity_id": job.get("entity_id", ""),
+        "selected_text": job.get("selected_text", ""),
+        "context_depth": job.get("context_depth", "medium"),
+        "output_format": job.get("output_format", "structured_json"),
+        "external_search_policy": job.get("external_search_policy", EXTERNAL_SEARCH_POLICY),
+        "_job_id": job.get("job_id"),
+        "_created_at": job.get("created_at"),
+    }
+    job["progress_message"] = "Generating AI result..."
+    save_ai_job(job)
 
     try:
-        job, error = create_ai_job(background_payload, current_user)
+        completed_job, error = create_ai_job(payload, get_current_user())
 
         if error:
             raise RuntimeError(error)
 
-        job["progress_message"] = "AI job completed."
-        save_ai_job(job)
+        completed_job["progress_message"] = "AI job completed."
+        save_ai_job(completed_job)
+        return completed_job
     except Exception as error:
-        failed_job = get_ai_job(job_id) or {
-            "job_id": job_id,
-            "action": payload.get("action", ""),
-            "entity_type": payload.get("entity_type", ""),
-            "entity_id": str(payload.get("entity_id", "")).strip(),
-            "created_by": current_user["username"] if current_user else "guest",
-            "created_at": created_at,
-        }
-        failed_job["status"] = "failed"
-        failed_job["progress_message"] = "AI job failed."
-        failed_job["error_message"] = str(error)
-        failed_job["warnings"] = list(failed_job.get("warnings", [])) + [str(error)]
-        failed_job["completed_at"] = get_timestamp()
-        save_ai_job(failed_job)
+        job["status"] = "failed"
+        job["progress_message"] = "AI job failed."
+        job["error_message"] = str(error)
+        job["warnings"] = list(job.get("warnings", [])) + [str(error)]
+        job["completed_at"] = get_timestamp()
+        save_ai_job(job)
+        return job
 
 
 def create_running_ai_job(payload, current_user):
@@ -1626,13 +1631,6 @@ def create_running_ai_job(payload, current_user):
     }
 
     save_ai_job(job)
-    AI_JOB_EXECUTOR.submit(
-        run_ai_job_background,
-        job_id,
-        dict(payload),
-        dict(current_user) if current_user else None,
-        created_at,
-    )
 
     return job, ""
 
@@ -2496,6 +2494,9 @@ def api_get_ai_job(job_id):
 
     if not job:
         return jsonify({"error": "AI job not found."}), 404
+
+    if job.get("status") == "running":
+        job = finish_running_ai_job(job)
 
     return jsonify(job)
 
