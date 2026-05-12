@@ -149,13 +149,25 @@
       padding-right: 24px;
     }
 
+    .flow .arrow-step::before,
     .flow .arrow-step::after {
       content: "";
       position: absolute;
-      top: -1px;
-      right: -22px;
       width: 0;
       height: 0;
+    }
+
+    .flow .arrow-step::before {
+      top: -1px;
+      right: -23px;
+      border-top: 24px solid transparent;
+      border-bottom: 24px solid transparent;
+      border-left: 23px solid var(--line);
+    }
+
+    .flow .arrow-step::after {
+      top: 0;
+      right: -21px;
       border-top: 23px solid transparent;
       border-bottom: 23px solid transparent;
       border-left: 22px solid #f9fbfc;
