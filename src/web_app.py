@@ -26,6 +26,7 @@ from src.storage import (
     get_feed_item,
     get_report,
     list_article_correlations,
+    list_ai_jobs,
     list_detection_rules,
     list_feed_items,
     list_reports,
@@ -35,6 +36,7 @@ from src.storage import (
     save_feed_items,
     save_report,
     save_report_version,
+    update_article_correlation_status,
 )
 
 
@@ -2243,8 +2245,30 @@ def analyst_briefing_frame():
     return render_template("analyst_briefing_frame.html")
 
 
-@app.route("/api/ai/jobs", methods=["POST"])
+@app.route("/api/ai/jobs", methods=["GET", "POST"])
 def api_create_ai_job():
+    if request.method == "GET":
+        jobs = list_ai_jobs()
+
+        return jsonify(
+            {
+                "jobs": [
+                    {
+                        "job_id": job["job_id"],
+                        "status": job.get("status", ""),
+                        "action": job.get("action", ""),
+                        "entity_type": job.get("entity_type", ""),
+                        "entity_id": job.get("entity_id", ""),
+                        "created_by": job.get("created_by", ""),
+                        "created_at": job.get("created_at", ""),
+                        "auto_saved_report_id": job.get("auto_saved_report_id"),
+                    }
+                    for job in jobs
+                ],
+                "count": len(jobs),
+            }
+        )
+
     payload = request.get_json(silent=True)
 
     if not isinstance(payload, dict):
@@ -2330,6 +2354,33 @@ def api_get_entity_connections(entity_type, entity_id):
         return jsonify({"error": "Unsupported entity type."}), 400
 
     return jsonify(get_entity_connections_payload(entity_type, entity_id))
+
+
+@app.route("/api/entities/article/<entity_id>/connections/<target_id>/review", methods=["POST"])
+def api_review_article_connection(entity_id, target_id):
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body is required."}), 400
+
+    status = str(payload.get("status", "needs_review"))
+
+    if status not in {"approved", "rejected", "needs_review"}:
+        return jsonify({"error": "Unsupported review status."}), 400
+
+    current_user = get_current_user()
+    correlation = update_article_correlation_status(
+        entity_id,
+        target_id,
+        status,
+        reviewed_by=current_user["username"] if current_user else "guest",
+        review_notes=str(payload.get("review_notes", "")).strip(),
+    )
+
+    if not correlation:
+        return jsonify({"error": "Connection not found."}), 404
+
+    return jsonify(correlation)
 
 
 @app.route("/api/reports", methods=["POST"])

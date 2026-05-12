@@ -92,6 +92,20 @@ def get_ai_job(job_id):
     return MEMORY_AI_JOBS.get(job_id)
 
 
+def list_ai_jobs():
+    db = get_firestore_client()
+
+    if db:
+        try:
+            jobs = [document.to_dict() for document in db.collection("ai_jobs").stream()]
+        except Exception:
+            jobs = list(MEMORY_AI_JOBS.values())
+    else:
+        jobs = list(MEMORY_AI_JOBS.values())
+
+    return sorted(jobs, key=lambda job: job.get("created_at", ""), reverse=True)
+
+
 def save_analyst_feedback(feedback):
     db = get_firestore_client()
 
@@ -474,6 +488,41 @@ def list_article_correlations(article_id):
         ]
 
     return sorted(correlations, key=lambda correlation: correlation.get("score", 0), reverse=True)
+
+
+def update_article_correlation_status(article_id, related_article_id, status, reviewed_by="", review_notes=""):
+    correlation_id = get_correlation_id(article_id, related_article_id)
+    db = get_firestore_client()
+    correlation = None
+
+    if db:
+        try:
+            document = db.collection("article_correlations").document(correlation_id)
+            snapshot = document.get()
+
+            if snapshot.exists:
+                correlation = snapshot.to_dict()
+                correlation["status"] = status
+                correlation["reviewed_by"] = reviewed_by
+                correlation["review_notes"] = review_notes
+                correlation["reviewed_at"] = datetime.utcnow().isoformat()
+                document.set(correlation)
+                return correlation
+        except Exception:
+            pass
+
+    correlation = MEMORY_ARTICLE_CORRELATIONS.get(correlation_id)
+
+    if not correlation:
+        return None
+
+    correlation["status"] = status
+    correlation["reviewed_by"] = reviewed_by
+    correlation["review_notes"] = review_notes
+    correlation["reviewed_at"] = datetime.utcnow().isoformat()
+    MEMORY_ARTICLE_CORRELATIONS[correlation_id] = correlation
+
+    return correlation
 
 
 def get_external_cache_id(item):

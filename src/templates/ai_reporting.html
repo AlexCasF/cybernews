@@ -44,6 +44,7 @@
       <button class="workbench-tab active" type="button" data-tab="result">Result</button>
       <button class="workbench-tab" type="button" data-tab="report">Report</button>
       <button class="workbench-tab" type="button" data-tab="evidence">Evidence</button>
+      <button class="workbench-tab" type="button" data-tab="history">History</button>
       <button class="workbench-tab" type="button" data-tab="json">JSON</button>
     </div>
 
@@ -129,6 +130,28 @@
       </div>
     </div>
 
+    <div class="workbench-section" data-section="history" hidden>
+      <div class="workbench-box">
+        <div class="panel-heading">
+          <h4>AI Job Timeline</h4>
+          <button id="refreshJobsButton" class="panel-action-button" type="button">Refresh</button>
+        </div>
+        <div id="aiJobsList">
+          <p>No AI jobs yet.</p>
+        </div>
+      </div>
+
+      <div class="workbench-box">
+        <div class="panel-heading">
+          <h4>Detection Rules</h4>
+          <button id="refreshDetectionsButton" class="panel-action-button" type="button">Refresh</button>
+        </div>
+        <div id="detectionRulesList">
+          <p>No detection drafts yet.</p>
+        </div>
+      </div>
+    </div>
+
     <div class="workbench-section" data-section="json" hidden>
       <pre id="aiJsonOutput" class="json-output">{}</pre>
     </div>
@@ -199,6 +222,10 @@
     const rejectDetectionButton = document.getElementById("rejectDetectionButton");
     const detectionMessage = document.getElementById("detectionMessage");
     const detectionRuleOutput = document.getElementById("detectionRuleOutput");
+    const refreshJobsButton = document.getElementById("refreshJobsButton");
+    const aiJobsList = document.getElementById("aiJobsList");
+    const refreshDetectionsButton = document.getElementById("refreshDetectionsButton");
+    const detectionRulesList = document.getElementById("detectionRulesList");
     const userIsAdmin = {{ "true" if current_user and current_user.role == "admin" else "false" }};
     let latestJob = null;
     let latestReportJson = null;
@@ -415,7 +442,7 @@
       const tbody = document.createElement("tbody");
       const headerRow = document.createElement("tr");
 
-      ["Ref", "Title", "Origin", "Relation", "Matched terms", "Score"].forEach((heading) => {
+      ["Ref", "Title", "Origin", "Relation", "Matched terms", "Score", "Review"].forEach((heading) => {
         const cell = document.createElement("th");
         cell.textContent = heading;
         headerRow.appendChild(cell);
@@ -453,6 +480,28 @@
           row.appendChild(cell);
         });
 
+        const reviewCell = document.createElement("td");
+
+        if (source.origin === "firestore" && source.article_id) {
+          const approveButton = document.createElement("button");
+          const rejectButton = document.createElement("button");
+          approveButton.className = "panel-action-button";
+          approveButton.type = "button";
+          approveButton.dataset.connectionTarget = source.article_id;
+          approveButton.dataset.connectionStatus = "approved";
+          approveButton.textContent = "Approve";
+          rejectButton.className = "panel-action-button danger-button";
+          rejectButton.type = "button";
+          rejectButton.dataset.connectionTarget = source.article_id;
+          rejectButton.dataset.connectionStatus = "rejected";
+          rejectButton.textContent = "Reject";
+          reviewCell.appendChild(approveButton);
+          reviewCell.appendChild(rejectButton);
+        } else {
+          reviewCell.textContent = "-";
+        }
+
+        row.appendChild(reviewCell);
         tbody.appendChild(row);
       });
 
@@ -666,6 +715,112 @@
       }
 
       refreshReportsButton.disabled = false;
+    }
+
+    function renderAiJobs(jobs) {
+      aiJobsList.innerHTML = "";
+
+      if (!jobs || jobs.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No AI jobs yet.";
+        aiJobsList.appendChild(empty);
+        return;
+      }
+
+      jobs.forEach((job) => {
+        const item = document.createElement("article");
+        const details = document.createElement("div");
+        const title = document.createElement("h5");
+        const meta = document.createElement("p");
+        const loadButton = document.createElement("button");
+
+        item.className = "saved-report-item";
+        title.textContent = `${aiActionLabels[job.action] || job.action} | ${job.entity_id}`;
+        meta.textContent = `${job.status} | ${job.created_at} | ${job.created_by}`;
+        loadButton.className = "panel-action-button";
+        loadButton.type = "button";
+        loadButton.dataset.jobId = job.job_id;
+        loadButton.textContent = "Load";
+
+        details.appendChild(title);
+        details.appendChild(meta);
+        item.appendChild(details);
+        item.appendChild(loadButton);
+        aiJobsList.appendChild(item);
+      });
+    }
+
+    async function refreshAiJobs() {
+      refreshJobsButton.disabled = true;
+
+      try {
+        const response = await fetch("/api/ai/jobs");
+        const data = await readJsonResponse(response, "Could not load AI job history.");
+
+        renderAiJobs(data.jobs);
+      } catch (error) {
+        aiJobsList.innerHTML = "";
+
+        const message = document.createElement("p");
+        message.className = "error-message";
+        message.textContent = error.message;
+        aiJobsList.appendChild(message);
+      }
+
+      refreshJobsButton.disabled = false;
+    }
+
+    function renderDetectionRules(rules) {
+      detectionRulesList.innerHTML = "";
+
+      if (!rules || rules.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No detection drafts yet.";
+        detectionRulesList.appendChild(empty);
+        return;
+      }
+
+      rules.forEach((rule) => {
+        const item = document.createElement("article");
+        const details = document.createElement("div");
+        const title = document.createElement("h5");
+        const meta = document.createElement("p");
+        const loadButton = document.createElement("button");
+
+        item.className = "saved-report-item";
+        title.textContent = `${rule.rule_type.toUpperCase()} | ${rule.title}`;
+        meta.textContent = `${rule.status} | ${rule.created_at} | ${rule.created_by}`;
+        loadButton.className = "panel-action-button";
+        loadButton.type = "button";
+        loadButton.dataset.ruleId = rule.rule_id;
+        loadButton.textContent = "Load";
+
+        details.appendChild(title);
+        details.appendChild(meta);
+        item.appendChild(details);
+        item.appendChild(loadButton);
+        detectionRulesList.appendChild(item);
+      });
+    }
+
+    async function refreshDetectionRules() {
+      refreshDetectionsButton.disabled = true;
+
+      try {
+        const response = await fetch("/api/detections");
+        const data = await readJsonResponse(response, "Could not load detection rules.");
+
+        renderDetectionRules(data.rules);
+      } catch (error) {
+        detectionRulesList.innerHTML = "";
+
+        const message = document.createElement("p");
+        message.className = "error-message";
+        message.textContent = error.message;
+        detectionRulesList.appendChild(message);
+      }
+
+      refreshDetectionsButton.disabled = false;
     }
 
     async function loadSavedReport(reportId) {
@@ -1036,6 +1191,7 @@
         const data = await readJsonResponse(response, "Could not generate detection draft.");
 
         renderDetectionRule(data);
+        refreshDetectionRules();
       } catch (error) {
         detectionMessage.textContent = error.message;
       }
@@ -1063,6 +1219,50 @@
         const data = await readJsonResponse(response, "Could not review detection draft.");
 
         renderDetectionRule(data);
+        refreshDetectionRules();
+      } catch (error) {
+        detectionMessage.textContent = error.message;
+      }
+    }
+
+    async function reviewConnection(targetId, status) {
+      if (!latestJob || latestJob.entity_type !== "article") {
+        detectionMessage.textContent = "Load an article AI job first.";
+        return;
+      }
+
+      detectionMessage.textContent = "Saving relationship review...";
+
+      try {
+        const response = await fetch(`/api/entities/article/${latestJob.entity_id}/connections/${targetId}/review`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            status: status,
+            review_notes: `Marked ${status} from AI Workbench.`,
+          }),
+        });
+
+        await readJsonResponse(response, "Could not review relationship.");
+        detectionMessage.textContent = `Relationship marked ${status}.`;
+
+        const connectionsResponse = await fetch(`/api/entities/article/${latestJob.entity_id}/connections`);
+        const connections = await readJsonResponse(connectionsResponse, "Could not refresh relationships.");
+        const relatedSources = (latestJob.related_sources || []).map((source) => {
+          const match = (connections.connections || []).find((connection) => connection.target_id === source.article_id);
+
+          if (match) {
+            return {
+              ...source,
+              relation_types: [match.relationship],
+              confidence: match.confidence,
+            };
+          }
+
+          return source;
+        });
+
+        renderRelatedSources(relatedSources, latestJob.source_map);
       } catch (error) {
         detectionMessage.textContent = error.message;
       }
@@ -1089,6 +1289,8 @@
     }
 
     refreshReportsButton.addEventListener("click", refreshSavedReports);
+    refreshJobsButton.addEventListener("click", refreshAiJobs);
+    refreshDetectionsButton.addEventListener("click", refreshDetectionRules);
     printReportButton.addEventListener("click", printCurrentReport);
     exportHtmlButton.addEventListener("click", exportCurrentReportHtml);
     iterateReportButton.addEventListener("click", iterateCurrentReport);
@@ -1100,6 +1302,40 @@
     });
     rejectDetectionButton.addEventListener("click", () => {
       reviewDetectionDraft("rejected");
+    });
+    aiJobsList.addEventListener("click", (event) => {
+      const loadButton = event.target.closest("button[data-job-id]");
+
+      if (loadButton) {
+        loadAiJob(loadButton.dataset.jobId);
+      }
+    });
+    detectionRulesList.addEventListener("click", (event) => {
+      const loadButton = event.target.closest("button[data-rule-id]");
+
+      if (loadButton) {
+        const ruleId = loadButton.dataset.ruleId;
+        fetch("/api/detections")
+          .then((response) => readJsonResponse(response, "Could not load detection rules."))
+          .then((data) => {
+            const rule = (data.rules || []).find((item) => item.rule_id === ruleId);
+
+            if (rule) {
+              renderDetectionRule(rule);
+              setWorkbenchTab("evidence");
+            }
+          })
+          .catch((error) => {
+            detectionMessage.textContent = error.message;
+          });
+      }
+    });
+    aiSourcesBox.addEventListener("click", (event) => {
+      const reviewButton = event.target.closest("button[data-connection-target]");
+
+      if (reviewButton) {
+        reviewConnection(reviewButton.dataset.connectionTarget, reviewButton.dataset.connectionStatus);
+      }
     });
     savedReportsList.addEventListener("click", (event) => {
       const loadButton = event.target.closest("button[data-report-id]");
@@ -1127,5 +1363,7 @@
     }
 
     refreshSavedReports();
+    refreshAiJobs();
+    refreshDetectionRules();
   </script>
 {% endblock %}
