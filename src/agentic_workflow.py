@@ -391,7 +391,7 @@ def run_agentic_article_action(
 
     if should_use_external_search(action, retrieval_plan, firestore_results, external_search_policy):
         external_results = search_external_sources_from_plan(retrieval_plan, context_depth)
-        retrieval_trace.append({"step": "external_search", "details": "Searched configured external source APIs.", "count": len(external_results)})
+        retrieval_trace.append({"step": "external_search", "details": "Searched configured external source APIs and cached returned context.", "count": len(external_results)})
     else:
         retrieval_trace.append({"step": "external_search", "details": "External article search skipped by policy.", "count": 0})
 
@@ -402,7 +402,7 @@ def run_agentic_article_action(
     cve_enrichments = build_cve_enrichments(cves)
     iocs = extract_iocs_from_text(primary_text)
     ioc_sightings = build_ioc_sightings(iocs, all_sources)
-    retrieval_trace.append({"step": "cve_ioc_enrichment", "details": "Loaded deterministic CVE enrichment and IOC sightings.", "count": len(cve_enrichments) + len(ioc_sightings)})
+    retrieval_trace.append({"step": "cve_ioc_enrichment", "details": "Loaded deterministic CVE enrichment, cached CVE context, and checked IOC sightings.", "count": len(cve_enrichments) + len(ioc_sightings)})
 
     context_bundle = build_context_bundle(
         action,

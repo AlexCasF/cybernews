@@ -1498,6 +1498,24 @@ def create_ai_job(payload, current_user):
         "created_at": created_at,
         "completed_at": created_at,
     }
+
+    if report_json:
+        report_id = str(uuid4())
+        report = {
+            "report_id": report_id,
+            "title": report_json.get("title") or "Threat Intelligence Report",
+            "source_job_id": job_id,
+            "report_json": report_json,
+            "created_by": current_user["username"] if current_user else "guest",
+            "created_at": created_at,
+            "updated_at": created_at,
+            "save_mode": "automatic",
+        }
+        save_report(report)
+        job["auto_saved_report_id"] = report_id
+    else:
+        job["auto_saved_report_id"] = None
+
     save_ai_job(job)
 
     return job, ""

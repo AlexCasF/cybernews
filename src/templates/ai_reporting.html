@@ -57,17 +57,16 @@
 
     <div class="workbench-section" data-section="report" hidden>
       <div class="workbench-actions">
-        <button id="saveReportButton" class="panel-action-button" type="button" hidden>Save report</button>
         <button id="printReportButton" class="panel-action-button" type="button" hidden>Export PDF / Print</button>
         <span id="saveReportMessage"></span>
       </div>
       <div class="saved-reports">
         <div class="panel-heading">
-          <h4>Saved Reports</h4>
+          <h4>Report Timeline</h4>
           <button id="refreshReportsButton" class="panel-action-button" type="button">Refresh</button>
         </div>
         <div id="savedReportsList" class="saved-reports-list">
-          <p>No reports saved yet.</p>
+          <p>No generated reports yet.</p>
         </div>
       </div>
       <div id="aiReportBox" class="workbench-box">
@@ -141,7 +140,6 @@
     const aiTraceBox = document.getElementById("aiTraceBox");
     const aiSourcesBox = document.getElementById("aiSourcesBox");
     const aiJsonOutput = document.getElementById("aiJsonOutput");
-    const saveReportButton = document.getElementById("saveReportButton");
     const printReportButton = document.getElementById("printReportButton");
     const saveReportMessage = document.getElementById("saveReportMessage");
     const refreshReportsButton = document.getElementById("refreshReportsButton");
@@ -536,7 +534,7 @@
 
       if (!reports || reports.length === 0) {
         const empty = document.createElement("p");
-        empty.textContent = "No reports saved yet.";
+        empty.textContent = "No generated reports yet.";
         savedReportsList.appendChild(empty);
         return;
       }
@@ -552,7 +550,7 @@
         item.className = "saved-report-item";
         actions.className = "saved-report-actions";
         title.textContent = report.title || "Untitled report";
-        meta.textContent = `Saved ${report.created_at} by ${report.created_by}`;
+        meta.textContent = `Generated ${report.created_at} by ${report.created_by}`;
         loadButton.className = "panel-action-button";
         loadButton.type = "button";
         loadButton.dataset.reportId = report.report_id;
@@ -661,7 +659,6 @@
       if (!reportJson) {
         latestReportJson = null;
         latestReportJobId = "";
-        saveReportButton.hidden = true;
         printReportButton.hidden = true;
         saveReportMessage.textContent = "";
 
@@ -672,11 +669,8 @@
       }
 
       latestReportJson = reportJson;
-      saveReportButton.hidden = false;
-      saveReportButton.disabled = false;
       printReportButton.hidden = false;
       printReportButton.disabled = false;
-      saveReportMessage.textContent = "";
 
       const title = document.createElement("h4");
       const subtitle = document.createElement("p");
@@ -765,6 +759,9 @@
       aiSelectedAction.textContent = aiActionLabels[job.action] || job.action;
       aiResultBox.innerHTML = "";
       latestReportJobId = job.job_id;
+      saveReportMessage.textContent = job.auto_saved_report_id
+        ? `Automatically saved as report ${job.auto_saved_report_id}.`
+        : "";
 
       const summaryTitle = document.createElement("h4");
       const summary = document.createElement("p");
@@ -817,6 +814,7 @@
       renderRetrievalTrace(job.retrieval_trace);
       renderRelatedSources(job.related_sources, job.source_map);
       aiJsonOutput.textContent = JSON.stringify(job, null, 2);
+      refreshSavedReports();
       setWorkbenchTab(job.action === "generate_report" ? "report" : "result");
     }
 
@@ -837,37 +835,6 @@
         message.textContent = error.message;
         aiResultBox.appendChild(message);
       }
-    }
-
-    async function saveCurrentReport() {
-      if (!latestReportJson) {
-        saveReportMessage.textContent = "No report is ready to save.";
-        return;
-      }
-
-      saveReportButton.disabled = true;
-      saveReportMessage.textContent = "Saving report...";
-
-      try {
-        const response = await fetch("/api/reports", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            source_job_id: latestReportJobId,
-            report_json: latestReportJson,
-          }),
-        });
-        const data = await readJsonResponse(response, "Report save failed.");
-
-        saveReportMessage.textContent = `Saved as report ${data.report_id}.`;
-        refreshSavedReports();
-      } catch (error) {
-        saveReportMessage.textContent = error.message;
-      }
-
-      saveReportButton.disabled = false;
     }
 
     function printCurrentReport() {
@@ -891,7 +858,6 @@
     }
 
     refreshReportsButton.addEventListener("click", refreshSavedReports);
-    saveReportButton.addEventListener("click", saveCurrentReport);
     printReportButton.addEventListener("click", printCurrentReport);
     savedReportsList.addEventListener("click", (event) => {
       const loadButton = event.target.closest("button[data-report-id]");

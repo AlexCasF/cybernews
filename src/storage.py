@@ -341,7 +341,7 @@ def list_article_correlations(article_id):
 
 
 def get_external_cache_id(item):
-    raw_key = f"{item.get('origin', '')}|{item.get('query', '')}|{item.get('url', '')}|{item.get('title', '')}"
+    raw_key = f"{item.get('origin', '')}|{item.get('query', '')}|{item.get('url', '')}|{item.get('title', '')}|{item.get('cve_id', '')}"
     digest = hashlib.sha256(raw_key.lower().encode("utf-8")).hexdigest()[:24]
     return f"ext-{digest}"
 
