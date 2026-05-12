@@ -8,7 +8,7 @@ from src.external_retrieval import (
     search_external_sources_from_plan,
     should_use_external_search,
 )
-from src.retrieval_planner import fallback_retrieval_plan, plan_retrieval_with_gemini
+from src.retrieval_planner import plan_retrieval_with_gemini
 from src.storage import get_feed_item
 
 
