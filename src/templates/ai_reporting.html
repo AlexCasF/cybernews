@@ -53,12 +53,34 @@
       <div id="aiResultBox" class="workbench-box">
         <p>No AI job has been loaded yet.</p>
       </div>
+      <div class="workbench-box">
+        <h4>Analyst Controls</h4>
+        <div class="workbench-actions">
+          <select id="feedbackRating">
+            <option value="useful">Useful</option>
+            <option value="neutral">Neutral</option>
+            <option value="not_useful">Not useful</option>
+          </select>
+          <input id="feedbackComment" type="text" placeholder="Feedback note">
+          <button id="sendFeedbackButton" class="panel-action-button" type="button">Send feedback</button>
+        </div>
+        <div class="workbench-actions">
+          <input id="regenerateGoal" type="text" placeholder="Optional goal for regeneration">
+          <button id="regenerateJobButton" class="panel-action-button" type="button">Regenerate</button>
+          <span id="feedbackMessage"></span>
+        </div>
+      </div>
     </div>
 
     <div class="workbench-section" data-section="report" hidden>
       <div class="workbench-actions">
         <button id="printReportButton" class="panel-action-button" type="button" hidden>Export PDF / Print</button>
+        <button id="exportHtmlButton" class="panel-action-button" type="button" hidden>Export HTML</button>
         <span id="saveReportMessage"></span>
+      </div>
+      <div class="workbench-actions">
+        <input id="reportIterationInput" type="text" placeholder="Add analyst iteration note">
+        <button id="iterateReportButton" class="panel-action-button" type="button">Iterate report</button>
       </div>
       <div class="saved-reports">
         <div class="panel-heading">
@@ -87,6 +109,23 @@
         <div id="aiSourcesBox">
           <p>No related sources have been loaded yet.</p>
         </div>
+      </div>
+
+      <div class="workbench-box">
+        <h4>Detection Draft</h4>
+        <div class="workbench-actions">
+          <select id="detectionRuleType">
+            <option value="sigma">Sigma</option>
+            <option value="kql">KQL</option>
+            <option value="splunk">Splunk SPL</option>
+            <option value="yara">YARA</option>
+          </select>
+          <button id="generateDetectionButton" class="panel-action-button" type="button">Generate detection</button>
+          <button id="approveDetectionButton" class="panel-action-button" type="button">Approve</button>
+          <button id="rejectDetectionButton" class="panel-action-button danger-button" type="button">Reject</button>
+          <span id="detectionMessage"></span>
+        </div>
+        <pre id="detectionRuleOutput" class="json-output">No detection draft yet.</pre>
       </div>
     </div>
 
@@ -141,13 +180,31 @@
     const aiSourcesBox = document.getElementById("aiSourcesBox");
     const aiJsonOutput = document.getElementById("aiJsonOutput");
     const printReportButton = document.getElementById("printReportButton");
+    const exportHtmlButton = document.getElementById("exportHtmlButton");
     const saveReportMessage = document.getElementById("saveReportMessage");
     const refreshReportsButton = document.getElementById("refreshReportsButton");
     const savedReportsList = document.getElementById("savedReportsList");
     const analystReportFrame = document.getElementById("analystReportFrame");
+    const feedbackRating = document.getElementById("feedbackRating");
+    const feedbackComment = document.getElementById("feedbackComment");
+    const sendFeedbackButton = document.getElementById("sendFeedbackButton");
+    const regenerateGoal = document.getElementById("regenerateGoal");
+    const regenerateJobButton = document.getElementById("regenerateJobButton");
+    const feedbackMessage = document.getElementById("feedbackMessage");
+    const reportIterationInput = document.getElementById("reportIterationInput");
+    const iterateReportButton = document.getElementById("iterateReportButton");
+    const detectionRuleType = document.getElementById("detectionRuleType");
+    const generateDetectionButton = document.getElementById("generateDetectionButton");
+    const approveDetectionButton = document.getElementById("approveDetectionButton");
+    const rejectDetectionButton = document.getElementById("rejectDetectionButton");
+    const detectionMessage = document.getElementById("detectionMessage");
+    const detectionRuleOutput = document.getElementById("detectionRuleOutput");
     const userIsAdmin = {{ "true" if current_user and current_user.role == "admin" else "false" }};
+    let latestJob = null;
     let latestReportJson = null;
     let latestReportJobId = "";
+    let latestReportId = "";
+    let latestDetectionRuleId = "";
     const aiActionLabels = {
       analyze: "Analyze",
       generate_report: "Generate report",
@@ -618,8 +675,10 @@
         const response = await fetch(`/api/reports/${reportId}`);
         const data = await readJsonResponse(response, "Could not load saved report.");
 
+        latestJob = null;
         latestReportJson = data.report_json;
         latestReportJobId = data.source_job_id || "";
+        latestReportId = data.report_id || "";
         renderAiReport(data.report_json);
         updateReportPreview(data.report_json);
         aiJsonOutput.textContent = JSON.stringify(data, null, 2);
@@ -659,7 +718,9 @@
       if (!reportJson) {
         latestReportJson = null;
         latestReportJobId = "";
+        latestReportId = "";
         printReportButton.hidden = true;
+        exportHtmlButton.hidden = true;
         saveReportMessage.textContent = "";
 
         const emptyReport = document.createElement("p");
@@ -671,6 +732,8 @@
       latestReportJson = reportJson;
       printReportButton.hidden = false;
       printReportButton.disabled = false;
+      exportHtmlButton.hidden = !latestReportId;
+      exportHtmlButton.disabled = !latestReportId;
 
       const title = document.createElement("h4");
       const subtitle = document.createElement("p");
@@ -758,7 +821,9 @@
       aiSelectedEntity.textContent = `${job.entity_type}: ${job.entity_id}`;
       aiSelectedAction.textContent = aiActionLabels[job.action] || job.action;
       aiResultBox.innerHTML = "";
+      latestJob = job;
       latestReportJobId = job.job_id;
+      latestReportId = job.auto_saved_report_id || "";
       saveReportMessage.textContent = job.auto_saved_report_id
         ? `Automatically saved as report ${job.auto_saved_report_id}.`
         : "";
@@ -837,6 +902,172 @@
       }
     }
 
+    async function sendFeedback() {
+      if (!latestJob) {
+        feedbackMessage.textContent = "Load an AI job first.";
+        return;
+      }
+
+      sendFeedbackButton.disabled = true;
+      feedbackMessage.textContent = "Sending feedback...";
+
+      try {
+        const response = await fetch(`/api/ai/jobs/${latestJob.job_id}/feedback`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            rating: feedbackRating.value,
+            comment: feedbackComment.value,
+          }),
+        });
+
+        await readJsonResponse(response, "Could not save feedback.");
+        feedbackMessage.textContent = "Feedback saved.";
+        feedbackComment.value = "";
+      } catch (error) {
+        feedbackMessage.textContent = error.message;
+      }
+
+      sendFeedbackButton.disabled = false;
+    }
+
+    async function regenerateCurrentJob() {
+      if (!latestJob) {
+        feedbackMessage.textContent = "Load an AI job first.";
+        return;
+      }
+
+      regenerateJobButton.disabled = true;
+      feedbackMessage.textContent = "Regenerating...";
+
+      try {
+        const response = await fetch(`/api/ai/jobs/${latestJob.job_id}/regenerate`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            analyst_goal: regenerateGoal.value,
+          }),
+        });
+        const data = await readJsonResponse(response, "Could not regenerate job.");
+
+        regenerateGoal.value = "";
+        renderAiJob(data);
+        feedbackMessage.textContent = `Regenerated as job ${data.job_id}.`;
+      } catch (error) {
+        feedbackMessage.textContent = error.message;
+      }
+
+      regenerateJobButton.disabled = false;
+    }
+
+    async function iterateCurrentReport() {
+      if (!latestReportId) {
+        saveReportMessage.textContent = "Load or generate a report first.";
+        return;
+      }
+
+      const instruction = reportIterationInput.value.trim();
+
+      if (!instruction) {
+        saveReportMessage.textContent = "Enter an iteration note first.";
+        return;
+      }
+
+      iterateReportButton.disabled = true;
+      saveReportMessage.textContent = "Iterating report...";
+
+      try {
+        const response = await fetch(`/api/reports/${latestReportId}/iterate`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({instruction: instruction}),
+        });
+        const data = await readJsonResponse(response, "Could not iterate report.");
+
+        latestReportJson = data.report_json;
+        reportIterationInput.value = "";
+        renderAiReport(data.report_json);
+        updateReportPreview(data.report_json);
+        aiJsonOutput.textContent = JSON.stringify(data, null, 2);
+        saveReportMessage.textContent = "Report iteration saved.";
+        refreshSavedReports();
+      } catch (error) {
+        saveReportMessage.textContent = error.message;
+      }
+
+      iterateReportButton.disabled = false;
+    }
+
+    function exportCurrentReportHtml() {
+      if (!latestReportId) {
+        saveReportMessage.textContent = "Load or generate a report first.";
+        return;
+      }
+
+      window.open(`/api/reports/${latestReportId}/export/html`, "_blank", "noopener,noreferrer");
+    }
+
+    function renderDetectionRule(rule) {
+      latestDetectionRuleId = rule.rule_id || "";
+      detectionRuleOutput.textContent = `${rule.rule_type.toUpperCase()} | ${rule.status}\n\n${rule.rule_content}`;
+      detectionMessage.textContent = `Detection draft ${rule.rule_id} is ${rule.status}.`;
+    }
+
+    async function generateDetectionDraft() {
+      if (!latestJob) {
+        detectionMessage.textContent = "Load an AI job first.";
+        return;
+      }
+
+      generateDetectionButton.disabled = true;
+      detectionMessage.textContent = "Generating detection draft...";
+
+      try {
+        const response = await fetch("/api/detections/generate", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            rule_type: detectionRuleType.value,
+            entity_type: latestJob.entity_type,
+            entity_id: latestJob.entity_id,
+            source_text: latestJob.selected_text,
+          }),
+        });
+        const data = await readJsonResponse(response, "Could not generate detection draft.");
+
+        renderDetectionRule(data);
+      } catch (error) {
+        detectionMessage.textContent = error.message;
+      }
+
+      generateDetectionButton.disabled = false;
+    }
+
+    async function reviewDetectionDraft(status) {
+      if (!latestDetectionRuleId) {
+        detectionMessage.textContent = "Generate a detection draft first.";
+        return;
+      }
+
+      detectionMessage.textContent = "Saving review...";
+
+      try {
+        const response = await fetch(`/api/detections/${latestDetectionRuleId}/review`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            status: status,
+            review_notes: status === "approved" ? "Approved from AI Workbench." : "Rejected from AI Workbench.",
+          }),
+        });
+        const data = await readJsonResponse(response, "Could not review detection draft.");
+
+        renderDetectionRule(data);
+      } catch (error) {
+        detectionMessage.textContent = error.message;
+      }
+    }
+
     function printCurrentReport() {
       if (!latestReportJson) {
         saveReportMessage.textContent = "No report is ready to print.";
@@ -859,6 +1090,17 @@
 
     refreshReportsButton.addEventListener("click", refreshSavedReports);
     printReportButton.addEventListener("click", printCurrentReport);
+    exportHtmlButton.addEventListener("click", exportCurrentReportHtml);
+    iterateReportButton.addEventListener("click", iterateCurrentReport);
+    sendFeedbackButton.addEventListener("click", sendFeedback);
+    regenerateJobButton.addEventListener("click", regenerateCurrentJob);
+    generateDetectionButton.addEventListener("click", generateDetectionDraft);
+    approveDetectionButton.addEventListener("click", () => {
+      reviewDetectionDraft("approved");
+    });
+    rejectDetectionButton.addEventListener("click", () => {
+      reviewDetectionDraft("rejected");
+    });
     savedReportsList.addEventListener("click", (event) => {
       const loadButton = event.target.closest("button[data-report-id]");
       const deleteButton = event.target.closest("button[data-delete-report-id]");

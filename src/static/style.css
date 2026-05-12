@@ -352,6 +352,20 @@ body {
   color: #5a6872;
 }
 
+.workbench-actions input,
+.workbench-actions select {
+  min-width: 180px;
+  padding: 8px;
+  font: inherit;
+  color: #172026;
+  background: white;
+  border: 1px solid #b9c6cc;
+}
+
+.workbench-actions input {
+  flex: 1 1 240px;
+}
+
 .saved-reports {
   margin-bottom: 12px;
   padding: 12px;
