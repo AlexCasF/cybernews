@@ -390,7 +390,11 @@ def run_agentic_article_action(
     external_results = []
 
     if should_use_external_search(action, retrieval_plan, firestore_results, external_search_policy):
-        external_results = search_external_sources_from_plan(retrieval_plan, context_depth)
+        external_results = search_external_sources_from_plan(
+            retrieval_plan,
+            context_depth,
+            include_web=external_search_policy == "force",
+        )
         retrieval_trace.append({"step": "external_search", "details": "Searched configured external source APIs and cached returned context.", "count": len(external_results)})
     else:
         retrieval_trace.append({"step": "external_search", "details": "External article search skipped by policy.", "count": 0})

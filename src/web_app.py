@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, Response, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from src.agentic_workflow import run_agentic_article_action
@@ -20,14 +20,19 @@ from src.ai_service import (
 from src.storage import (
     delete_report,
     get_ai_job,
+    get_detection_rule,
     get_feed_item,
     get_report,
     list_article_correlations,
+    list_detection_rules,
     list_feed_items,
     list_reports,
     save_ai_job,
+    save_analyst_feedback,
+    save_detection_rule,
     save_feed_items,
     save_report,
+    save_report_version,
 )
 
 
@@ -1619,6 +1624,295 @@ def get_entity_connections_payload(entity_type, entity_id):
     }
 
 
+def create_ai_feedback(job_id, payload, current_user):
+    if not get_ai_job(job_id):
+        return None, "AI job not found."
+
+    feedback = {
+        "feedback_id": str(uuid4()),
+        "job_id": job_id,
+        "rating": str(payload.get("rating", "neutral")),
+        "comment": str(payload.get("comment", "")).strip(),
+        "created_by": current_user["username"] if current_user else "guest",
+        "created_at": get_timestamp(),
+    }
+    save_analyst_feedback(feedback)
+    return feedback, ""
+
+
+def regenerate_ai_job(job_id, payload, current_user):
+    old_job = get_ai_job(job_id)
+
+    if not old_job:
+        return None, "AI job not found."
+
+    analyst_goal = str(payload.get("analyst_goal", "")).strip()
+    selected_text = old_job.get("selected_text", "")
+
+    if analyst_goal:
+        selected_text = f"{selected_text}\nAnalyst goal: {analyst_goal}"
+
+    new_payload = {
+        "action": old_job.get("action", ""),
+        "entity_type": old_job.get("entity_type", ""),
+        "entity_id": old_job.get("entity_id", ""),
+        "selected_text": selected_text,
+        "context_depth": payload.get("context_depth", old_job.get("context_depth", "medium")),
+        "output_format": old_job.get("output_format", "structured_json"),
+        "external_search_policy": payload.get("external_search_policy", old_job.get("external_search_policy", EXTERNAL_SEARCH_POLICY)),
+    }
+
+    return create_ai_job(new_payload, current_user)
+
+
+def render_section_html(section):
+    heading = html.escape(str(section.get("heading", "Section")))
+    section_type = section.get("type", "paragraph")
+
+    if section_type in {"bullet_list", "recommendations"}:
+        items = "".join(f"<li>{html.escape(str(item))}</li>" for item in section.get("items", []))
+        return f"<section><h2>{heading}</h2><ul>{items}</ul></section>"
+
+    if section_type == "numbered_list":
+        items = "".join(f"<li>{html.escape(str(item))}</li>" for item in section.get("items", []))
+        return f"<section><h2>{heading}</h2><ol>{items}</ol></section>"
+
+    if section_type == "source_links":
+        links = []
+
+        for link in section.get("links", []):
+            url = str(link.get("url", ""))
+
+            if not url.startswith(("https://", "http://")):
+                continue
+
+            label = html.escape(str(link.get("label", url)))
+            safe_url = html.escape(url, quote=True)
+            links.append(f'<li><a href="{safe_url}" target="_blank" rel="noopener noreferrer">{label}</a></li>')
+
+        return f"<section><h2>{heading}</h2><ul>{''.join(links)}</ul></section>"
+
+    if section_type == "table":
+        headers = "".join(f"<th>{html.escape(str(column))}</th>" for column in section.get("columns", []))
+        rows = []
+
+        for row in section.get("rows", []):
+            row_values = row if isinstance(row, list) else list(row.values())
+            cells = "".join(f"<td>{html.escape(str(value))}</td>" for value in row_values)
+            rows.append(f"<tr>{cells}</tr>")
+
+        return f"<section><h2>{heading}</h2><table><thead><tr>{headers}</tr></thead><tbody>{''.join(rows)}</tbody></table></section>"
+
+    content = html.escape(str(section.get("content", "")))
+    return f"<section><h2>{heading}</h2><p>{content}</p></section>"
+
+
+def render_report_export_html(report):
+    report_json = report.get("report_json", {})
+    title = html.escape(str(report_json.get("title", "Threat Intelligence Report")))
+    subtitle = html.escape(str(report_json.get("subtitle", "")))
+    created_at = html.escape(str(report_json.get("created_at", report.get("created_at", ""))))
+    sections = "".join(render_section_html(section) for section in report_json.get("sections", []))
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  <style>
+    body {{ margin: 0; font-family: Arial, sans-serif; color: #172026; background: #f5f7f8; }}
+    main {{ display: grid; gap: 14px; max-width: 960px; margin: 0 auto; padding: 20px; }}
+    header, section {{ padding: 14px; background: white; border: 1px solid #dbe3e7; }}
+    header {{ border-left: 5px solid #28d7d0; }}
+    h1, h2, p {{ margin: 0; }}
+    h1 {{ font-size: 1.5rem; }}
+    h2 {{ margin-bottom: 8px; font-size: 1rem; }}
+    .meta {{ margin-top: 6px; color: #5a6872; }}
+    ul, ol {{ margin: 8px 0 0; padding-left: 20px; }}
+    li {{ margin-bottom: 6px; }}
+    table {{ width: 100%; border-collapse: collapse; }}
+    th, td {{ padding: 8px; text-align: left; border-bottom: 1px solid #dbe3e7; }}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>{title}</h1>
+      <p class="meta">{subtitle}</p>
+      <p class="meta">Created at {created_at}</p>
+    </header>
+    {sections}
+  </main>
+</body>
+</html>"""
+
+
+def iterate_report(report_id, payload, current_user):
+    report = get_report(report_id)
+
+    if not report:
+        return None, "Report not found."
+
+    instruction = str(payload.get("instruction", "")).strip()
+
+    if not instruction:
+        return None, "instruction is required."
+
+    created_at = get_timestamp()
+    version = {
+        "version_id": str(uuid4()),
+        "report_id": report_id,
+        "report_json": report.get("report_json", {}),
+        "created_by": current_user["username"] if current_user else "guest",
+        "created_at": created_at,
+        "iteration_note": instruction,
+    }
+    save_report_version(version)
+
+    report_json = dict(report.get("report_json", {}))
+    sections = list(report_json.get("sections", []))
+    sections.append(
+        {
+            "type": "summary",
+            "heading": "Analyst Iteration",
+            "content": instruction,
+        }
+    )
+    report_json["sections"] = sections
+    report_json["updated_at"] = created_at
+    report["report_json"] = report_json
+    report["updated_at"] = created_at
+    report["last_iteration_note"] = instruction
+    save_report(report)
+
+    return report, ""
+
+
+def clean_detection_terms(values):
+    clean_terms = []
+
+    for value in values:
+        clean_value = re.sub(r"[^a-zA-Z0-9_.:/-]", "", str(value))[:80]
+
+        if clean_value and clean_value not in clean_terms:
+            clean_terms.append(clean_value)
+
+    return clean_terms[:8]
+
+
+def build_detection_content(rule_type, title, terms):
+    if not terms:
+        terms = ["suspicious"]
+
+    quoted_terms = ", ".join(f'"{term}"' for term in terms)
+
+    if rule_type == "sigma":
+        term_lines = "\n".join(f"      - '{term}'" for term in terms)
+        return f"""title: {title}
+status: experimental
+description: Draft rule generated by CyberNews. Requires analyst review.
+logsource:
+  product: windows
+detection:
+  selection:
+    CommandLine|contains:
+{term_lines}
+  condition: selection
+falsepositives:
+  - Legitimate administrative activity
+level: medium"""
+
+    if rule_type == "yara":
+        string_lines = "\n".join(f"    $s{index} = \"{term}\" ascii nocase" for index, term in enumerate(terms, start=1))
+        return f"""rule CyberNews_Draft_{hashlib.sha1(title.encode('utf-8')).hexdigest()[:8]} {{
+  meta:
+    description = \"Draft rule generated by CyberNews. Requires analyst review.\"
+  strings:
+{string_lines}
+  condition:
+    any of them
+}}"""
+
+    if rule_type == "kql":
+        return f"""DeviceEvents
+| where Timestamp > ago(7d)
+| where ProcessCommandLine has_any ({quoted_terms})
+| project Timestamp, DeviceName, AccountName, ProcessCommandLine"""
+
+    return f"""index=*
+({ " OR ".join(terms) })
+| table _time host source sourcetype _raw"""
+
+
+def create_detection_rule(payload, current_user):
+    rule_type = str(payload.get("rule_type", "sigma")).lower()
+
+    if rule_type not in {"sigma", "yara", "kql", "splunk"}:
+        return None, "Unsupported rule_type."
+
+    entity_type = str(payload.get("entity_type", "article"))
+    entity_id = str(payload.get("entity_id", "")).strip()
+    source_text = str(payload.get("source_text", "")).strip()
+
+    if entity_type == "article" and entity_id and not source_text:
+        article = get_feed_item(entity_id) or {}
+        source_text = f"{article.get('title', '')}\n{article.get('summary', '')}"
+
+    if not source_text:
+        return None, "source_text or a valid article entity is required."
+
+    cves = extract_cves_from_text(source_text)
+    iocs = [ioc["value"] for ioc in extract_iocs_from_text(source_text)]
+    detection_goal = str(payload.get("detection_goal", "Detect suspicious activity related to the selected intelligence.")).strip()
+    terms = clean_detection_terms(cves + iocs + source_text.split()[:6])
+    title = str(payload.get("title", f"CyberNews Draft Detection for {entity_id or 'selected intelligence'}")).strip()
+
+    rule = {
+        "rule_id": str(uuid4()),
+        "rule_type": rule_type,
+        "title": title,
+        "description": "Draft detection rule generated from CyberNews context.",
+        "detection_goal": detection_goal,
+        "required_logs": ["Relevant endpoint, network, or SIEM logs depending on environment."],
+        "rule_content": build_detection_content(rule_type, title, terms),
+        "attack_mappings": [],
+        "false_positive_notes": ["Generated rule is broad and must be tuned before use."],
+        "test_notes": "Run against a small historical dataset before production use.",
+        "confidence": 0.45,
+        "warnings": ["Draft only. Needs analyst review. Do not auto-deploy."],
+        "source_entity": {"type": entity_type, "id": entity_id},
+        "status": "needs_review",
+        "created_by": current_user["username"] if current_user else "guest",
+        "created_at": get_timestamp(),
+        "reviewed_by": "",
+        "reviewed_at": "",
+        "review_notes": "",
+    }
+    save_detection_rule(rule)
+    return rule, ""
+
+
+def review_detection_rule(rule_id, payload, current_user):
+    rule = get_detection_rule(rule_id)
+
+    if not rule:
+        return None, "Detection rule not found."
+
+    status = str(payload.get("status", "needs_review"))
+
+    if status not in {"needs_review", "approved", "rejected"}:
+        return None, "Unsupported review status."
+
+    rule["status"] = status
+    rule["review_notes"] = str(payload.get("review_notes", "")).strip()
+    rule["reviewed_by"] = current_user["username"] if current_user else "guest"
+    rule["reviewed_at"] = get_timestamp()
+    save_detection_rule(rule)
+
+    return rule, ""
+
+
 def get_graph_severity_from_epss_label(epss_label):
     if epss_label == "Very High":
         return "Critical"
@@ -1926,6 +2220,49 @@ def api_get_ai_job(job_id):
     return jsonify(job)
 
 
+@app.route("/api/ai/jobs/<job_id>/stream")
+def api_stream_ai_job(job_id):
+    job = get_ai_job(job_id)
+
+    if not job:
+        return jsonify({"error": "AI job not found."}), 404
+
+    def generate():
+        yield f"event: status\ndata: {json.dumps(job)}\n\n"
+
+    return Response(generate(), mimetype="text/event-stream")
+
+
+@app.route("/api/ai/jobs/<job_id>/feedback", methods=["POST"])
+def api_ai_job_feedback(job_id):
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body is required."}), 400
+
+    feedback, error = create_ai_feedback(job_id, payload, get_current_user())
+
+    if error:
+        return jsonify({"error": error}), 404
+
+    return jsonify(feedback), 201
+
+
+@app.route("/api/ai/jobs/<job_id>/regenerate", methods=["POST"])
+def api_ai_job_regenerate(job_id):
+    payload = request.get_json(silent=True) or {}
+
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body must be an object."}), 400
+
+    job, error = regenerate_ai_job(job_id, payload, get_current_user())
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify(job), 201
+
+
 @app.route("/api/entities/<entity_type>/<entity_id>")
 def api_get_entity(entity_type, entity_id):
     if entity_type not in AI_ENTITY_TYPES:
@@ -2001,6 +2338,71 @@ def api_get_report(report_id):
         return jsonify({"error": "Report not found."}), 404
 
     return jsonify(report)
+
+
+@app.route("/api/reports/<report_id>/iterate", methods=["POST"])
+def api_iterate_report(report_id):
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body is required."}), 400
+
+    report, error = iterate_report(report_id, payload, get_current_user())
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify(report)
+
+
+@app.route("/api/reports/<report_id>/export/html")
+def api_export_report_html(report_id):
+    report = get_report(report_id)
+
+    if not report:
+        return jsonify({"error": "Report not found."}), 404
+
+    return Response(render_report_export_html(report), mimetype="text/html")
+
+
+@app.route("/api/detections", methods=["GET"])
+def api_list_detections():
+    return jsonify(
+        {
+            "rules": list_detection_rules(),
+            "count": len(list_detection_rules()),
+        }
+    )
+
+
+@app.route("/api/detections/generate", methods=["POST"])
+def api_generate_detection():
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body is required."}), 400
+
+    rule, error = create_detection_rule(payload, get_current_user())
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify(rule), 201
+
+
+@app.route("/api/detections/<rule_id>/review", methods=["POST"])
+def api_review_detection(rule_id):
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body is required."}), 400
+
+    rule, error = review_detection_rule(rule_id, payload, get_current_user())
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify(rule)
 
 
 @app.route("/api/articles")

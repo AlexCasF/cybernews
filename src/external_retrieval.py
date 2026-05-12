@@ -11,6 +11,7 @@ NEWSAPI_URL = "https://newsapi.org/v2/everything"
 NVD_CVE_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 EPSS_URL = "https://api.first.org/data/v1/epss"
+DUCKDUCKGO_URL = "https://api.duckduckgo.com/"
 
 
 def get_json(url, headers=None, timeout=8):
@@ -216,11 +217,85 @@ def should_use_external_search(action, retrieval_plan, firestore_results, extern
     return len(strong_matches) < 3 or (action == "analyze" and has_entities)
 
 
+def collect_duckduckgo_topics(topics):
+    results = []
+
+    for topic in topics:
+        if "Topics" in topic:
+            results.extend(collect_duckduckgo_topics(topic.get("Topics", [])))
+            continue
+
+        url = topic.get("FirstURL")
+        text = topic.get("Text")
+
+        if url and text:
+            results.append({"url": url, "text": text})
+
+    return results
+
+
+def search_web_query(query, max_results=5):
+    if not query:
+        return []
+
+    params = urlencode(
+        {
+            "q": query,
+            "format": "json",
+            "no_redirect": "1",
+            "no_html": "1",
+        }
+    )
+
+    try:
+        data = get_json(f"{DUCKDUCKGO_URL}?{params}", timeout=8)
+    except Exception:
+        return []
+
+    topics = collect_duckduckgo_topics(data.get("RelatedTopics", []))
+    results = []
+
+    if data.get("AbstractURL") and data.get("AbstractText"):
+        topics.insert(
+            0,
+            {
+                "url": data.get("AbstractURL"),
+                "text": data.get("AbstractText"),
+            },
+        )
+
+    for index, topic in enumerate(topics[:max_results], start=1):
+        results.append(
+            {
+                "source_ref": f"WEB{index}",
+                "origin": "web",
+                "title": topic["text"].split(" - ")[0][:120],
+                "summary": topic["text"],
+                "snippet": topic["text"],
+                "source": "DuckDuckGo",
+                "url": topic["url"],
+                "published": "Unknown date",
+                "query": query,
+                "matched_terms": [query],
+                "relation_types": ["web_query_match"],
+                "score": 2.0,
+            }
+        )
+
+    return results
+
+
 def search_web_from_plan(retrieval_plan, max_queries=3, max_results_per_query=5):
-    return []
+    results = []
+
+    for query in retrieval_plan.get("web_queries", [])[:max_queries]:
+        results.extend(search_web_query(query.get("query", ""), max_results_per_query))
+
+    save_external_context_cache(results)
+    return results
 
 
-def search_external_sources_from_plan(retrieval_plan, context_depth):
+def search_external_sources_from_plan(retrieval_plan, context_depth, include_web=False):
     results = []
 
     for query in retrieval_plan.get("source_api_queries", []):
@@ -232,5 +307,8 @@ def search_external_sources_from_plan(retrieval_plan, context_depth):
                     int(query.get("max_results", 10)),
                 )
             )
+
+    if include_web:
+        results.extend(search_web_from_plan(retrieval_plan))
 
     return results

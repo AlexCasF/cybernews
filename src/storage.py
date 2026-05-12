@@ -14,6 +14,9 @@ MEMORY_REPORTS = {}
 MEMORY_FEED_ITEMS = {}
 MEMORY_ARTICLE_CORRELATIONS = {}
 MEMORY_EXTERNAL_CONTEXT_CACHE = {}
+MEMORY_ANALYST_FEEDBACK = {}
+MEMORY_REPORT_VERSIONS = {}
+MEMORY_DETECTION_RULES = {}
 FIRESTORE_CLIENT = None
 FIRESTORE_CHECKED = False
 CVE_PATTERN = re.compile(r"CVE-\d{4}-\d{4,7}", re.IGNORECASE)
@@ -89,6 +92,40 @@ def get_ai_job(job_id):
     return MEMORY_AI_JOBS.get(job_id)
 
 
+def save_analyst_feedback(feedback):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            db.collection("analyst_feedback").document(feedback["feedback_id"]).set(feedback)
+            return
+        except Exception:
+            pass
+
+    MEMORY_ANALYST_FEEDBACK[feedback["feedback_id"]] = feedback
+
+
+def list_analyst_feedback(job_id=None):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            feedback_items = [document.to_dict() for document in db.collection("analyst_feedback").stream()]
+        except Exception:
+            feedback_items = list(MEMORY_ANALYST_FEEDBACK.values())
+    else:
+        feedback_items = list(MEMORY_ANALYST_FEEDBACK.values())
+
+    if job_id:
+        feedback_items = [
+            item
+            for item in feedback_items
+            if item.get("job_id") == job_id
+        ]
+
+    return sorted(feedback_items, key=lambda item: item.get("created_at", ""), reverse=True)
+
+
 def save_report(report):
     db = get_firestore_client()
 
@@ -100,6 +137,46 @@ def save_report(report):
             pass
 
     MEMORY_REPORTS[report["report_id"]] = report
+
+
+def save_report_version(version):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            db.collection("report_versions").document(version["version_id"]).set(version)
+            return
+        except Exception:
+            pass
+
+    MEMORY_REPORT_VERSIONS[version["version_id"]] = version
+
+
+def list_report_versions(report_id):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            versions = [
+                document.to_dict()
+                for document in db.collection("report_versions")
+                .where("report_id", "==", report_id)
+                .stream()
+            ]
+        except Exception:
+            versions = [
+                version
+                for version in MEMORY_REPORT_VERSIONS.values()
+                if version.get("report_id") == report_id
+            ]
+    else:
+        versions = [
+            version
+            for version in MEMORY_REPORT_VERSIONS.values()
+            if version.get("report_id") == report_id
+        ]
+
+    return sorted(versions, key=lambda version: version.get("created_at", ""))
 
 
 def get_report(report_id):
@@ -117,6 +194,50 @@ def get_report(report_id):
         return None
 
     return MEMORY_REPORTS.get(report_id)
+
+
+def save_detection_rule(rule):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            db.collection("detection_rules").document(rule["rule_id"]).set(rule)
+            return
+        except Exception:
+            pass
+
+    MEMORY_DETECTION_RULES[rule["rule_id"]] = rule
+
+
+def get_detection_rule(rule_id):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            document = db.collection("detection_rules").document(rule_id).get()
+        except Exception:
+            return MEMORY_DETECTION_RULES.get(rule_id)
+
+        if document.exists:
+            return document.to_dict()
+
+        return None
+
+    return MEMORY_DETECTION_RULES.get(rule_id)
+
+
+def list_detection_rules():
+    db = get_firestore_client()
+
+    if db:
+        try:
+            rules = [document.to_dict() for document in db.collection("detection_rules").stream()]
+        except Exception:
+            rules = list(MEMORY_DETECTION_RULES.values())
+    else:
+        rules = list(MEMORY_DETECTION_RULES.values())
+
+    return sorted(rules, key=lambda rule: rule.get("created_at", ""), reverse=True)
 
 
 def delete_report(report_id):
