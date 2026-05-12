@@ -16,6 +16,8 @@ from werkzeug.security import check_password_hash
 from src.agentic_workflow import run_agentic_article_action
 from src.ai_service import (
     explain_cve_risk,
+    generate_detection_rule_ai,
+    iterate_report_with_ai,
 )
 from src.storage import (
     delete_report,
@@ -1784,19 +1786,28 @@ def iterate_report(report_id, payload, current_user):
     save_report_version(version)
 
     report_json = dict(report.get("report_json", {}))
-    sections = list(report_json.get("sections", []))
-    sections.append(
-        {
-            "type": "summary",
-            "heading": "Analyst Iteration",
-            "content": instruction,
-        }
-    )
-    report_json["sections"] = sections
+    warnings = []
+
+    try:
+        report_json, model = iterate_report_with_ai(report_json, instruction, created_at)
+        warnings.append(f"Report iterated with {model}.")
+    except Exception as error:
+        sections = list(report_json.get("sections", []))
+        sections.append(
+            {
+                "type": "summary",
+                "heading": "Analyst Iteration",
+                "content": instruction,
+            }
+        )
+        report_json["sections"] = sections
+        warnings.append(f"AI iteration unavailable, saved analyst note only: {error}")
+
     report_json["updated_at"] = created_at
     report["report_json"] = report_json
     report["updated_at"] = created_at
     report["last_iteration_note"] = instruction
+    report["iteration_warnings"] = warnings
     save_report(report)
 
     return report, ""
@@ -1880,20 +1891,44 @@ def create_detection_rule(payload, current_user):
     detection_goal = str(payload.get("detection_goal", "Detect suspicious activity related to the selected intelligence.")).strip()
     terms = clean_detection_terms(cves + iocs + source_text.split()[:6])
     title = str(payload.get("title", f"CyberNews Draft Detection for {entity_id or 'selected intelligence'}")).strip()
+    ai_model = "deterministic-template"
+    warnings = ["Draft only. Needs analyst review. Do not auto-deploy."]
+
+    try:
+        ai_rule, ai_model = generate_detection_rule_ai(rule_type, title, source_text, detection_goal)
+        title = ai_rule["title"] or title
+        description = ai_rule["description"]
+        required_logs = ai_rule["required_logs"] or ["Relevant endpoint, network, or SIEM logs depending on environment."]
+        rule_content = ai_rule["rule_content"] or build_detection_content(rule_type, title, terms)
+        attack_mappings = ai_rule["attack_mappings"]
+        false_positive_notes = ai_rule["false_positive_notes"] or ["Generated rule is broad and must be tuned before use."]
+        test_notes = ai_rule["test_notes"] or "Run against a small historical dataset before production use."
+        confidence = ai_rule["confidence"]
+        warnings = ai_rule["warnings"]
+    except Exception as error:
+        description = "Draft detection rule generated from CyberNews context."
+        required_logs = ["Relevant endpoint, network, or SIEM logs depending on environment."]
+        rule_content = build_detection_content(rule_type, title, terms)
+        attack_mappings = []
+        false_positive_notes = ["Generated rule is broad and must be tuned before use."]
+        test_notes = "Run against a small historical dataset before production use."
+        confidence = 0.45
+        warnings.append(f"AI generation unavailable, used deterministic template: {error}")
 
     rule = {
         "rule_id": str(uuid4()),
         "rule_type": rule_type,
         "title": title,
-        "description": "Draft detection rule generated from CyberNews context.",
+        "description": description,
         "detection_goal": detection_goal,
-        "required_logs": ["Relevant endpoint, network, or SIEM logs depending on environment."],
-        "rule_content": build_detection_content(rule_type, title, terms),
-        "attack_mappings": [],
-        "false_positive_notes": ["Generated rule is broad and must be tuned before use."],
-        "test_notes": "Run against a small historical dataset before production use.",
-        "confidence": 0.45,
-        "warnings": ["Draft only. Needs analyst review. Do not auto-deploy."],
+        "required_logs": required_logs,
+        "rule_content": rule_content,
+        "attack_mappings": attack_mappings,
+        "false_positive_notes": false_positive_notes,
+        "test_notes": test_notes,
+        "confidence": confidence,
+        "warnings": warnings,
+        "model": ai_model,
         "source_entity": {"type": entity_type, "id": entity_id},
         "status": "needs_review",
         "created_by": current_user["username"] if current_user else "guest",
