@@ -43,6 +43,7 @@
     <div class="workbench-tabs" aria-label="AI Workbench tabs">
       <button class="workbench-tab active" type="button" data-tab="result">Result</button>
       <button class="workbench-tab" type="button" data-tab="report">Report</button>
+      <button class="workbench-tab" type="button" data-tab="evidence">Evidence</button>
       <button class="workbench-tab" type="button" data-tab="json">JSON</button>
     </div>
 
@@ -71,6 +72,22 @@
       </div>
       <div id="aiReportBox" class="workbench-box">
         <p>No report has been generated yet.</p>
+      </div>
+    </div>
+
+    <div class="workbench-section" data-section="evidence" hidden>
+      <div class="workbench-box">
+        <h4>Retrieval Trace</h4>
+        <div id="aiTraceBox">
+          <p>No retrieval trace has been loaded yet.</p>
+        </div>
+      </div>
+
+      <div class="workbench-box">
+        <h4>Related Sources</h4>
+        <div id="aiSourcesBox">
+          <p>No related sources have been loaded yet.</p>
+        </div>
       </div>
     </div>
 
@@ -121,6 +138,8 @@
     const aiSelectedAction = document.getElementById("aiSelectedAction");
     const aiResultBox = document.getElementById("aiResultBox");
     const aiReportBox = document.getElementById("aiReportBox");
+    const aiTraceBox = document.getElementById("aiTraceBox");
+    const aiSourcesBox = document.getElementById("aiSourcesBox");
     const aiJsonOutput = document.getElementById("aiJsonOutput");
     const saveReportButton = document.getElementById("saveReportButton");
     const printReportButton = document.getElementById("printReportButton");
@@ -236,6 +255,104 @@
       });
 
       parent.appendChild(list);
+    }
+
+    function renderRetrievalTrace(trace) {
+      aiTraceBox.innerHTML = "";
+
+      if (!trace || trace.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No retrieval trace was recorded for this job.";
+        aiTraceBox.appendChild(empty);
+        return;
+      }
+
+      const list = document.createElement("ol");
+
+      trace.forEach((entry) => {
+        const item = document.createElement("li");
+        const count = typeof entry.count === "number" ? ` (${entry.count})` : "";
+        item.textContent = `${entry.step || "step"}: ${entry.details || ""}${count}`;
+        list.appendChild(item);
+      });
+
+      aiTraceBox.appendChild(list);
+    }
+
+    function renderRelatedSources(sources, sourceMap) {
+      aiSourcesBox.innerHTML = "";
+
+      const sourceItems = sources && sources.length > 0
+        ? sources
+        : Object.entries(sourceMap || {}).map(([sourceRef, source]) => ({
+            source_ref: sourceRef,
+            title: source.title,
+            url: source.url,
+            origin: source.origin,
+            source: source.source || source.origin,
+            published: source.published || "",
+            relation_types: [],
+            matched_terms: [],
+            score: "",
+          }));
+
+      if (!sourceItems || sourceItems.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No related sources were recorded for this job.";
+        aiSourcesBox.appendChild(empty);
+        return;
+      }
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const tbody = document.createElement("tbody");
+      const headerRow = document.createElement("tr");
+
+      ["Ref", "Title", "Origin", "Relation", "Matched terms", "Score"].forEach((heading) => {
+        const cell = document.createElement("th");
+        cell.textContent = heading;
+        headerRow.appendChild(cell);
+      });
+
+      sourceItems.forEach((source) => {
+        const row = document.createElement("tr");
+        const titleCell = document.createElement("td");
+        const titleLink = document.createElement("a");
+        const values = [
+          source.source_ref || "-",
+          source.origin || source.source || "-",
+          (source.relation_types || []).join(", ") || "-",
+          (source.matched_terms || []).join(", ") || "-",
+          source.score || source.confidence || "-",
+        ];
+
+        titleLink.textContent = source.title || "Untitled source";
+        titleLink.href = isSafeHttpUrl(source.url) ? source.url : "#";
+        titleLink.target = "_blank";
+        titleLink.rel = "noopener noreferrer";
+        titleCell.appendChild(titleLink);
+
+        values.slice(0, 1).forEach((value) => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+
+        row.appendChild(titleCell);
+
+        values.slice(1).forEach((value) => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+
+        tbody.appendChild(row);
+      });
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      aiSourcesBox.appendChild(table);
     }
 
     function renderCveEnrichments(parent, enrichments) {
@@ -643,6 +760,8 @@
 
       renderAiReport(job.report_json);
       updateReportPreview(job.report_json);
+      renderRetrievalTrace(job.retrieval_trace);
+      renderRelatedSources(job.related_sources, job.source_map);
       aiJsonOutput.textContent = JSON.stringify(job, null, 2);
       setWorkbenchTab(job.action === "generate_report" ? "report" : "result");
     }

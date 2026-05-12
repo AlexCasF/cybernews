@@ -418,6 +418,25 @@ body {
   padding-left: 20px;
 }
 
+.workbench-box ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.workbench-box table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.workbench-box th,
+.workbench-box td {
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #dbe3e7;
+}
+
 .json-output {
   min-height: 220px;
   max-height: 360px;

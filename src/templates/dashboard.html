@@ -70,6 +70,15 @@
         </select>
       </label>
 
+      <label for="aiContextMode">
+        AI Context
+        <select id="aiContextMode">
+          <option value="auto">DB + source APIs</option>
+          <option value="off">Local DB only</option>
+          <option value="force">DB + source APIs + web</option>
+        </select>
+      </label>
+
       <button id="refreshLiveNewsButton" type="button">Refresh Feed</button>
       {% if current_user and current_user.role == "admin" %}
         <button id="syncFeedButton" type="button">Sync {{ initial_backfill_days }} Days</button>
@@ -122,6 +131,7 @@
     const sourceFilterOptions = Array.from(document.querySelectorAll(".source-filter-option"));
     const sortFilter = document.getElementById("sortFilter");
     const timeWindowFilter = document.getElementById("timeWindowFilter");
+    const aiContextMode = document.getElementById("aiContextMode");
     const refreshLiveNewsButton = document.getElementById("refreshLiveNewsButton");
     const syncFeedButton = document.getElementById("syncFeedButton");
     const articleList = document.getElementById("articleList");
@@ -427,6 +437,7 @@
             selected_text: selectedText,
             context_depth: "medium",
             output_format: outputFormat,
+            external_search_policy: aiContextMode.value,
           }),
         });
         const data = await response.json();
