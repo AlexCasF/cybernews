@@ -22,6 +22,12 @@
         <a href="{{ url_for('login') }}">Login</a>
       {% endif %}
     </nav>
+
+    <div class="theme-toggle" aria-label="Theme mode">
+      <button type="button" data-theme-choice="light" title="Light mode" aria-label="Light mode">☀</button>
+      <button type="button" data-theme-choice="dark" title="Dark mode" aria-label="Dark mode">☾</button>
+      <button type="button" data-theme-choice="device" title="Use device theme" aria-label="Use device theme">▣</button>
+    </div>
   </header>
 
   {% if current_user %}
@@ -39,5 +45,42 @@
   </footer>
 
   {% block scripts %}{% endblock %}
+  <script>
+    const themeButtons = document.querySelectorAll("[data-theme-choice]");
+    const deviceTheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+    function getStoredThemeMode() {
+      return localStorage.getItem("cybernews-theme") || "device";
+    }
+
+    function applyThemeMode(mode) {
+      const resolvedMode = mode === "device"
+        ? (deviceTheme.matches ? "dark" : "light")
+        : mode;
+
+      document.body.dataset.theme = resolvedMode;
+      document.body.dataset.themeMode = mode;
+
+      themeButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.themeChoice === mode);
+      });
+    }
+
+    themeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const mode = button.dataset.themeChoice;
+        localStorage.setItem("cybernews-theme", mode);
+        applyThemeMode(mode);
+      });
+    });
+
+    deviceTheme.addEventListener("change", () => {
+      if (getStoredThemeMode() === "device") {
+        applyThemeMode("device");
+      }
+    });
+
+    applyThemeMode(getStoredThemeMode());
+  </script>
 </body>
 </html>
