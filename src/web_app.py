@@ -1624,8 +1624,8 @@ def create_ai_job(payload, current_user):
     else:
         job["auto_saved_report_id"] = None
 
-    save_ai_job_artifacts(job)
     save_ai_job(job)
+    save_ai_job_artifacts(job)
 
     return job, ""
 

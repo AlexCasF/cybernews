@@ -1038,12 +1038,19 @@
       setWorkbenchTab(job.action === "generate_report" ? "report" : "result");
     }
 
-    async function loadAiJob(jobId) {
+    async function loadAiJob(jobId, fallbackJob = null) {
       aiJobStatus.textContent = "loading";
 
       try {
         const response = await fetch(`/api/ai/jobs/${jobId}`);
-        const data = await readJsonResponse(response, "Could not load AI job.");
+        let data = null;
+
+        if (response.status === 404 && fallbackJob) {
+          data = fallbackJob;
+          saveReportMessage.textContent = "Loaded from browser handoff because the job was not found in backend storage yet.";
+        } else {
+          data = await readJsonResponse(response, "Could not load AI job.");
+        }
 
         renderAiJob(data);
       } catch (error) {
@@ -1356,10 +1363,21 @@
     });
 
     const pendingJobId = localStorage.getItem("pendingAiJobId");
+    const pendingJobText = localStorage.getItem("pendingAiJob");
+    let pendingJob = null;
+
+    if (pendingJobText) {
+      try {
+        pendingJob = JSON.parse(pendingJobText);
+      } catch (error) {
+        pendingJob = null;
+      }
+    }
 
     if (pendingJobId) {
       localStorage.removeItem("pendingAiJobId");
-      loadAiJob(pendingJobId);
+      localStorage.removeItem("pendingAiJob");
+      loadAiJob(pendingJobId, pendingJob);
     }
 
     refreshSavedReports();

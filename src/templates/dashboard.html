@@ -447,6 +447,7 @@
         }
 
         localStorage.setItem("pendingAiJobId", data.job_id);
+        localStorage.setItem("pendingAiJob", JSON.stringify(data));
         window.location.href = "{{ url_for('ai_reporting') }}";
       } catch (error) {
         alert(error.message);
