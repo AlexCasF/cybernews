@@ -20,7 +20,9 @@ from src.ai_service import (
 from src.storage import (
     delete_report,
     get_ai_job,
+    get_feed_item,
     get_report,
+    list_article_correlations,
     list_feed_items,
     list_reports,
     save_ai_job,
@@ -1525,6 +1527,80 @@ def create_report(payload, current_user):
     return report, ""
 
 
+def get_entity_payload(entity_type, entity_id):
+    if entity_type == "article":
+        article = get_feed_item(entity_id)
+
+        if not article:
+            return None
+
+        return {
+            "entity_type": "article",
+            "entity_id": entity_id,
+            "entity": article,
+        }
+
+    if entity_type == "report":
+        report = get_report(entity_id)
+
+        if not report:
+            return None
+
+        return {
+            "entity_type": "report",
+            "entity_id": entity_id,
+            "entity": report,
+        }
+
+    if entity_type == "cve":
+        return {
+            "entity_type": "cve",
+            "entity_id": entity_id.upper(),
+            "entity": build_cve_enrichment(entity_id),
+        }
+
+    return None
+
+
+def get_entity_connections_payload(entity_type, entity_id):
+    source_entity = {
+        "type": entity_type,
+        "id": entity_id,
+        "label": entity_id,
+    }
+
+    if entity_type != "article":
+        return {
+            "source_entity": source_entity,
+            "connections": [],
+        }
+
+    article = get_feed_item(entity_id) or {}
+    source_entity["label"] = article.get("title", entity_id)
+    correlations = list_article_correlations(entity_id)
+    connections = []
+
+    for correlation in correlations:
+        target_id = correlation.get("related_article_id", "")
+        connections.append(
+            {
+                "target_type": "article",
+                "target_id": target_id,
+                "target_label": correlation.get("related_title", target_id),
+                "relationship": ", ".join(correlation.get("relation_types", [])) or "related_to",
+                "confidence": correlation.get("confidence", 0.0),
+                "evidence": correlation.get("evidence", []),
+                "matched_terms": correlation.get("matched_terms", []),
+                "status": correlation.get("status", "needs_review"),
+            }
+        )
+
+    return {
+        "source_entity": source_entity,
+        "connections": connections,
+    }
+
+
 def get_graph_severity_from_epss_label(epss_label):
     if epss_label == "Very High":
         return "Critical"
@@ -1830,6 +1906,27 @@ def api_get_ai_job(job_id):
         return jsonify({"error": "AI job not found."}), 404
 
     return jsonify(job)
+
+
+@app.route("/api/entities/<entity_type>/<entity_id>")
+def api_get_entity(entity_type, entity_id):
+    if entity_type not in AI_ENTITY_TYPES:
+        return jsonify({"error": "Unsupported entity type."}), 400
+
+    payload = get_entity_payload(entity_type, entity_id)
+
+    if not payload:
+        return jsonify({"error": "Entity not found."}), 404
+
+    return jsonify(payload)
+
+
+@app.route("/api/entities/<entity_type>/<entity_id>/connections")
+def api_get_entity_connections(entity_type, entity_id):
+    if entity_type not in AI_ENTITY_TYPES:
+        return jsonify({"error": "Unsupported entity type."}), 400
+
+    return jsonify(get_entity_connections_payload(entity_type, entity_id))
 
 
 @app.route("/api/reports", methods=["POST"])
