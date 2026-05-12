@@ -76,6 +76,12 @@ SECURITY_RSS_SOURCES = [
         "url": "https://www.bleepingcomputer.com/feed/",
     },
 ]
+NEWSAPI_BACKFILL_QUERIES = [
+    "cybersecurity",
+    "CVE OR vulnerability",
+    "ransomware OR malware",
+    "phishing OR breach",
+]
 HN_SECURITY_TERMS = [
     "security",
     "cyber",
@@ -210,7 +216,7 @@ def normalize_newsapi_article(article, index):
     }
 
 
-def get_live_news_articles():
+def get_live_news_articles(days=None, page_size=50, queries=None):
     api_key = os.getenv("NEWS_API_KEY")
 
     if not api_key:
@@ -220,50 +226,54 @@ def get_live_news_articles():
             "message": "NEWS_API_KEY is missing. NewsAPI articles are unavailable.",
         }
 
-    query = urlencode(
-        {
-            "q": "cybersecurity",
+    query_list = queries or ["cybersecurity"]
+    live_articles = []
+    seen_urls = set()
+    failed_queries = 0
+
+    for search_query in query_list:
+        params = {
+            "q": search_query,
             "language": "en",
             "sortBy": "publishedAt",
-            "pageSize": 6,
+            "pageSize": min(page_size, 100),
             "apiKey": api_key,
         }
-    )
 
-    try:
-        with urlopen(f"{NEWSAPI_URL}?{query}", timeout=8) as response:
-            data = json.loads(response.read().decode("utf-8"))
-    except Exception:
-        return {
-            "articles": [],
-            "source": "newsapi",
-            "message": "NewsAPI is unavailable right now.",
-        }
+        if days:
+            params["from"] = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
 
-    if data.get("status") != "ok":
-        return {
-            "articles": [],
-            "source": "newsapi",
-            "message": "NewsAPI returned an error.",
-        }
+        try:
+            with urlopen(f"{NEWSAPI_URL}?{urlencode(params)}", timeout=10) as response:
+                data = json.loads(response.read().decode("utf-8"))
+        except Exception:
+            failed_queries += 1
+            continue
 
-    live_articles = [
-        normalize_newsapi_article(article, index + 1)
-        for index, article in enumerate(data.get("articles", []))
-        if article.get("title") and article.get("url")
-    ]
+        if data.get("status") != "ok":
+            failed_queries += 1
+            continue
+
+        for article in data.get("articles", []):
+            url = article.get("url")
+
+            if not article.get("title") or not url or url in seen_urls:
+                continue
+
+            seen_urls.add(url)
+            live_articles.append(normalize_newsapi_article(article, len(live_articles) + 1))
 
     if not live_articles:
         return {
             "articles": [],
             "source": "newsapi",
-            "message": "No NewsAPI articles were found.",
+            "message": "No NewsAPI articles were found." if failed_queries == 0 else "NewsAPI is unavailable right now.",
         }
 
     return {
         "articles": live_articles,
         "source": "newsapi",
-        "message": "Live NewsAPI articles loaded.",
+        "message": f"NewsAPI articles loaded from {len(query_list) - failed_queries} query set(s).",
     }
 
 
@@ -388,13 +398,13 @@ def get_security_rss_articles():
             entries = root.findall(f"{atom_namespace}entry")
             articles.extend(
                 normalize_atom_entry(entry, source["name"], source_slug, index + 1)
-                for index, entry in enumerate(entries[:4])
+                for index, entry in enumerate(entries)
             )
         else:
             items = root.findall("./channel/item")
             articles.extend(
                 normalize_rss_item(item, source["name"], source_slug, index + 1)
-                for index, item in enumerate(items[:4])
+                for index, item in enumerate(items)
             )
 
     if articles and failed_sources:
@@ -438,7 +448,7 @@ def normalize_hn_story(story, index):
     }
 
 
-def get_hacker_news_security_articles():
+def get_hacker_news_security_articles(max_scan=25, max_results=8):
     try:
         with urlopen(HN_TOP_STORIES_URL, timeout=8) as response:
             story_ids = json.loads(response.read().decode("utf-8"))
@@ -451,12 +461,12 @@ def get_hacker_news_security_articles():
 
     articles = []
 
-    for story_id in story_ids[:40]:
-        if len(articles) >= 6:
+    for story_id in story_ids[:max_scan]:
+        if len(articles) >= max_results:
             break
 
         try:
-            with urlopen(HN_ITEM_URL.format(item_id=story_id), timeout=5) as response:
+            with urlopen(HN_ITEM_URL.format(item_id=story_id), timeout=1.5) as response:
                 story = json.loads(response.read().decode("utf-8"))
         except Exception:
             continue
@@ -533,8 +543,11 @@ def get_aggregated_news_feed(save_to_store=False, days=None):
     messages = []
     seen_keys = set()
 
+    newsapi_queries = NEWSAPI_BACKFILL_QUERIES if save_to_store else ["cybersecurity"]
+    newsapi_page_size = 100 if save_to_store else 50
+
     source_results = [
-        ("newsapi", get_live_news_articles(), "articles"),
+        ("newsapi", get_live_news_articles(days=days, page_size=newsapi_page_size, queries=newsapi_queries), "articles"),
         ("security-rss", get_security_rss_articles(), "articles"),
         ("hacker-news", get_hacker_news_security_articles(), "articles"),
         ("bsi", get_bsi_advisories(), "advisories"),
@@ -616,7 +629,7 @@ def get_bsi_advisories():
 
     advisories = [
         normalize_bsi_item(item, index + 1)
-        for index, item in enumerate(items[:8])
+        for index, item in enumerate(items)
     ]
 
     return {
@@ -647,7 +660,7 @@ def get_cisa_advisories():
 
     advisories = [
         normalize_rss_item(item, "CISA Advisories", "cisa-advisories", index + 1)
-        for index, item in enumerate(items[:6])
+        for index, item in enumerate(items)
     ]
 
     for advisory in advisories:

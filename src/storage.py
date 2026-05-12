@@ -359,15 +359,30 @@ def save_feed_items(feed_items):
         indexed_items.append(indexed_item)
 
     if db:
-        for item in indexed_items:
-            try:
-                db.collection("feed_items").document(item["id"]).set(item)
+        try:
+            batch = db.batch()
+
+            for index, item in enumerate(indexed_items, start=1):
+                document = db.collection("feed_items").document(item["id"])
+                batch.set(document, item)
                 saved_count += 1
-            except Exception:
+
+                if index % 400 == 0:
+                    batch.commit()
+                    batch = db.batch()
+
+            if indexed_items:
+                batch.commit()
+
+            return saved_count
+        except Exception:
+            saved_count = 0
+
+            for item in indexed_items:
                 MEMORY_FEED_ITEMS[item["id"]] = item
                 saved_count += 1
 
-        return saved_count
+            return saved_count
 
     for item in indexed_items:
         MEMORY_FEED_ITEMS[item["id"]] = item
