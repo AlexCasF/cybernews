@@ -12,4 +12,4 @@ COPY src ./src
 
 ENV PORT=8080
 
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} src.web_app:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --timeout ${GUNICORN_TIMEOUT:-600} src.web_app:app"]
