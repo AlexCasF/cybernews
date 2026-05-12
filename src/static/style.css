@@ -153,6 +153,8 @@ body {
 }
 
 .card-actions {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -261,6 +263,7 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   padding-right: 6px;
+  padding-bottom: 180px;
 }
 
 .pagination-controls {
@@ -297,6 +300,11 @@ body {
 
 .ai-actions-menu {
   position: relative;
+  z-index: 100;
+}
+
+.ai-actions-menu[open] {
+  z-index: 10000;
 }
 
 .ai-actions-menu summary {
@@ -314,7 +322,7 @@ body {
 .ai-actions-list {
   position: absolute;
   right: 0;
-  z-index: 5;
+  z-index: 10001;
   display: grid;
   min-width: 170px;
   margin-top: 6px;
@@ -547,8 +555,13 @@ body {
 }
 
 .news-item {
+  position: relative;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
+}
+
+.news-item:has(.ai-actions-menu[open]) {
+  z-index: 9999;
 }
 
 .news-item > div,
