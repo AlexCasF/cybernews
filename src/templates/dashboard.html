@@ -72,7 +72,7 @@
 
       <button id="refreshLiveNewsButton" type="button">Refresh Feed</button>
       {% if current_user and current_user.role == "admin" %}
-        <button id="syncFeedButton" type="button">Sync 7 Days</button>
+        <button id="syncFeedButton" type="button">Sync {{ initial_backfill_days }} Days</button>
       {% endif %}
     </div>
 
@@ -380,7 +380,7 @@
 
     async function syncFeedItems() {
       syncFeedButton.disabled = true;
-      newsMessage.textContent = "Syncing the last 7 days into Firestore...";
+      newsMessage.textContent = "Syncing {{ initial_backfill_days }} days into Firestore...";
 
       try {
         const response = await fetch("/api/feed-sync", {
