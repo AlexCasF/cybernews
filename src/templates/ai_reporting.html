@@ -206,7 +206,13 @@
         return;
       }
 
-      addTextList(parent, cves);
+      addTextList(parent, cves.map((cve) => {
+        if (typeof cve === "string") {
+          return cve;
+        }
+
+        return `${cve.cve_id || "Unknown CVE"} (${(cve.source_refs || []).join(", ") || "no source ref"})`;
+      }));
     }
 
     function renderIocList(parent, iocs) {
@@ -224,6 +230,52 @@
       }
 
       addTextList(parent, iocs.map((ioc) => `${ioc.type}: ${ioc.value} (${ioc.confidence})`));
+    }
+
+    function renderRelatedCves(parent, relatedCves) {
+      const title = document.createElement("p");
+      const titleLabel = document.createElement("strong");
+      titleLabel.textContent = "Related-context CVEs:";
+      title.appendChild(titleLabel);
+      parent.appendChild(title);
+
+      if (!relatedCves || relatedCves.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No related-only CVEs found.";
+        parent.appendChild(empty);
+        return;
+      }
+
+      addTextList(parent, relatedCves.map((cve) => {
+        return `${cve.cve_id}: ${cve.relationship || "related"} (${(cve.seen_in || []).join(", ")})`;
+      }));
+    }
+
+    function renderIocSightings(parent, sightings, relatedContextIocs) {
+      const title = document.createElement("p");
+      const titleLabel = document.createElement("strong");
+      titleLabel.textContent = "IOC sightings:";
+      title.appendChild(titleLabel);
+      parent.appendChild(title);
+
+      const items = [];
+
+      (sightings || []).forEach((sighting) => {
+        items.push(`${sighting.ioc}: seen in ${sighting.sighting_count || 0} related source(s)`);
+      });
+
+      (relatedContextIocs || []).forEach((ioc) => {
+        items.push(`${ioc.type}: ${ioc.value} found only in related context (${(ioc.source_refs || []).join(", ")})`);
+      });
+
+      if (items.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No related IOC sightings found.";
+        parent.appendChild(empty);
+        return;
+      }
+
+      addTextList(parent, items);
     }
 
     function renderRelatedArticles(parent, articles) {
@@ -731,10 +783,12 @@
 
       if (job.action === "extract_cves" || (resultJson.extracted_cves && resultJson.extracted_cves.length > 0)) {
         renderCveList(aiResultBox, resultJson.extracted_cves);
+        renderRelatedCves(aiResultBox, resultJson.related_cves);
       }
 
       if (job.action === "extract_iocs" || (resultJson.extracted_iocs && resultJson.extracted_iocs.length > 0)) {
         renderIocList(aiResultBox, resultJson.extracted_iocs);
+        renderIocSightings(aiResultBox, resultJson.ioc_sightings, resultJson.related_context_iocs);
       }
 
       renderRelatedArticles(aiResultBox, resultJson.related_articles);

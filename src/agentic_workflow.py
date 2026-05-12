@@ -112,6 +112,93 @@ def build_ioc_sightings(iocs, sources):
     return sightings
 
 
+def build_primary_cve_objects(cves, primary_text):
+    return [
+        {
+            "cve_id": cve,
+            "evidence": cve if cve in primary_text.upper() else "CVE detected in primary article context.",
+            "source_refs": ["A0"],
+        }
+        for cve in cves
+    ]
+
+
+def build_related_cves(primary_cves, sources):
+    primary_set = set(primary_cves)
+    related = []
+    seen = set()
+
+    for source in sources:
+        source_text = f"{source.get('title', '')} {source.get('summary', '')}"
+
+        for cve in extract_cves_from_text(source_text):
+            key = (cve, source.get("source_ref", ""))
+
+            if cve in primary_set or key in seen:
+                continue
+
+            seen.add(key)
+            related.append(
+                {
+                    "cve_id": cve,
+                    "seen_in": [source.get("source_ref", "")],
+                    "relationship": ", ".join(source.get("relation_types", [])) or "related context",
+                }
+            )
+
+    return related
+
+
+def build_related_context_iocs(primary_iocs, sources):
+    primary_values = {ioc.get("value", "").lower() for ioc in primary_iocs}
+    related = []
+    seen = set()
+
+    for source in sources:
+        source_text = f"{source.get('title', '')} {source.get('summary', '')}"
+
+        for ioc in extract_iocs_from_text(source_text):
+            value = ioc.get("value", "")
+            key = (value.lower(), source.get("source_ref", ""))
+
+            if not value or value.lower() in primary_values or key in seen:
+                continue
+
+            seen.add(key)
+            related.append(
+                {
+                    "type": ioc.get("type", "unknown"),
+                    "value": value,
+                    "confidence": ioc.get("confidence", 0.6),
+                    "source_refs": [source.get("source_ref", "")],
+                    "evidence": source.get("title", ""),
+                }
+            )
+
+    return related
+
+
+def apply_action_specific_fields(artifact, action, context_bundle):
+    primary = context_bundle["primary_article"]
+    primary_text = f"{primary.get('title', '')} {primary.get('summary', '')} {primary.get('selected_text', '')}"
+    related_sources = context_bundle.get("internal_sources", []) + context_bundle.get("external_sources", [])
+    primary_cves = extract_cves_from_text(primary_text)
+    primary_iocs = extract_iocs_from_text(primary_text)
+
+    if action == "extract_cves":
+        artifact["extracted_cves"] = primary_cves
+        artifact["primary_article_cves"] = build_primary_cve_objects(primary_cves, primary_text)
+        artifact["related_cves"] = build_related_cves(primary_cves, related_sources)
+
+    if action == "extract_iocs":
+        artifact["extracted_iocs"] = primary_iocs
+        artifact["primary_article_iocs"] = primary_iocs
+        artifact["ioc_sightings"] = context_bundle.get("ioc_sightings", [])
+        artifact["related_context_iocs"] = build_related_context_iocs(primary_iocs, related_sources)
+
+    return artifact
+
+
 def build_fallback_artifact(action, context_bundle):
     primary = context_bundle["primary_article"]
     text = f"{primary.get('title', '')} {primary.get('summary', '')} {primary.get('selected_text', '')}"
@@ -178,7 +265,11 @@ def artifact_to_result_json(artifact, context_bundle):
         "related_sources": artifact.get("related_sources", context_bundle.get("internal_sources", []) + context_bundle.get("external_sources", [])),
         "source_map": artifact.get("source_map", context_bundle.get("source_map", {})),
         "cve_enrichments": context_bundle.get("cve_enrichments", []),
-        "ioc_sightings": context_bundle.get("ioc_sightings", []),
+        "primary_article_cves": artifact.get("primary_article_cves", []),
+        "related_cves": artifact.get("related_cves", []),
+        "primary_article_iocs": artifact.get("primary_article_iocs", []),
+        "ioc_sightings": artifact.get("ioc_sightings", context_bundle.get("ioc_sightings", [])),
+        "related_context_iocs": artifact.get("related_context_iocs", []),
         "confidence": artifact.get("confidence", 0.6),
         "evidence": artifact.get("evidence", []),
     }
@@ -336,6 +427,7 @@ def run_agentic_article_action(
         model = "fallback-writer-v1"
         warnings = [f"Gemini artifact writer unavailable, used deterministic fallback: {error}"]
 
+    artifact = apply_action_specific_fields(artifact, action, context_bundle)
     result_json = artifact_to_result_json(artifact, context_bundle)
     report_json = None
 
