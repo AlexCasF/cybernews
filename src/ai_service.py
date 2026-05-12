@@ -181,6 +181,167 @@ CVE_RISK_EXPLANATION_SCHEMA = {
     "required": ["reasoning", "recommended_action", "assumptions", "confidence"],
 }
 
+RETRIEVAL_PLAN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "topic": {"type": "string"},
+        "confidence": {"type": "number"},
+        "core_entities": {
+            "type": "object",
+            "properties": {
+                "cves": {"type": "array", "items": {"type": "string"}},
+                "iocs": {"type": "array", "items": {"type": "string"}},
+                "vendors": {"type": "array", "items": {"type": "string"}},
+                "products": {"type": "array", "items": {"type": "string"}},
+                "threat_actors": {"type": "array", "items": {"type": "string"}},
+                "malware_families": {"type": "array", "items": {"type": "string"}},
+                "vulnerability_names": {"type": "array", "items": {"type": "string"}},
+                "attack_terms": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": [
+                "cves",
+                "iocs",
+                "vendors",
+                "products",
+                "threat_actors",
+                "malware_families",
+                "vulnerability_names",
+                "attack_terms",
+            ],
+        },
+        "priority_search_terms": {"type": "array", "items": {"type": "string"}},
+        "exact_terms": {"type": "array", "items": {"type": "string"}},
+        "negative_terms": {"type": "array", "items": {"type": "string"}},
+        "firestore_queries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string"},
+                    "terms": {"type": "array", "items": {"type": "string"}},
+                    "priority": {"type": "string"},
+                },
+                "required": ["type", "terms", "priority"],
+            },
+        },
+        "source_api_queries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "target": {"type": "string"},
+                    "query": {"type": "string"},
+                    "cve_ids": {"type": "array", "items": {"type": "string"}},
+                    "from_days_ago": {"type": "number"},
+                    "max_results": {"type": "number"},
+                    "priority": {"type": "string"},
+                },
+                "required": ["target", "query", "cve_ids", "from_days_ago", "max_results", "priority"],
+            },
+        },
+        "web_queries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "purpose": {"type": "string"},
+                    "priority": {"type": "string"},
+                },
+                "required": ["query", "purpose", "priority"],
+            },
+        },
+    },
+    "required": [
+        "topic",
+        "confidence",
+        "core_entities",
+        "priority_search_terms",
+        "exact_terms",
+        "negative_terms",
+        "firestore_queries",
+        "source_api_queries",
+        "web_queries",
+    ],
+}
+
+AGENTIC_ARTIFACT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "artifact_type": {"type": "string"},
+        "summary": {
+            "type": "object",
+            "properties": {
+                "executive": {"type": "string"},
+                "technical": {"type": "string"},
+                "key_points": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["executive", "technical", "key_points"],
+        },
+        "primary_findings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "finding": {"type": "string"},
+                    "source_refs": {"type": "array", "items": {"type": "string"}},
+                    "confidence": {"type": "number"},
+                },
+                "required": ["finding", "source_refs", "confidence"],
+            },
+        },
+        "correlated_findings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "finding": {"type": "string"},
+                    "relation_type": {"type": "string"},
+                    "matched_terms": {"type": "array", "items": {"type": "string"}},
+                    "source_refs": {"type": "array", "items": {"type": "string"}},
+                    "confidence": {"type": "number"},
+                },
+                "required": ["finding", "relation_type", "matched_terms", "source_refs", "confidence"],
+            },
+        },
+        "extracted_cves": {"type": "array", "items": {"type": "string"}},
+        "extracted_iocs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string"},
+                    "value": {"type": "string"},
+                    "confidence": {"type": "number"},
+                },
+                "required": ["type", "value", "confidence"],
+            },
+        },
+        "entities": {"type": "object"},
+        "attack_mappings": {"type": "array", "items": {"type": "object"}},
+        "recommended_actions": {"type": "array", "items": {"type": "string"}},
+        "related_sources": {"type": "array", "items": {"type": "object"}},
+        "source_map": {"type": "object"},
+        "confidence": {"type": "number"},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": [
+        "artifact_type",
+        "summary",
+        "primary_findings",
+        "correlated_findings",
+        "extracted_cves",
+        "extracted_iocs",
+        "entities",
+        "attack_mappings",
+        "recommended_actions",
+        "related_sources",
+        "source_map",
+        "confidence",
+        "evidence",
+    ],
+}
+
 
 def is_vertex_ready():
     return genai is not None and os.getenv("USE_VERTEX_AI", "1") == "1"
@@ -265,6 +426,22 @@ def explain_cve_risk(enrichment):
         "confidence": float(result.get("confidence", 0.0)),
         "model": model,
     }
+
+
+def plan_retrieval(action, primary_article, selected_text, context_depth):
+    result, model = run_simple_extraction(
+        build_retrieval_plan_prompt(action, primary_article, selected_text, context_depth),
+        RETRIEVAL_PLAN_SCHEMA,
+    )
+    return result, model
+
+
+def write_agentic_artifact(action, context_bundle):
+    result, model = run_simple_extraction(
+        build_agentic_writer_prompt(action, context_bundle),
+        AGENTIC_ARTIFACT_SCHEMA,
+    )
+    return normalize_agentic_artifact(result), model
 
 
 def run_simple_extraction(prompt, schema):
@@ -385,6 +562,66 @@ Rules:
 
 Deterministic CVE data:
 {json.dumps(enrichment, indent=2)}
+""".strip()
+
+
+def build_retrieval_plan_prompt(action, primary_article, selected_text, context_depth):
+    return f"""
+You are a cyber threat intelligence retrieval planner.
+
+Read the primary article and produce a JSON retrieval plan.
+Your job is not to write the final analysis.
+Your job is to identify search terms, entities, CVEs, IOCs, vendors, products,
+threat actors, malware families, vulnerability names, and useful queries.
+
+Rules:
+- Return valid JSON only.
+- Prefer precise search terms over generic ones.
+- Extract CVEs exactly.
+- Extract IOCs only when explicit.
+- Create Firestore queries first.
+- Create external API queries only when useful.
+- Do not invent entities that are not supported by the text.
+- Include negative_terms for likely false positives.
+
+Input:
+{json.dumps({
+    "action": action,
+    "primary_article": primary_article,
+    "selected_text": selected_text,
+    "context_depth": context_depth,
+}, indent=2)}
+""".strip()
+
+
+def build_agentic_writer_prompt(action, context_bundle):
+    return f"""
+You are a cyber threat intelligence analyst.
+
+You will receive a structured context bundle containing:
+- the primary article
+- the retrieval plan
+- internal Firestore sources
+- external sources
+- CVE enrichments
+- IOC sightings
+- a source map
+
+Write the requested artifact for the action: {action}
+
+Rules:
+- Return valid JSON only.
+- Use the primary article as the anchor.
+- Use related sources only as supporting context.
+- Every important claim must include source_refs when possible.
+- Do not merge facts from related articles into the primary article.
+- Separate confirmed findings from weak correlations.
+- If a relationship is weak, label it as weak.
+- Do not invent CVEs, IOCs, threat actors, or malware names.
+- Keep the output concise and analyst-friendly.
+
+Context bundle:
+{json.dumps(context_bundle, indent=2)}
 """.strip()
 
 
@@ -534,3 +771,27 @@ def normalize_links(links):
         )
 
     return clean_links
+
+
+def normalize_agentic_artifact(result):
+    summary = result.get("summary") or {}
+
+    return {
+        "artifact_type": str(result.get("artifact_type", "analysis")),
+        "summary": {
+            "executive": str(summary.get("executive", "")),
+            "technical": str(summary.get("technical", "")),
+            "key_points": [str(item) for item in summary.get("key_points", [])],
+        },
+        "primary_findings": list(result.get("primary_findings", [])),
+        "correlated_findings": list(result.get("correlated_findings", [])),
+        "extracted_cves": [str(cve).upper() for cve in result.get("extracted_cves", [])],
+        "extracted_iocs": list(result.get("extracted_iocs", [])),
+        "entities": dict(result.get("entities", {})),
+        "attack_mappings": list(result.get("attack_mappings", [])),
+        "recommended_actions": [str(item) for item in result.get("recommended_actions", [])],
+        "related_sources": list(result.get("related_sources", [])),
+        "source_map": dict(result.get("source_map", {})),
+        "confidence": float(result.get("confidence", 0.0)),
+        "evidence": [str(item) for item in result.get("evidence", [])],
+    }
