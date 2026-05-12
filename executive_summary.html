@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberNews Executive Summary</title>
+  <style>
+    :root {
+      --ink: #172026;
+      --muted: #5a6872;
+      --panel: #ffffff;
+      --page: #f5f7f8;
+      --line: #dbe3e7;
+      --accent: #006e72;
+      --dark: #14212b;
+      --soft: #c8f5f2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: var(--ink);
+      background: var(--page);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 22px;
+    }
+
+    header {
+      padding: 28px;
+      color: white;
+      background: var(--dark);
+    }
+
+    h1,
+    h2,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 2.4rem;
+    }
+
+    h2 {
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      color: var(--accent);
+    }
+
+    section {
+      margin-top: 18px;
+      padding: 20px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+
+    .summary-grid,
+    .feature-grid,
+    .architecture-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .summary-grid {
+      grid-template-columns: 1.3fr 0.7fr;
+    }
+
+    .feature-grid,
+    .architecture-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .card {
+      padding: 14px;
+      background: #f9fbfc;
+      border: 1px solid var(--line);
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .card p,
+    li {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--dark);
+      background: var(--soft);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .flow div {
+      padding: 12px;
+      text-align: center;
+      background: #f9fbfc;
+      border: 1px solid var(--line);
+    }
+
+    footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      main {
+        padding: 0;
+      }
+
+      section {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>CyberNews</h1>
+      <p>Professional cyber threat intelligence and SOC-style dashboard for aggregating security news, vulnerability data, and AI-assisted analyst reports.</p>
+      <div class="badge-row">
+        <span class="badge">Cloud Run</span>
+        <span class="badge">Firestore</span>
+        <span class="badge">Gemini</span>
+        <span class="badge">Flask</span>
+      </div>
+    </header>
+
+    <section class="summary-grid">
+      <div>
+        <h2>Project Overview</h2>
+        <p>CyberNews is a web-based cyber threat intelligence hub. It collects cybersecurity headlines, vulnerability advisories, community signals, and CVE risk data into one searchable feed. Analysts can generate AI-assisted summaries and reports from selected feed items, while admins can manage generated AI artifacts.</p>
+      </div>
+      <div>
+        <h2>User Roles</h2>
+        <ul>
+          <li><strong>User:</strong> access to the feed and AI features.</li>
+          <li><strong>Admin:</strong> user features plus deletion of generated AI artifacts.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Core Features</h2>
+      <div class="feature-grid">
+        <div class="card">
+          <h3>Unified Threat Feed</h3>
+          <p>Aggregates articles and advisories from NewsAPI, The Hacker News RSS, SecurityWeek RSS, Hacker News, BSI, and CISA advisories.</p>
+        </div>
+        <div class="card">
+          <h3>Vulnerability Intelligence</h3>
+          <p>Enriches CVEs with deterministic data from NVD, CISA KEV, and FIRST EPSS to support risk-based prioritization.</p>
+        </div>
+        <div class="card">
+          <h3>AI Workbench</h3>
+          <p>Uses Gemini to analyze articles, extract CVEs and IOCs, generate source-linked reports, and show retrieval traces.</p>
+        </div>
+        <div class="card">
+          <h3>Safe Reports</h3>
+          <p>Stores generated reports in Firestore and renders them through controlled HTML views instead of trusting arbitrary model output.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Architecture</h2>
+      <div class="architecture-grid">
+        <div class="card">
+          <h3>Frontend</h3>
+          <p>Server-rendered HTML templates with plain CSS and JavaScript. The dashboard includes responsive feed cards, filters, sorting, pagination, and a dark/light/device theme toggle.</p>
+        </div>
+        <div class="card">
+          <h3>Backend</h3>
+          <p>Python Flask application exposing dashboard routes, API endpoints, feed sync, CVE enrichment, authentication, and AI job orchestration.</p>
+        </div>
+        <div class="card">
+          <h3>Data Layer</h3>
+          <p>Google Firestore stores feed items, AI jobs, generated reports, evidence, feedback, detection drafts, and related article context.</p>
+        </div>
+        <div class="card">
+          <h3>Deployment</h3>
+          <p>Containerized with Docker, deployed to Google Cloud Run through Cloud Build. Runtime secrets and API keys are provided through Cloud Run environment variables.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>AI Workflow</h2>
+      <div class="flow">
+        <div>Select feed item</div>
+        <div>Create AI job</div>
+        <div>Load article context</div>
+        <div>Search related sources</div>
+        <div>Ask Gemini</div>
+        <div>Save report</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Security and Reliability</h2>
+      <ul>
+        <li>Role-based access separates regular users from admin-only artifact deletion.</li>
+        <li>Session-based login protects dashboard and API routes.</li>
+        <li>AI output is treated as untrusted and stored as structured report data.</li>
+        <li>External API failures fall back to stored feed data where possible.</li>
+        <li>CVE facts are sourced from deterministic APIs instead of being invented by the LLM.</li>
+      </ul>
+    </section>
+
+    <footer>
+      CyberNews Executive Summary · 2026
+    </footer>
+  </main>
+</body>
+</html>
