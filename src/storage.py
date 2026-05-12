@@ -10,6 +10,8 @@ except ImportError:
 
 
 MEMORY_AI_JOBS = {}
+MEMORY_AI_ARTIFACTS = {}
+MEMORY_AI_EVIDENCE = {}
 MEMORY_REPORTS = {}
 MEMORY_FEED_ITEMS = {}
 MEMORY_ARTICLE_CORRELATIONS = {}
@@ -90,6 +92,74 @@ def get_ai_job(job_id):
         return None
 
     return MEMORY_AI_JOBS.get(job_id)
+
+
+def save_ai_artifact(artifact):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            db.collection("ai_artifacts").document(artifact["artifact_id"]).set(artifact)
+            return
+        except Exception:
+            pass
+
+    MEMORY_AI_ARTIFACTS[artifact["artifact_id"]] = artifact
+
+
+def list_ai_artifacts(job_id=None):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            artifacts = [document.to_dict() for document in db.collection("ai_artifacts").stream()]
+        except Exception:
+            artifacts = list(MEMORY_AI_ARTIFACTS.values())
+    else:
+        artifacts = list(MEMORY_AI_ARTIFACTS.values())
+
+    if job_id:
+        artifacts = [
+            artifact
+            for artifact in artifacts
+            if artifact.get("job_id") == job_id
+        ]
+
+    return sorted(artifacts, key=lambda artifact: artifact.get("created_at", ""), reverse=True)
+
+
+def save_ai_evidence(evidence):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            db.collection("ai_evidence").document(evidence["evidence_id"]).set(evidence)
+            return
+        except Exception:
+            pass
+
+    MEMORY_AI_EVIDENCE[evidence["evidence_id"]] = evidence
+
+
+def list_ai_evidence(job_id=None):
+    db = get_firestore_client()
+
+    if db:
+        try:
+            evidence_items = [document.to_dict() for document in db.collection("ai_evidence").stream()]
+        except Exception:
+            evidence_items = list(MEMORY_AI_EVIDENCE.values())
+    else:
+        evidence_items = list(MEMORY_AI_EVIDENCE.values())
+
+    if job_id:
+        evidence_items = [
+            evidence
+            for evidence in evidence_items
+            if evidence.get("job_id") == job_id
+        ]
+
+    return sorted(evidence_items, key=lambda evidence: evidence.get("created_at", ""), reverse=True)
 
 
 def list_ai_jobs():

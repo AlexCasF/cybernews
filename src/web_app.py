@@ -26,11 +26,15 @@ from src.storage import (
     get_feed_item,
     get_report,
     list_article_correlations,
+    list_ai_artifacts,
+    list_ai_evidence,
     list_ai_jobs,
     list_detection_rules,
     list_feed_items,
     list_reports,
     save_ai_job,
+    save_ai_artifact,
+    save_ai_evidence,
     save_analyst_feedback,
     save_detection_rule,
     save_feed_items,
@@ -1421,6 +1425,88 @@ def get_prompt_version(action, model):
     return "article-analysis-v1"
 
 
+def save_ai_job_artifacts(job):
+    created_at = job.get("created_at", get_timestamp())
+    artifacts = [
+        {
+            "artifact_id": f"{job['job_id']}-result",
+            "job_id": job["job_id"],
+            "artifact_type": "result_json",
+            "content_json": job.get("result_json", {}),
+            "created_by": job.get("created_by", ""),
+            "created_at": created_at,
+        }
+    ]
+
+    if job.get("report_json"):
+        artifacts.append(
+            {
+                "artifact_id": f"{job['job_id']}-report",
+                "job_id": job["job_id"],
+                "artifact_type": "report_json",
+                "content_json": job.get("report_json", {}),
+                "created_by": job.get("created_by", ""),
+                "created_at": created_at,
+            }
+        )
+
+    if job.get("context_bundle"):
+        artifacts.append(
+            {
+                "artifact_id": f"{job['job_id']}-context",
+                "job_id": job["job_id"],
+                "artifact_type": "context_bundle",
+                "content_json": job.get("context_bundle", {}),
+                "created_by": job.get("created_by", ""),
+                "created_at": created_at,
+            }
+        )
+
+    for artifact in artifacts:
+        save_ai_artifact(artifact)
+
+    evidence_values = []
+
+    for item in job.get("evidence", []):
+        evidence_values.append(
+            {
+                "evidence_type": "model_evidence",
+                "content": str(item),
+                "source_ref": "",
+            }
+        )
+
+    for entry in job.get("retrieval_trace", []):
+        evidence_values.append(
+            {
+                "evidence_type": "retrieval_trace",
+                "content": f"{entry.get('step', '')}: {entry.get('details', '')}",
+                "source_ref": entry.get("step", ""),
+            }
+        )
+
+    for source in job.get("related_sources", []):
+        evidence_values.append(
+            {
+                "evidence_type": "related_source",
+                "content": source.get("why_related") or source.get("title", ""),
+                "source_ref": source.get("source_ref", ""),
+                "source_url": source.get("url", ""),
+            }
+        )
+
+    for index, evidence in enumerate(evidence_values, start=1):
+        save_ai_evidence(
+            {
+                "evidence_id": f"{job['job_id']}-evidence-{index}",
+                "job_id": job["job_id"],
+                "created_by": job.get("created_by", ""),
+                "created_at": created_at,
+                **evidence,
+            }
+        )
+
+
 def create_ai_job(payload, current_user):
     action = payload.get("action", "")
     entity_type = payload.get("entity_type", "")
@@ -1538,6 +1624,7 @@ def create_ai_job(payload, current_user):
     else:
         job["auto_saved_report_id"] = None
 
+    save_ai_job_artifacts(job)
     save_ai_job(job)
 
     return job, ""
@@ -2303,6 +2390,32 @@ def api_stream_ai_job(job_id):
         yield f"event: status\ndata: {json.dumps(job)}\n\n"
 
     return Response(generate(), mimetype="text/event-stream")
+
+
+@app.route("/api/ai/jobs/<job_id>/artifacts")
+def api_ai_job_artifacts(job_id):
+    if not get_ai_job(job_id):
+        return jsonify({"error": "AI job not found."}), 404
+
+    return jsonify(
+        {
+            "artifacts": list_ai_artifacts(job_id),
+            "count": len(list_ai_artifacts(job_id)),
+        }
+    )
+
+
+@app.route("/api/ai/jobs/<job_id>/evidence")
+def api_ai_job_evidence(job_id):
+    if not get_ai_job(job_id):
+        return jsonify({"error": "AI job not found."}), 404
+
+    return jsonify(
+        {
+            "evidence": list_ai_evidence(job_id),
+            "count": len(list_ai_evidence(job_id)),
+        }
+    )
 
 
 @app.route("/api/ai/jobs/<job_id>/feedback", methods=["POST"])
