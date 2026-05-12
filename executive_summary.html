@@ -116,6 +116,19 @@
       background: var(--soft);
     }
 
+    .project-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0 0 18px;
+      color: #d8f7f5;
+      font-size: 0.95rem;
+    }
+
+    .project-meta a {
+      color: #d8f7f5;
+    }
+
     .flow {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -128,6 +141,27 @@
       text-align: center;
       background: #f9fbfc;
       border: 1px solid var(--line);
+    }
+
+    .flow .arrow-step {
+      position: relative;
+      margin-right: 12px;
+      padding-right: 24px;
+      color: white;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .flow .arrow-step::after {
+      content: "";
+      position: absolute;
+      top: -1px;
+      right: -22px;
+      width: 0;
+      height: 0;
+      border-top: 23px solid transparent;
+      border-bottom: 23px solid transparent;
+      border-left: 22px solid var(--accent);
     }
 
     footer {
@@ -156,6 +190,11 @@
   <main>
     <header>
       <h1>CyberNews</h1>
+      <p class="project-meta">
+        <span>Alexander Fischer</span>
+        <span>May 12, 2026</span>
+        <a href="https://github.com/AlexCasF/cybernews">github.com/AlexCasF/cybernews</a>
+      </p>
       <p>Professional cyber threat intelligence and SOC-style dashboard for aggregating security news, vulnerability data, and AI-assisted analyst reports.</p>
       <div class="badge-row">
         <span class="badge">Cloud Run</span>
@@ -226,11 +265,11 @@
     <section>
       <h2>AI Workflow</h2>
       <div class="flow">
-        <div>Select feed item</div>
-        <div>Create AI job</div>
-        <div>Load article context</div>
-        <div>Search related sources</div>
-        <div>Ask Gemini</div>
+        <div class="arrow-step">Select feed item</div>
+        <div class="arrow-step">Create AI job</div>
+        <div class="arrow-step">Load article context</div>
+        <div class="arrow-step">Search related sources</div>
+        <div class="arrow-step">Ask Gemini</div>
         <div>Save report</div>
       </div>
     </section>
